@@ -4,7 +4,7 @@ Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-pl
 ### Compile
 You must install openssl library at first, and then
 ```bash
-g++ *.cpp common/*.cpp -lssl -lcrypto -O3 -o zsign
+g++ *.cpp common/*.cpp -lcrypto -O3 -o zsign
 ```
 
 ### Usage
