@@ -8,7 +8,7 @@ g++ *.cpp common/*.cpp -lssl -lcrypto -o zsign -O3
 ```
 
 ### Usage
-I have already tested on mac and linux(need unzip and zip command).
+I have already tested on macOS and Linux (need unzip and zip command).
 ```bash
 usage: ./zsign -c cert.pem -k privkey.pem -m dev.mobileprovisioning -o output.ipa [options]... [file|folder]
 
