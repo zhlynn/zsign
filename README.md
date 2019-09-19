@@ -38,25 +38,25 @@ options:
 
 2. Sign ipa with private key and mobileprovisioning file.
 ```bash
-./zsign -k privkey.pem -m dev.prov -o resign.ipa -z 9 demo.ipa
+./zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
 ```
 
 3. Sign folder with p12 and mobileprovisioning file (using cache).
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o resign.ipa folder
+./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa folder
 ```
 
 4. Sign folder with p12 and mobileprovisioning file (without cache).
 ```bash
-./zsign -f -k dev.p12 -p 123 -m dev.prov -o resign.ipa folder
+./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa folder
 ```
 
 5. Inject dylib and resign.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o resign.ipa -l demo.dylib demo.ipa 
+./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -l demo.dylib demo.ipa 
 ```
 
 6. Change bundle id and bundle name
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o resign.ipa -b 'com.tree.new.bee' -n 'TreeNewBee' demo.ipa
+./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -b 'com.tree.new.bee' -n 'TreeNewBee' demo.ipa
 ```
