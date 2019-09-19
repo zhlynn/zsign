@@ -51,7 +51,7 @@ int usage()
 	return -1;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	ZTimer gtimer;
 
@@ -68,86 +68,86 @@ int main(int argc, char* argv[])
 	string strOutputFile;
 	string strDisplayName;
 	string strEntitlementsFile;
-	
+
 	int opt = 0;
 	int argslot = -1;
-	while(-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:", options, &argslot)))
+	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:", options, &argslot)))
 	{
-		switch (opt) 
+		switch (opt)
 		{
-			case 'd':
-				ZLog::SetLogLever(ZLog::E_DEBUG);
-				break;
-			case 'f':
-				bForce = true;
-				break;
-			case 'c':
-				strCertFile = optarg;
-				break;
-			case 'k':
-				strPKeyFile = optarg;
-				break;
-			case 'm':
-				strProvFile = optarg;
-				break;
-			case 'p':
-				strPassword = optarg;
-				break;
-			case 'b':
-				strBundleId = optarg;
-				break;
-			case 'n':
-				strDisplayName = optarg;
-				break;
-			case 'e':
-				strEntitlementsFile = optarg;
-				break;
-			case 'l':
-				strDyLibFile = optarg;
-				break;
-			case 'i':
-				bInstall = true;
-				break;
-			case 'o':
-				strOutputFile = GetCanonicalizePath(optarg);
-				break;
-			case 'z':
-				uZipLevel = atoi(optarg);
-				break;
-			case 'q':
-				ZLog::SetLogLever(ZLog::E_NONE);
-				break;
-			case 'v':
-				{
-					printf("version: 0.1\n");
-					return 0;
-				}
-				break;
-			case 'h':
-			case '?':
-				return usage();
-				break;
+		case 'd':
+			ZLog::SetLogLever(ZLog::E_DEBUG);
+			break;
+		case 'f':
+			bForce = true;
+			break;
+		case 'c':
+			strCertFile = optarg;
+			break;
+		case 'k':
+			strPKeyFile = optarg;
+			break;
+		case 'm':
+			strProvFile = optarg;
+			break;
+		case 'p':
+			strPassword = optarg;
+			break;
+		case 'b':
+			strBundleId = optarg;
+			break;
+		case 'n':
+			strDisplayName = optarg;
+			break;
+		case 'e':
+			strEntitlementsFile = optarg;
+			break;
+		case 'l':
+			strDyLibFile = optarg;
+			break;
+		case 'i':
+			bInstall = true;
+			break;
+		case 'o':
+			strOutputFile = GetCanonicalizePath(optarg);
+			break;
+		case 'z':
+			uZipLevel = atoi(optarg);
+			break;
+		case 'q':
+			ZLog::SetLogLever(ZLog::E_NONE);
+			break;
+		case 'v':
+		{
+			printf("version: 0.1\n");
+			return 0;
+		}
+		break;
+		case 'h':
+		case '?':
+			return usage();
+			break;
 		}
 
 		ZLog::DebugV(">>> Option:\t-%c, %s\n", opt, optarg);
 	}
 
-	if(optind >= argc)
+	if (optind >= argc)
 	{
 		return usage();
 	}
-	
-	if(ZLog::IsDebug())
+
+	if (ZLog::IsDebug())
 	{
 		CreateFolder("./.zsign_debug");
-		for(int i = optind; i < argc; i++)
+		for (int i = optind; i < argc; i++)
 		{
 			ZLog::DebugV(">>> Argument:\t%s\n", argv[i]);
 		}
 	}
-	
+
 	string strPath = GetCanonicalizePath(argv[optind]);
-	if(!IsFileExists(strPath.c_str()))
+	if (!IsFileExists(strPath.c_str()))
 	{
 		ZLog::ErrorV(">>> Invalid Path! %s\n", strPath.c_str());
 		return -1;
@@ -157,8 +157,8 @@ int main(int argc, char* argv[])
 	if (!IsFolder(strPath.c_str()))
 	{
 		bZipFile = IsZipFile(strPath.c_str());
-		if(!bZipFile)
-		{//macho file
+		if (!bZipFile)
+		{ //macho file
 			ZMachO macho;
 			if (macho.Init(strPath.c_str()))
 			{
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 
 	ZTimer timer;
 	ZSignAsset zSignAsset;
-	if(!zSignAsset.Init(strCertFile, strPKeyFile, strProvFile, strEntitlementsFile, strPassword))
+	if (!zSignAsset.Init(strCertFile, strPKeyFile, strProvFile, strEntitlementsFile, strPassword))
 	{
 		return -1;
 	}
@@ -178,13 +178,13 @@ int main(int argc, char* argv[])
 	bool bEnableCache = true;
 	string strFolder = strPath;
 	if (bZipFile)
-	{//ipa file
+	{ //ipa file
 		bForce = true;
 		bEnableCache = false;
 		StringFormat(strFolder, "/tmp/zsign_folder_%llu", timer.Reset());
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
-		if(!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
+		if (!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
 		{
 			RemoveFolder(strFolder.c_str());
 			ZLog::ErrorV(">>> Unzip Failed!\n");
@@ -198,11 +198,11 @@ int main(int argc, char* argv[])
 	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strDisplayName, strDyLibFile, bForce, bEnableCache);
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
-	if(bInstall && strOutputFile.empty())
+	if (bInstall && strOutputFile.empty())
 	{
 		StringFormat(strOutputFile, "/tmp/zsign_temp_%llu.ipa", GetMicroSencond());
 	}
-	
+
 	if (!strOutputFile.empty())
 	{
 		timer.Reset();
@@ -213,11 +213,11 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		if(!IsPathSuffix(strOutputFile, ".ipa"))
+		if (!IsPathSuffix(strOutputFile, ".ipa"))
 		{
 			strOutputFile += ".ipa";
 		}
-		
+
 		ZLog::PrintV(">>> Archiving: \t%s ... \n", strOutputFile.c_str());
 		string strBaseFolder = bundle.m_strAppFolder.substr(0, pos);
 		char szOldFolder[PATH_MAX] = {0};
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
 				RemoveFile(strOutputFile.c_str());
 				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
 				chdir(szOldFolder);
-				if(!IsFileExists(strOutputFile.c_str()))
+				if (!IsFileExists(strOutputFile.c_str()))
 				{
 					ZLog::Error(">>> Archive Failed!\n");
 					return -1;
@@ -239,17 +239,17 @@ int main(int argc, char* argv[])
 		timer.PrintResult(true, ">>> Archive OK! (%s)", GetFileSizeString(strOutputFile.c_str()).c_str());
 	}
 
-	if(bRet && bInstall)
+	if (bRet && bInstall)
 	{
 		SystemExec("ideviceinstaller -i '%s'", strOutputFile.c_str());
 	}
 
-	if(0 == strOutputFile.find("/tmp/zsign_tmp_"))
+	if (0 == strOutputFile.find("/tmp/zsign_tmp_"))
 	{
 		RemoveFile(strOutputFile.c_str());
 	}
 
-	if(0 == strFolder.find("/tmp/zsign_folder_"))
+	if (0 == strFolder.find("/tmp/zsign_folder_"))
 	{
 		RemoveFolder(strFolder.c_str());
 	}

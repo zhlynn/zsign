@@ -1,7 +1,6 @@
 #include "base64.h"
 #include <string.h>
 
-
 #define B0(a) (a & 0xFF)
 #define B1(a) (a >> 8 & 0xFF)
 #define B2(a) (a >> 16 & 0xFF)
@@ -13,20 +12,20 @@ CHBase64::CHBase64(void)
 
 CHBase64::~CHBase64(void)
 {
-	if(!m_arrEnc.empty())
+	if (!m_arrEnc.empty())
 	{
-		for(size_t i = 0; i < m_arrEnc.size(); i++)
+		for (size_t i = 0; i < m_arrEnc.size(); i++)
 		{
-			delete [] m_arrEnc[i];
+			delete[] m_arrEnc[i];
 		}
 		m_arrEnc.clear();
 	}
 
-	if(!m_arrDec.empty())
+	if (!m_arrDec.empty())
 	{
-		for(size_t i = 0; i < m_arrDec.size(); i++)
+		for (size_t i = 0; i < m_arrDec.size(); i++)
 		{
-			delete [] m_arrDec[i];
+			delete[] m_arrDec[i];
 		}
 		m_arrDec.clear();
 	}
@@ -68,8 +67,8 @@ int CHBase64::GetB64Index(char ch)
 	return index;
 }
 
-const char* CHBase64::Encode(const char* szSrc, int nSrcLen) 
-{   
+const char *CHBase64::Encode(const char *szSrc, int nSrcLen)
+{
 	if (0 == nSrcLen)
 	{
 		nSrcLen = (int)strlen(szSrc);
@@ -80,23 +79,23 @@ const char* CHBase64::Encode(const char* szSrc, int nSrcLen)
 		return "";
 	}
 
-	char* szEnc = new char[nSrcLen*3 + 128];
+	char *szEnc = new char[nSrcLen * 3 + 128];
 	m_arrEnc.push_back(szEnc);
 
 	int i = 0;
 	int len = 0;
-	unsigned char* psrc = (unsigned char*)szSrc;
-	char * p64 = szEnc;
+	unsigned char *psrc = (unsigned char *)szSrc;
+	char *p64 = szEnc;
 	for (i = 0; i < nSrcLen - 3; i += 3)
 	{
-		unsigned long ulTmp = *(unsigned long*)psrc;
-		register int b0 = GetB64char((B0(ulTmp) >> 2) & 0x3F); 
-		register int b1 = GetB64char((B0(ulTmp) << 6 >> 2 | B1(ulTmp) >> 4) & 0x3F); 
-		register int b2 = GetB64char((B1(ulTmp) << 4 >> 2 | B2(ulTmp) >> 6) & 0x3F); 
-		register int b3 = GetB64char((B2(ulTmp) << 2 >> 2) & 0x3F); 
-		*((unsigned long*)p64) = b0 | b1 << 8 | b2 << 16 | b3 << 24;
+		unsigned long ulTmp = *(unsigned long *)psrc;
+		register int b0 = GetB64char((B0(ulTmp) >> 2) & 0x3F);
+		register int b1 = GetB64char((B0(ulTmp) << 6 >> 2 | B1(ulTmp) >> 4) & 0x3F);
+		register int b2 = GetB64char((B1(ulTmp) << 4 >> 2 | B2(ulTmp) >> 6) & 0x3F);
+		register int b3 = GetB64char((B2(ulTmp) << 2 >> 2) & 0x3F);
+		*((unsigned long *)p64) = b0 | b1 << 8 | b2 << 16 | b3 << 24;
 		len += 4;
-		p64  += 4; 
+		p64 += 4;
 		psrc += 3;
 	}
 
@@ -106,87 +105,87 @@ const char* CHBase64::Encode(const char* szSrc, int nSrcLen)
 		unsigned long ulTmp = 0;
 		for (int j = 0; j < rest; ++j)
 		{
-			*(((unsigned char*)&ulTmp) + j) = *psrc++;
+			*(((unsigned char *)&ulTmp) + j) = *psrc++;
 		}
-		p64[0] = GetB64char((B0(ulTmp) >> 2) & 0x3F); 
-		p64[1] = GetB64char((B0(ulTmp) << 6 >> 2 | B1(ulTmp) >> 4) & 0x3F); 
-		p64[2] = rest > 1 ? GetB64char((B1(ulTmp) << 4 >> 2 | B2(ulTmp) >> 6) & 0x3F) : '='; 
-		p64[3] = rest > 2 ? GetB64char((B2(ulTmp) << 2 >> 2) & 0x3F) : '='; 
-		p64 += 4; 
+		p64[0] = GetB64char((B0(ulTmp) >> 2) & 0x3F);
+		p64[1] = GetB64char((B0(ulTmp) << 6 >> 2 | B1(ulTmp) >> 4) & 0x3F);
+		p64[2] = rest > 1 ? GetB64char((B1(ulTmp) << 4 >> 2 | B2(ulTmp) >> 6) & 0x3F) : '=';
+		p64[3] = rest > 2 ? GetB64char((B2(ulTmp) << 2 >> 2) & 0x3F) : '=';
+		p64 += 4;
 		len += 4;
 	}
-	*p64 = '\0'; 
+	*p64 = '\0';
 	return szEnc;
 }
 
-const char* CHBase64::Encode(const string& strInput)
+const char *CHBase64::Encode(const string &strInput)
 {
 	return Encode(strInput.data(), strInput.size());
 }
 
-const char* CHBase64::Decode(const char* szSrc, int nSrcLen, int* pDecLen) 
-{   
+const char *CHBase64::Decode(const char *szSrc, int nSrcLen, int *pDecLen)
+{
 	if (0 == nSrcLen)
 	{
 		nSrcLen = (int)strlen(szSrc);
 	}
-	
+
 	if (nSrcLen <= 0)
 	{
 		return "";
 	}
 
-	char* szDec = new char[nSrcLen];
+	char *szDec = new char[nSrcLen];
 	m_arrDec.push_back(szDec);
 
 	int i = 0;
 	int len = 0;
-	unsigned char* psrc = (unsigned char*)szSrc;
-	char * pbuf = szDec;
+	unsigned char *psrc = (unsigned char *)szSrc;
+	char *pbuf = szDec;
 	for (i = 0; i < nSrcLen - 4; i += 4)
 	{
-		unsigned long ulTmp = *(unsigned long*)psrc;
+		unsigned long ulTmp = *(unsigned long *)psrc;
 
 		register int b0 = (GetB64Index((char)B0(ulTmp)) << 2 | GetB64Index((char)B1(ulTmp)) << 2 >> 6) & 0xFF;
 		register int b1 = (GetB64Index((char)B1(ulTmp)) << 4 | GetB64Index((char)B2(ulTmp)) << 2 >> 4) & 0xFF;
 		register int b2 = (GetB64Index((char)B2(ulTmp)) << 6 | GetB64Index((char)B3(ulTmp)) << 2 >> 2) & 0xFF;
 
-		*((unsigned long*)pbuf) = b0 | b1 << 8 | b2 << 16;
-		psrc  += 4; 
+		*((unsigned long *)pbuf) = b0 | b1 << 8 | b2 << 16;
+		psrc += 4;
 		pbuf += 3;
 		len += 3;
 	}
 
-	if(i < nSrcLen)
+	if (i < nSrcLen)
 	{
 		int rest = nSrcLen - i;
 		unsigned long ulTmp = 0;
 		for (int j = 0; j < rest; ++j)
 		{
-			*(((unsigned char*)&ulTmp) + j) = *psrc++;
+			*(((unsigned char *)&ulTmp) + j) = *psrc++;
 		}
 
 		register int b0 = (GetB64Index((char)B0(ulTmp)) << 2 | GetB64Index((char)B1(ulTmp)) << 2 >> 6) & 0xFF;
 		*pbuf++ = b0;
-		len  ++;
+		len++;
 
 		if ('=' != B1(ulTmp) && '=' != B2(ulTmp))
 		{
 			register int b1 = (GetB64Index((char)B1(ulTmp)) << 4 | GetB64Index((char)B2(ulTmp)) << 2 >> 4) & 0xFF;
 			*pbuf++ = b1;
-			len  ++;
+			len++;
 		}
 
 		if ('=' != B2(ulTmp) && '=' != B3(ulTmp))
 		{
 			register int b2 = (GetB64Index((char)B2(ulTmp)) << 6 | GetB64Index((char)B3(ulTmp)) << 2 >> 2) & 0xFF;
 			*pbuf++ = b2;
-			len  ++;
+			len++;
 		}
 	}
 	*pbuf = '\0';
 
-	if(NULL != pDecLen)
+	if (NULL != pDecLen)
 	{
 		*pDecLen = (int)(pbuf - szDec);
 	}
@@ -194,11 +193,11 @@ const char* CHBase64::Decode(const char* szSrc, int nSrcLen, int* pDecLen)
 	return szDec;
 }
 
-const char* CHBase64::Decode(const char* szSrc, string& strOutput)
+const char *CHBase64::Decode(const char *szSrc, string &strOutput)
 {
 	strOutput.clear();
 	int nDecLen = 0;
-	const char* p = Decode(szSrc, 0, &nDecLen);
+	const char *p = Decode(szSrc, 0, &nDecLen);
 	strOutput.append(p, nDecLen);
 	return strOutput.data();
 }

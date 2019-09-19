@@ -30,7 +30,7 @@ bool SlotParseRequirements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
 
-	if(ZLog::IsDebug())
+	if (ZLog::IsDebug())
 	{
 		WriteFile("./.zsign_debug/Requirements.slot", (const char *)pSlotBase, uSlotLength);
 	}
@@ -40,8 +40,8 @@ bool SlotParseRequirements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 bool SlotBuildRequirements(const string &strBundleID, const string &strSubjectCN, string &strOutput)
 {
 	strOutput.clear();
-	if(strBundleID.empty() || strSubjectCN.empty())
-	{//ldid
+	if (strBundleID.empty() || strSubjectCN.empty())
+	{ //ldid
 		strOutput = "\xfa\xde\x0c\x01\x00\x00\x00\x0c\x00\x00\x00\x00";
 		return true;
 	}
@@ -117,7 +117,7 @@ bool SlotParseEntitlements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
 
-	if(ZLog::IsDebug())
+	if (ZLog::IsDebug())
 	{
 		WriteFile("./.zsign_debug/Entitlements.slot", (const char *)pSlotBase, uSlotLength);
 		WriteFile("./.zsign_debug/Entitlements.plist", (const char *)pSlotBase + 8, uSlotLength - 8);
@@ -237,7 +237,7 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
 
-	if(ZLog::IsDebug())
+	if (ZLog::IsDebug())
 	{
 		if (1 == cdHeader.hashType)
 		{
@@ -376,9 +376,9 @@ bool SlotBuildCodeDirectory(
 		strOutput.append(arrSpecialSlots[i].data(), arrSpecialSlots[i].size());
 	}
 
-	if(NULL != pCodeSlotsData && (uCodeSlotsDataLength == uCodeSlots*cdHeader.hashSize))
-	{//use exists
-		strOutput.append((const char*)pCodeSlotsData, uCodeSlotsDataLength);
+	if (NULL != pCodeSlotsData && (uCodeSlotsDataLength == uCodeSlots * cdHeader.hashSize))
+	{ //use exists
+		strOutput.append((const char *)pCodeSlotsData, uCodeSlotsDataLength);
 	}
 	else
 	{
@@ -412,7 +412,7 @@ bool SlotParseCMSSignature(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	//ZLog::PrintV("%s\n", jvInfo.styleWrite().c_str());
 
 	ZLog::PrintV("\tcerts: \n");
-	for(size_t i = 0; i < jvInfo["certs"].size(); i++)
+	for (size_t i = 0; i < jvInfo["certs"].size(); i++)
 	{
 		ZLog::PrintV("\t\t\t%s\t<=\t%s\n", jvInfo["certs"][i]["Subject"]["CN"].asCString(), jvInfo["certs"][i]["Issuer"]["CN"].asCString());
 	}
@@ -420,7 +420,7 @@ bool SlotParseCMSSignature(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
 
-	if(ZLog::IsDebug())
+	if (ZLog::IsDebug())
 	{
 		WriteFile("./.zsign_debug/CMSSignature.slot", (const char *)pSlotBase, uSlotLength);
 		WriteFile("./.zsign_debug/CMSSignature.der", (const char *)pSlotBase + 8, uSlotLength - 8);
@@ -429,13 +429,13 @@ bool SlotParseCMSSignature(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 }
 
 bool SlotBuildCMSSignature(
-	ZSignAsset* pSignAsset,
+	ZSignAsset *pSignAsset,
 	const string &strCodeDirectorySlot,
 	const string &strAltnateCodeDirectorySlot,
 	string &strOutput)
 {
 	strOutput.clear();
-	
+
 	JValue jvHashes;
 	string strCDHashesPlist;
 	string strCodeDirectorySlotSHA1;
@@ -447,7 +447,7 @@ bool SlotBuildCMSSignature(
 	jvHashes.writePList(strCDHashesPlist);
 
 	string strCMSData;
-	if(!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCMSData))
+	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCMSData))
 	{
 		return false;
 	}
@@ -483,11 +483,11 @@ bool ParseCodeSignature(uint8_t *pCSBase)
 	ZLog::PrintV("\tmagic: \t\t0x%x\n", LE(psb->magic));
 	ZLog::PrintV("\tlength: \t%d\n", LE(psb->length));
 	ZLog::PrintV("\tslots: \t\t%d\n", LE(psb->count));
-	
+
 	CS_BlobIndex *pbi = (CS_BlobIndex *)(pCSBase + sizeof(CS_SuperBlob));
 	for (uint32_t i = 0; i < LE(psb->count); i++, pbi++)
 	{
-		uint8_t* pSlotBase = pCSBase + LE(pbi->offset);
+		uint8_t *pSlotBase = pCSBase + LE(pbi->offset);
 		switch (LE(pbi->type))
 		{
 		case CSSLOT_CODEDIRECTORY:
@@ -517,14 +517,14 @@ bool ParseCodeSignature(uint8_t *pCSBase)
 		}
 	}
 
-	if(ZLog::IsDebug())
+	if (ZLog::IsDebug())
 	{
 		WriteFile("./.zsign_debug/CodeSignature.blob", (const char *)pCSBase, LE(psb->length));
 	}
 	return true;
 }
 
-bool SlotGetCodeSlotsData(uint8_t *pSlotBase, uint8_t*& pCodeSlots, uint32_t& uCodeSlotsLength)
+bool SlotGetCodeSlotsData(uint8_t *pSlotBase, uint8_t *&pCodeSlots, uint32_t &uCodeSlotsLength)
 {
 	uint32_t uSlotLength = LE(*(((uint32_t *)pSlotBase) + 1));
 	if (uSlotLength < 8)
@@ -533,11 +533,11 @@ bool SlotGetCodeSlotsData(uint8_t *pSlotBase, uint8_t*& pCodeSlots, uint32_t& uC
 	}
 	CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
 	pCodeSlots = pSlotBase + LE(cdHeader.hashOffset);
-	uCodeSlotsLength = LE(cdHeader.nCodeSlots)*cdHeader.hashSize;
+	uCodeSlotsLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
 	return true;
 }
 
-bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase, uint8_t*& pCodeSlots1Data, uint32_t& uCodeSlots1DataLength, uint8_t*& pCodeSlots256Data, uint32_t& uCodeSlots256DataLength)
+bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase, uint8_t *&pCodeSlots1Data, uint32_t &uCodeSlots1DataLength, uint8_t *&pCodeSlots256Data, uint32_t &uCodeSlots256DataLength)
 {
 	pCodeSlots1Data = NULL;
 	pCodeSlots256Data = NULL;
@@ -552,31 +552,31 @@ bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase, uint8_t*& pCodeSlots1
 	CS_BlobIndex *pbi = (CS_BlobIndex *)(pCSBase + sizeof(CS_SuperBlob));
 	for (uint32_t i = 0; i < LE(psb->count); i++, pbi++)
 	{
-		uint8_t* pSlotBase = pCSBase + LE(pbi->offset);
+		uint8_t *pSlotBase = pCSBase + LE(pbi->offset);
 		switch (LE(pbi->type))
 		{
 		case CSSLOT_CODEDIRECTORY:
+		{
+			CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
+			if (LE(cdHeader.length) > 8)
 			{
-				CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
-				if(LE(cdHeader.length) > 8)
-				{
-					pCodeSlots1Data = pSlotBase + LE(cdHeader.hashOffset);
-					uCodeSlots1DataLength = LE(cdHeader.nCodeSlots)*cdHeader.hashSize;
-				}
+				pCodeSlots1Data = pSlotBase + LE(cdHeader.hashOffset);
+				uCodeSlots1DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
 			}
-			break;
+		}
+		break;
 		case CSSLOT_ALTERNATE_CODEDIRECTORIES:
+		{
+			CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
+			if (LE(cdHeader.length) > 8)
 			{
-				CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
-				if(LE(cdHeader.length) > 8)
-				{
-					pCodeSlots256Data = pSlotBase + LE(cdHeader.hashOffset);
-					uCodeSlots256DataLength = LE(cdHeader.nCodeSlots)*cdHeader.hashSize;
-				}
+				pCodeSlots256Data = pSlotBase + LE(cdHeader.hashOffset);
+				uCodeSlots256DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
 			}
-			break;
+		}
+		break;
 		default:
-			break;
+		break;
 		}
 	}
 
