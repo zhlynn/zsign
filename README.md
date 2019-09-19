@@ -43,12 +43,12 @@ options:
 
 3. Sign folder with p12 and mobileprovisioning file (using cache).
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa folder
+./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa WeChat.app
 ```
 
 4. Sign folder with p12 and mobileprovisioning file (without cache).
 ```bash
-./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa folder
+./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa WeChat.app
 ```
 
 5. Inject dylib and resign.
