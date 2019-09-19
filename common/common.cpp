@@ -519,29 +519,21 @@ void PrintDataSHASum(const char *prefix, int nSumType, uint8_t *data, size_t siz
 bool SHASum(int nSumType, uint8_t *data, size_t size, string &strOutput)
 {
 	strOutput.clear();
-	if (NULL != data && size > 0)
+	if (1 == nSumType)
 	{
-		if (1 == nSumType)
-		{
-			uint8_t hash[20];
-			memset(hash, 0, 20);
-			SHA1(data, size, hash);
-			strOutput.append((const char *)hash, 20);
-		}
-		else
-		{
-			uint8_t hash[32];
-			memset(hash, 0, 32);
-			SHA256(data, size, hash);
-			strOutput.append((const char *)hash, 32);
-		}
-		return true;
+		uint8_t hash[20];
+		memset(hash, 0, 20);
+		SHA1(data, size, hash);
+		strOutput.append((const char *)hash, 20);
 	}
 	else
 	{
-		strOutput.append((1 == nSumType) ? 20 : 32, 0);
-		return false;
+		uint8_t hash[32];
+		memset(hash, 0, 32);
+		SHA256(data, size, hash);
+		strOutput.append((const char *)hash, 32);
 	}
+	return true;
 }
 
 bool SHASum(int nSumType, const string &strData, string &strOutput)
