@@ -29,7 +29,7 @@ const struct option options[] = {
 
 int usage()
 {
-	ZLog::Print("Usage: \n");
+	ZLog::Print("Usage: TODO\n");
 	return -1;
 }
 
