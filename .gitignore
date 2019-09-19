@@ -2,3 +2,4 @@ zsign
 .vscode
 *.dSYM
 *.ipa
+.zsign*
