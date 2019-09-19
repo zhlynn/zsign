@@ -33,7 +33,7 @@ options:
 
 1. Show CodeSignature segment info.
 ```bash
-./zsign WeChat.app/WeChat
+./zsign demo.app/execute
 ```
 
 2. Sign ipa with private key and mobileprovisioning file.
@@ -43,12 +43,12 @@ options:
 
 3. Sign folder with p12 and mobileprovisioning file (using cache).
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa WeChat.app
+./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
 ```
 
 4. Sign folder with p12 and mobileprovisioning file (without cache).
 ```bash
-./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa WeChat.app
+./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
 ```
 
 5. Inject dylib and resign.
