@@ -10,13 +10,14 @@ g++ *.cpp common/*.cpp -lssl -lcrypto -o zsign -O3
 ### Usage
 I have already tested on macOS and Linux (need unzip and zip command).
 ```bash
-usage: ./zsign -c cert.pem -k privkey.pem -m dev.mobileprovisioning -o output.ipa [options]... [file|folder]
+usage: ./zsign -c cert.pem -k privkey.pem -m dev.prov -o output.ipa [options]... [file|folder]
 
 options:
 -k, --pkey          Path to private key or p12 file. (PEM or DER format)
+-m, --prov          Path to mobile provisioning profile.
 -c, --cert          Path to certificate file. (PEM or DER format)
 -d, --debug         Generate debug output files. (.zsign_debug folder)
--f, --force         Force signing without cache when sign folder.
+-f, --force         Force sign without cache when signing folder.
 -o, --output        Path to output ipa file.
 -p, --password      Password for private key or p12 file.
 -b, --bundleid      New bundle id to change.
@@ -37,25 +38,25 @@ options:
 
 2. Sign ipa with privatekey and mobileprovisioning file.
 ```bash
-./zsign -k privkey.pem -m dev.mobileprovisioning -o resign.ipa -z 9 demo.ipa
+./zsign -k privkey.pem -m dev.prov -o resign.ipa -z 9 demo.ipa
 ```
 
-3. Sign folder with p12 and mobileprovisioning file.
+3. Sign folder with p12 and mobileprovisioning file (using cache).
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa folder
+./zsign -k dev.p12 -p 123 -m dev.prov -o resign.ipa folder
 ```
 
 4. Sign folder with p12 and mobileprovisioning file without cache.
 ```bash
-./zsign -f -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa folder
+./zsign -f -k dev.p12 -p 123 -m dev.prov -o resign.ipa folder
 ```
 
 5. Inject dylib and resign.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa demo.ipa -l demo.dylib
+./zsign -k dev.p12 -p 123 -m dev.prov -o resign.ipa -l demo.dylib demo.ipa 
 ```
 
 6. Change bundle id and bundle name
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa demo.ipa -b 'com.tree.new.bee' -n 'TreeNewBee'
+./zsign -k dev.p12 -p 123 -m dev.prov -o resign.ipa -b 'com.tree.new.bee' -n 'TreeNewBee' demo.ipa
 ```
