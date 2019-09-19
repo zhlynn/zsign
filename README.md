@@ -11,6 +11,7 @@ g++ *.cpp common/*.cpp -lssl -lcrypto -o zsign -O3
 I have already tested on mac and linux(need unzip and zip command).
 ```bash
 usage: ./zsign -c cert.pem -k privkey.pem -m dev.mobileprovisioning -o output.ipa [options]... [file|folder]
+
 options:
 -k, --pkey          Path to private key or p12 file. (PEM or DER format)
 -c, --cert          Path to certificate file. (PEM or DER format)
@@ -29,18 +30,32 @@ options:
 -h, --help          Show help.
 ```
 
+1. Show CodeSignature segment info.
+```bash
+./zsign WeChat.app/WeChat
+```
 
-1. Sign IPA with privatekey and mobileprovisioning file.
+2. Sign ipa with privatekey and mobileprovisioning file.
 ```bash
 ./zsign -k privkey.pem -m dev.mobileprovisioning -o resign.ipa -z 9 demo.ipa
 ```
 
-2. Sign Folder with p12 and mobileprovisioning file.
+3. Sign folder with p12 and mobileprovisioning file.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa folder
 ```
 
-3. Inject dylib and resign.
+4. Sign folder with p12 and mobileprovisioning file without cache.
+```bash
+./zsign -f -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa folder
+```
+
+5. Inject dylib and resign.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa demo.ipa -l demo.dylib
+```
+
+6. Change bundle id and bundle name
+```bash
+./zsign -k dev.p12 -p 123 -m dev.mobileprovisioning -o resign.ipa demo.ipa -b 'com.tree.new.bee' -n 'TreeNewBee'
 ```
