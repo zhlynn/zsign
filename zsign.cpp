@@ -29,7 +29,25 @@ const struct option options[] = {
 
 int usage()
 {
-	ZLog::Print("Usage: TODO\n");
+	ZLog::Print("Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder\n");
+	ZLog::Print("options:\n");
+	ZLog::Print("-k, --pkey\t\tPath to private key or p12 file. (PEM or DER format)\n");
+	ZLog::Print("-m, --prov\t\tPath to mobile provisioning profile.\n");
+	ZLog::Print("-c, --cert\t\tPath to certificate file. (PEM or DER format)\n");
+	ZLog::Print("-d, --debug\t\tGenerate debug output files. (.zsign_debug folder)\n");
+	ZLog::Print("-f, --force\t\tForce sign without cache when signing folder.\n");
+	ZLog::Print("-o, --output\t\tPath to output ipa file.\n");
+	ZLog::Print("-p, --password\t\tPassword for private key or p12 file.\n");
+	ZLog::Print("-b, --bundleid\t\tNew bundle id to change.\n");
+	ZLog::Print("-n, --bundlename\tNew bundle name to change.\n");
+	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
+	ZLog::Print("-z, --ziplevel\t\tCompressed level when output the ipa file. (0-9)\n");
+	ZLog::Print("-l, --dylib\t\tPath to inject dylib file.\n");
+	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
+	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
+	ZLog::Print("-v, --version\t\tVerbose for version.\n");
+	ZLog::Print("-h, --help\t\tShow help.\n");
+
 	return -1;
 }
 
@@ -100,6 +118,10 @@ int main(int argc, char* argv[])
 				ZLog::SetLogLever(ZLog::E_NONE);
 				break;
 			case 'v':
+				{
+					printf("version: 0.1\n");
+					return 0;
+				}
 				break;
 			case 'h':
 			case '?':
