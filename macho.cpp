@@ -109,11 +109,11 @@ bool ZMachO::CloseFile()
 		return false;
 	}
 
-	if((munmap((void *)m_pBase, m_sSize)) < 0)
+	if ((munmap((void *)m_pBase, m_sSize)) < 0)
 	{
 		ZLog::ErrorV(">>> CodeSign Write(munmap) Failed! Error: %p, %lu, %s\n", m_pBase, m_sSize, strerror(errno));
-        return false;
-    }
+		return false;
+	}
 	return true;
 }
 

@@ -10,7 +10,7 @@ g++ *.cpp common/*.cpp -lssl -lcrypto -o zsign -O3
 ### Usage
 I have already tested on macOS and Linux (need unzip and zip command).
 ```bash
-usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
+Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
 
 options:
 -k, --pkey          Path to private key or p12 file. (PEM or DER format)
