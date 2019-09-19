@@ -27,7 +27,7 @@ options:
 -l, --dylib         Path to inject dylib file.
 -i, --install       Install ipa file using ideviceinstaller command for test.
 -q, --quiet         Quiet operation.
--v, --version       Verbose for version.
+-v, --version       Show version.
 -h, --help          Show help.
 ```
 
