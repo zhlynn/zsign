@@ -36,7 +36,7 @@ options:
 ./zsign WeChat.app/WeChat
 ```
 
-2. Sign ipa with privatekey and mobileprovisioning file.
+2. Sign ipa with private key and mobileprovisioning file.
 ```bash
 ./zsign -k privkey.pem -m dev.prov -o resign.ipa -z 9 demo.ipa
 ```
@@ -46,7 +46,7 @@ options:
 ./zsign -k dev.p12 -p 123 -m dev.prov -o resign.ipa folder
 ```
 
-4. Sign folder with p12 and mobileprovisioning file without cache.
+4. Sign folder with p12 and mobileprovisioning file (without cache).
 ```bash
 ./zsign -f -k dev.p12 -p 123 -m dev.prov -o resign.ipa folder
 ```
