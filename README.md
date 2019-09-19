@@ -1,5 +1,5 @@
 # zsign
-Maybe is the most quickly codesign alternative for ios12+ in the world,  cross-platform, more features.
+Maybe is the most quickly codesign alternative for iOS12+ in the world,  cross-platform, more features.
 
 ### Compile
 You must install openssl library at first, then
