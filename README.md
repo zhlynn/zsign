@@ -2,13 +2,28 @@
 Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform, more features.
 
 ### Compile
-You must install openssl library at first, and then
+You must install openssl library at first,
+#### macOS:
+```bash
+brew install openssl
+```
+and then
+```bash
+g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl/1.0.2s/include -L/usr/local/Cellar/openssl/1.0.2s/lib -o zsign
+```
+
+#### CentOS:
+```bash
+yum install openssl-devel
+```
+and then
 ```bash
 g++ *.cpp common/*.cpp -lcrypto -O3 -o zsign
 ```
 
 ### Usage
-I have already tested on macOS and Linux (need **unzip** and **zip** command).
+I have already tested on macOS and Linux, but you also need **unzip** and **zip** command installed.
+
 ```bash
 Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
 
