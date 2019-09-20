@@ -450,9 +450,16 @@ bool ZArchO::Sign(ZSignAsset *pSignAsset, bool bForce, const string &strBundleId
 
 	string strCodeResourcesSHA1;
 	string strCodeResourcesSHA256;
-	SHASum(E_SHASUM_TYPE_1, strCodeResourcesData, strCodeResourcesSHA1);
-	SHASum(E_SHASUM_TYPE_256, strCodeResourcesData, strCodeResourcesSHA256);
-
+	if(strCodeResourcesData.empty())
+	{
+		strCodeResourcesSHA1.append(20, 0);
+		strCodeResourcesSHA256.append(32, 0);
+	}
+	else
+	{
+		SHASum(strCodeResourcesData, strCodeResourcesSHA1, strCodeResourcesSHA256);
+	}
+	
 	string strCodeSignBlob;
 	BuildCodeSignature(pSignAsset, bForce, strBundleId, strInfoPlistSHA1, strInfoPlistSHA256, strCodeResourcesSHA1, strCodeResourcesSHA256, strCodeSignBlob);
 	if (strCodeSignBlob.empty())
