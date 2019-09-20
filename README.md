@@ -92,4 +92,4 @@ options:
 ### How to sign quickly ?
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.  
 At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.  
-When you re-sign with another cert next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try！：）
+When you re-sign with other assets next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try！：）
