@@ -313,11 +313,28 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	SlotBuildEntitlements(IsExecute() ? pSignAsset->m_strEntitlementsData : "", strEntitlementsSlot);
 
 	string strRequirementsSlotSHA1;
-	string strEntitlementsSlotSHA1;
 	string strRequirementsSlotSHA256;
+	if(strRequirementsSlot.empty())
+	{//empty
+		strRequirementsSlotSHA1.append(20, 0);
+		strRequirementsSlotSHA256.append(32, 0);
+	}
+	else
+	{
+		SHASum(strRequirementsSlot, strRequirementsSlotSHA1, strRequirementsSlotSHA256);
+	}
+	
+	string strEntitlementsSlotSHA1;
 	string strEntitlementsSlotSHA256;
-	SHASum(strRequirementsSlot, strRequirementsSlotSHA1, strRequirementsSlotSHA256);
-	SHASum(strEntitlementsSlot, strEntitlementsSlotSHA1, strEntitlementsSlotSHA256);
+	if(strEntitlementsSlot.empty())
+	{//empty
+		strEntitlementsSlotSHA1.append(20, 0);
+		strEntitlementsSlotSHA256.append(32, 0);
+	}
+	else
+	{
+		SHASum(strEntitlementsSlot, strEntitlementsSlotSHA1, strEntitlementsSlotSHA256);
+	}
 
 	uint8_t *pCodeSlots1Data = NULL;
 	uint8_t *pCodeSlots256Data = NULL;
