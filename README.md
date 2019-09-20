@@ -4,6 +4,7 @@ If this tool can help you, please don't forget to star me. :)
 
 ### Compile
 You must install openssl library at first,
+
 #### macOS:
 ```bash
 brew install openssl
