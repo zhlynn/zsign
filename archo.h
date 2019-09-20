@@ -12,7 +12,7 @@ public:
 	bool Sign(ZSignAsset *pSignAsset, bool bForce, const string &strBundleId, const string &strInfoPlistSHA1, const string &strInfoPlistSHA256, const string &strCodeResourcesData);
 	void PrintInfo();
 	bool IsExecute();
-	bool InjectDyLib(const char *szDyLibPath, bool &bCreate);
+	bool InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreate);
 	uint32_t ReallocCodeSignSpace(const string &strNewFile);
 
 private:

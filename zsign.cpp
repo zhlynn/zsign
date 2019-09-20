@@ -18,9 +18,10 @@ const struct option options[] = {
 	{ "bundleid",		required_argument,		NULL, 'b' },
 	{ "bundlename",		required_argument,		NULL, 'n' },
 	{ "entitlements",	required_argument,		NULL, 'e' },
-	{ "output",			no_argument,			NULL, 'o' },
+	{ "output",			required_argument,		NULL, 'o' },
 	{ "ziplevel",		required_argument,		NULL, 'z' },
 	{ "dylib",			required_argument,		NULL, 'l' },
+	{ "weak",			no_argument,			NULL, 'w' },
 	{ "install",		no_argument,			NULL, 'i' },
 	{ "quiet",			no_argument,			NULL, 'q' },
 	{ "help",			no_argument,			NULL, 'h' },
@@ -43,9 +44,10 @@ int usage()
 	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
 	ZLog::Print("-z, --ziplevel\t\tCompressed level when output the ipa file. (0-9)\n");
 	ZLog::Print("-l, --dylib\t\tPath to inject dylib file.\n");
+	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
-	ZLog::Print("-v, --version\t\tVerbose for version.\n");
+	ZLog::Print("-v, --version\t\tShow version.\n");
 	ZLog::Print("-h, --help\t\tShow help.\n");
 
 	return -1;
@@ -57,6 +59,7 @@ int main(int argc, char *argv[])
 
 	bool bForce = false;
 	bool bInstall = false;
+	bool bWeakInject = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -71,7 +74,7 @@ int main(int argc, char *argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:", options, &argslot)))
+	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w", options, &argslot)))
 	{
 		switch (opt)
 		{
@@ -114,12 +117,15 @@ int main(int argc, char *argv[])
 		case 'z':
 			uZipLevel = atoi(optarg);
 			break;
+		case 'w':
+			bWeakInject = true;
+			break;
 		case 'q':
 			ZLog::SetLogLever(ZLog::E_NONE);
 			break;
 		case 'v':
 		{
-			printf("version: 0.1\n");
+			printf("version: 0.2\n");
 			return 0;
 		}
 		break;
@@ -162,7 +168,16 @@ int main(int argc, char *argv[])
 			ZMachO macho;
 			if (macho.Init(strPath.c_str()))
 			{
-				macho.PrintInfo();
+				if(!strDyLibFile.empty())
+				{//inject dylib
+					bool bCreate = false;
+					macho.InjectDyLib(bWeakInject, strDyLibFile.c_str(), bCreate);
+				}
+				else
+				{
+					macho.PrintInfo();
+				}
+				macho.Free();
 			}
 			return 0;
 		}
@@ -195,7 +210,7 @@ int main(int argc, char *argv[])
 
 	timer.Reset();
 	ZAppBundle bundle;
-	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strDisplayName, strDyLibFile, bForce, bEnableCache);
+	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache);
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	if (bInstall && strOutputFile.empty())

@@ -34,6 +34,12 @@ bool ZMachO::InitV(const char *szFormatPath, ...)
 	return Init(szFile);
 }
 
+bool ZMachO::Free()
+{
+	FreeArchOes();
+	return CloseFile();
+}
+
 bool ZMachO::NewArchO(uint8_t *pBase, uint32_t uLength)
 {
 	ZArchO *archo = new ZArchO();
@@ -277,14 +283,14 @@ bool ZMachO::ReallocCodeSignSpace()
 	return false;
 }
 
-bool ZMachO::InjectDyLib(const char *szDyLibPath, bool &bCreate)
+bool ZMachO::InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreate)
 {
 	ZLog::WarnV(">>> Inject DyLib: %s ... \n", szDyLibPath);
 
 	vector<uint32_t> arrMachOesSizes;
 	for (size_t i = 0; i < m_arrArchOes.size(); i++)
 	{
-		if (!m_arrArchOes[i]->InjectDyLib(szDyLibPath, bCreate))
+		if (!m_arrArchOes[i]->InjectDyLib(bWeakInject, szDyLibPath, bCreate))
 		{
 			ZLog::Error(">>> Failed!\n");
 			return false;

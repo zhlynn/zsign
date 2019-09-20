@@ -524,7 +524,7 @@ uint32_t ZArchO::ReallocCodeSignSpace(const string &strNewFile)
 	return uNewLength;
 }
 
-bool ZArchO::InjectDyLib(const char *szDyLibPath, bool &bCreate)
+bool ZArchO::InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreate)
 {
 	if (NULL == m_pHeader)
 	{
@@ -535,13 +535,22 @@ bool ZArchO::InjectDyLib(const char *szDyLibPath, bool &bCreate)
 	for (uint32_t i = 0; i < BO(m_pHeader->ncmds); i++)
 	{
 		load_command *plc = (load_command *)pLoadCommand;
-		if (LC_LOAD_DYLIB == BO(plc->cmd))
+		uint32_t uLoadType = BO(plc->cmd);
+		if (LC_LOAD_DYLIB == uLoadType || LC_LOAD_WEAK_DYLIB == uLoadType)
 		{
 			dylib_command *dlc = (dylib_command *)pLoadCommand;
 			const char *szDyLib = (const char *)(pLoadCommand + BO(dlc->dylib.name.offset));
 			if (0 == strcmp(szDyLib, szDyLibPath))
-			{
-				ZLog::WarnV(">>> DyLib Is Already Existed!\n");
+			{	
+				if((bWeakInject && (LC_LOAD_WEAK_DYLIB != uLoadType)) || (!bWeakInject && (LC_LOAD_DYLIB != uLoadType)))
+				{
+					dlc->cmd = BO((uint32_t)(bWeakInject ? LC_LOAD_WEAK_DYLIB : LC_LOAD_DYLIB));
+					ZLog::WarnV(">>> DyLib Load Type Changed! %s -> %s\n", (LC_LOAD_DYLIB == uLoadType) ? "LC_LOAD_DYLIB" : "LC_LOAD_WEAK_DYLIB", bWeakInject ? "LC_LOAD_WEAK_DYLIB" : "LC_LOAD_DYLIB");
+				}
+				else
+				{
+					ZLog::WarnV(">>> DyLib Is Already Existed! %s\n");
+				}
 				return true;
 			}
 		}
@@ -553,13 +562,13 @@ bool ZArchO::InjectDyLib(const char *szDyLibPath, bool &bCreate)
 	uint32_t uDyLibCommandSize = sizeof(dylib_command) + uDylibPathLength + uDylibPathPadding;
 	if (m_uLoadCommandsFreeSpace < uDyLibCommandSize)
 	{
-		ZLog::Error(">>> Can't Find Free Space Of LoadCommands For LC_LOAD_DYLIB!\n");
+		ZLog::Error(">>> Can't Find Free Space Of LoadCommands For LC_LOAD_DYLIB Or LC_LOAD_WEAK_DYLIB!\n");
 		return false;
 	}
 
 	//add
 	dylib_command *dlc = (dylib_command *)(m_pBase + m_uHeaderSize + BO(m_pHeader->sizeofcmds));
-	dlc->cmd = BO((uint32_t)LC_LOAD_DYLIB);
+	dlc->cmd = BO((uint32_t)(bWeakInject ? LC_LOAD_WEAK_DYLIB : LC_LOAD_DYLIB));
 	dlc->cmdsize = BO(uDyLibCommandSize);
 	dlc->dylib.name.offset = BO((uint32_t)sizeof(dylib_command));
 	dlc->dylib.timestamp = BO((uint32_t)2);

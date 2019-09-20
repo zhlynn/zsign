@@ -6,6 +6,7 @@ ZAppBundle::ZAppBundle()
 {
 	m_pSignAsset = NULL;
 	m_bForceSign = false;
+	m_bWeakInject = false;
 }
 
 bool ZAppBundle::FindAppFolder(const string &strFolder, string &strAppFolder)
@@ -413,7 +414,7 @@ bool ZAppBundle::SignNode(JValue &jvNode)
 	bool bForceSign = m_bForceSign;
 	if ("/" == strFolder && !m_strDyLibPath.empty())
 	{ //inject dylib
-		macho.InjectDyLib(m_strDyLibPath.c_str(), bForceSign);
+		macho.InjectDyLib(m_bWeakInject, m_strDyLibPath.c_str(), bForceSign);
 	}
 
 	if (!macho.Sign(m_pSignAsset, bForceSign, strBundleId, strInfoPlistSHA1, strInfoPlistSHA256, strCodeResData))
@@ -452,10 +453,11 @@ void ZAppBundle::GetPlugIns(const string &strFolder, vector<string> &arrPlugIns)
 	}
 }
 
-bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bEnableCache)
+bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache)
 {
 	m_bForceSign = bForce;
 	m_pSignAsset = pSignAsset;
+	m_bWeakInject = bWeakInject; 
 	if (NULL == m_pSignAsset)
 	{
 		return false;
