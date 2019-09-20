@@ -69,7 +69,7 @@ options:
 ./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
 ```
 
-5. Inject dylib into ipa and resign.
+5. Inject dylib into ipa and re-sign.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -l demo.dylib demo.ipa 
 ```
@@ -88,3 +88,8 @@ options:
 ```bash
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
+
+### How to sign quickly ?
+You can unzip the ipa file at first, and then using zsign to sign folder with assets.  
+At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.  
+When you re-sign with another cert next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try！：）
