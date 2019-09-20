@@ -42,6 +42,7 @@ options:
 -e, --entitlements  New entitlements to change.
 -z, --ziplevel      Compressed level when output the ipa file. (0-9)
 -l, --dylib         Path to inject dylib file.
+-w, --weak          Inject dylib as LC_LOAD_WEAK_DYLIB.
 -i, --install       Install ipa file using ideviceinstaller command for test.
 -q, --quiet         Quiet operation.
 -v, --version       Show version.
@@ -68,7 +69,7 @@ options:
 ./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
 ```
 
-5. Inject dylib and resign.
+5. Inject dylib into ipa and resign.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -l demo.dylib demo.ipa 
 ```
@@ -76,4 +77,14 @@ options:
 6. Change bundle id and bundle name
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -b 'com.tree.new.bee' -n 'TreeNewBee' demo.ipa
+```
+
+7. Inject dylib(LC_LOAD_DYLIB) into mach-o file.
+```bash
+./zsign -l "@executable_path/demo.dylib" demo.app/execute
+```
+
+8. Inject dylib(LC_LOAD_WEAK_DYLIB) into mach-o file.
+```bash
+./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
