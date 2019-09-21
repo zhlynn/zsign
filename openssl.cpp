@@ -420,7 +420,7 @@ bool GetCMSInfo(uint8_t *pCMSData, uint32_t uCMSLength, JValue &jvOutput)
 	{
 		if ((*pos))
 		{
-			CHBase64 b64;
+			ZBase64 b64;
 			jvOutput["content"] = b64.Encode((const char *)(*pos)->data, (*pos)->length);
 		}
 	}

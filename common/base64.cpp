@@ -6,11 +6,11 @@
 #define B2(a) (a >> 16 & 0xFF)
 #define B3(a) (a >> 24 & 0xFF)
 
-CHBase64::CHBase64(void)
+ZBase64::ZBase64(void)
 {
 }
 
-CHBase64::~CHBase64(void)
+ZBase64::~ZBase64(void)
 {
 	if (!m_arrEnc.empty())
 	{
@@ -31,7 +31,7 @@ CHBase64::~CHBase64(void)
 	}
 }
 
-char CHBase64::GetB64char(int nIndex)
+char ZBase64::GetB64char(int nIndex)
 {
 	static const char szTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	if (nIndex >= 0 && nIndex < 64)
@@ -41,7 +41,7 @@ char CHBase64::GetB64char(int nIndex)
 	return '=';
 }
 
-int CHBase64::GetB64Index(char ch)
+int ZBase64::GetB64Index(char ch)
 {
 	int index = -1;
 	if (ch >= 'A' && ch <= 'Z')
@@ -67,7 +67,7 @@ int CHBase64::GetB64Index(char ch)
 	return index;
 }
 
-const char *CHBase64::Encode(const char *szSrc, int nSrcLen)
+const char *ZBase64::Encode(const char *szSrc, int nSrcLen)
 {
 	if (0 == nSrcLen)
 	{
@@ -118,12 +118,12 @@ const char *CHBase64::Encode(const char *szSrc, int nSrcLen)
 	return szEnc;
 }
 
-const char *CHBase64::Encode(const string &strInput)
+const char *ZBase64::Encode(const string &strInput)
 {
 	return Encode(strInput.data(), strInput.size());
 }
 
-const char *CHBase64::Decode(const char *szSrc, int nSrcLen, int *pDecLen)
+const char *ZBase64::Decode(const char *szSrc, int nSrcLen, int *pDecLen)
 {
 	if (0 == nSrcLen)
 	{
@@ -193,7 +193,7 @@ const char *CHBase64::Decode(const char *szSrc, int nSrcLen, int *pDecLen)
 	return szDec;
 }
 
-const char *CHBase64::Decode(const char *szSrc, string &strOutput)
+const char *ZBase64::Decode(const char *szSrc, string &strOutput)
 {
 	strOutput.clear();
 	int nDecLen = 0;

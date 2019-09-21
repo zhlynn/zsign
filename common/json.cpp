@@ -864,7 +864,7 @@ string JValue::asData() const
 	{
 		if (isDataString())
 		{
-			CHBase64 b64;
+			ZBase64 b64;
 			int nDataLen = 0;
 			const char *pdata = b64.Decode(m_Value.vString + 5, 0, &nDataLen);
 			string strdata;
@@ -1710,7 +1710,7 @@ void JWriter::FastWriteValue(const JValue &jval, string &strDoc)
 	{
 		strDoc += "\"data:";
 		const string &strData = jval.asData();
-		CHBase64 b64;
+		ZBase64 b64;
 		strDoc += b64.Encode(strData.data(), (int)strData.size());
 		strDoc += "\"";
 	}
@@ -1789,7 +1789,7 @@ void JWriter::StyleWriteValue(const JValue &jval)
 		string strDoc;
 		strDoc += "\"data:";
 		const string &strData = jval.asData();
-		CHBase64 b64;
+		ZBase64 b64;
 		strDoc += b64.Encode(strData.data(), (int)strData.size());
 		strDoc += "\"";
 		PushValue(strDoc);
@@ -2107,7 +2107,7 @@ bool PReader::readValue(JValue &pval, Token &token)
 		string strval;
 		decodeString(token, strval);
 
-		CHBase64 b64;
+		ZBase64 b64;
 		int nDecLen = 0;
 		const char *data = b64.Decode(strval.data(), (int)strval.size(), &nDecLen);
 		pval.assignData(data, nDecLen);
@@ -2958,7 +2958,7 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 	}
 	else if (pval.isData())
 	{
-		CHBase64 b64;
+		ZBase64 b64;
 		string strdata = pval.asData();
 		strdoc += strindent;
 		strdoc += "<data>\n";

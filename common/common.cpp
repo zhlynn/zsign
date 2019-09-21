@@ -565,7 +565,7 @@ bool SHASumFile(const char *szFile, string &strSHA1, string &strSHA256)
 
 bool SHASumBase64(const string &strData, string &strSHA1Base64, string &strSHA256Base64)
 {
-	CHBase64 b64;
+	ZBase64 b64;
 	string strSHA1;
 	string strSHA256;
 	SHASum(strData, strSHA1, strSHA256);
@@ -576,7 +576,7 @@ bool SHASumBase64(const string &strData, string &strSHA1Base64, string &strSHA25
 
 bool SHASumBase64File(const char *szFile, string &strSHA1Base64, string &strSHA256Base64)
 {
-	CHBase64 b64;
+	ZBase64 b64;
 	string strSHA1;
 	string strSHA256;
 	SHASumFile(szFile, strSHA1, strSHA256);

@@ -327,7 +327,7 @@ bool ZAppBundle::SignNode(JValue &jvNode)
 		}
 	}
 
-	CHBase64 b64;
+	ZBase64 b64;
 	string strInfoPlistSHA1;
 	string strInfoPlistSHA256;
 	string strFolder = jvNode["path"];

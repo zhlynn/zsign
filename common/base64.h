@@ -5,11 +5,11 @@
 
 using namespace std;
 
-class CHBase64
+class ZBase64
 {
 public:
-	CHBase64(void);
-	~CHBase64(void);
+	ZBase64(void);
+	~ZBase64(void);
 
 public:
 	const char *Encode(const char *szSrc, int nSrcLen = 0);
