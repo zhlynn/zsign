@@ -9,7 +9,7 @@ You must install openssl library at first,
 ```bash
 brew install openssl
 ```
-and then
+and then (attention to replace your openssl version)
 ```bash
 g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl/1.0.2s/include -L/usr/local/Cellar/openssl/1.0.2s/lib -O3 -o zsign
 ```

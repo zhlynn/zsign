@@ -348,6 +348,7 @@ bool GetCertInfo(X509 *cert, JValue &jvCertInfo)
 
 	jvCertInfo["Validity"]["NotBefore"] = ASN1_TIMEtoString(X509_get_notBefore(cert));
 	jvCertInfo["Validity"]["NotAfter"] = ASN1_TIMEtoString(X509_get_notAfter(cert));
+	
 	/*
 	uint32_t ex_kusage = X509_get_key_usage(cert);
 	if(KU_DATA_ENCIPHERMENT == (ex_kusage & KU_DATA_ENCIPHERMENT))

@@ -28,8 +28,26 @@ bool SlotParseRequirements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 		return false;
 	}
 
-	SlotParseGeneralTailer(pSlotBase, uSlotLength);
+	if(IsFileExists("/usr/bin/csreq"))
+	{
+		string strTempFile;
+		StringFormat(strTempFile, "/tmp/Requirements_%llu.blob", GetMicroSencond());
+		WriteFile(strTempFile.c_str(), (const char *)pSlotBase, uSlotLength);
 
+		string strCommand;
+		StringFormat(strCommand, "/usr/bin/csreq -r '%s' -t ", strTempFile.c_str());
+		char result[1024] = {0};
+		FILE *cmd = popen(strCommand.c_str(), "r");
+		while (NULL != fgets(result, sizeof(result), cmd))
+		{
+			printf("\treqtext: \t%s", result);
+		}
+		pclose(cmd);
+		RemoveFile(strTempFile.c_str());
+	}
+
+	SlotParseGeneralTailer(pSlotBase, uSlotLength);
+	
 	if (ZLog::IsDebug())
 	{
 		WriteFile("./.zsign_debug/Requirements.slot", (const char *)pSlotBase, uSlotLength);
