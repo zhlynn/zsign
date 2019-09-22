@@ -66,7 +66,7 @@ const char *StringFormat(string &strFormat, const char *szFormatArgs, ...);
 string &StringReplace(string &context, const string &from, const string &to);
 void StringSplit(const string &src, const string &split, vector<string> &dest);
 
-string FormatSize(int64_t size, int64_t base);
+string FormatSize(int64_t size, int64_t base = 1024);
 time_t GetUnixStamp();
 uint64_t GetMicroSencond();
 bool SystemExec(const char *szFormatCmd, ...);

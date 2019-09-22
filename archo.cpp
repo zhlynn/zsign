@@ -267,8 +267,7 @@ void ZArchO::PrintInfo()
 	ZLog::Print("------------------------------------------------------------------\n");
 	ZLog::Print(">>> MachO Info: \n");
 	ZLog::PrintV("\tFileType: \t%s\n", GetFileType(BO(m_pHeader->filetype)));
-	ZLog::PrintV("\tFileBase: \t%p\n", m_pBase);
-	ZLog::PrintV("\tFileSize: \t%u\n", m_uLength);
+	ZLog::PrintV("\tTotalSize: \t%u (%s)\n", m_uLength, FormatSize(m_uLength).c_str());
 	ZLog::PrintV("\tPlatform: \t%u\n", m_b64 ? 64 : 32);
 	ZLog::PrintV("\tCPUArch: \t%s\n", GetArch(BO(m_pHeader->cputype), BO(m_pHeader->cpusubtype)));
 	ZLog::PrintV("\tCPUType: \t0x%x\n", BO(m_pHeader->cputype));
@@ -276,9 +275,60 @@ void ZArchO::PrintInfo()
 	ZLog::PrintV("\tBigEndian: \t%d\n", m_bBigEndian);
 	ZLog::PrintV("\tEncrypted: \t%d\n", m_bEncrypted);
 	ZLog::PrintV("\tCommandCount: \t%d\n", BO(m_pHeader->ncmds));
-	ZLog::PrintV("\tCodeLength: \t%d\n", m_uCodeLength);
-	ZLog::PrintV("\tSignLength: \t%d\n", m_uSignLength);
-	ZLog::PrintV("\tSpareLength: \t%d\n", m_uLength - m_uCodeLength - m_uSignLength);
+	ZLog::PrintV("\tCodeLength: \t%d (%s)\n", m_uCodeLength, FormatSize(m_uCodeLength).c_str());
+	ZLog::PrintV("\tSignLength: \t%d (%s)\n", m_uSignLength, FormatSize(m_uSignLength).c_str());
+	ZLog::PrintV("\tSpareLength: \t%d (%s)\n", m_uLength - m_uCodeLength - m_uSignLength, FormatSize(m_uLength - m_uCodeLength - m_uSignLength).c_str());
+	
+	uint8_t *pLoadCommand = m_pBase + m_uHeaderSize;
+	for (uint32_t i = 0; i < BO(m_pHeader->ncmds); i++)
+	{
+		load_command *plc = (load_command *)pLoadCommand;
+		if (LC_VERSION_MIN_IPHONEOS == BO(plc->cmd))
+		{
+			ZLog::PrintV("\tMIN_IPHONEOS: \t0x%x\n", *((uint32_t*)(pLoadCommand + sizeof(load_command))));
+		}
+		else if(LC_RPATH == BO(plc->cmd))
+		{
+			ZLog::PrintV("\tLC_RPATH: \t%s\n", (char*)(pLoadCommand + sizeof(load_command) + 4));
+		}
+		pLoadCommand += BO(plc->cmdsize);
+	}
+
+	bool bHasWeakDylib = false;
+	ZLog::PrintV("\tLC_LOAD_DYLIB: \n");
+	pLoadCommand = m_pBase + m_uHeaderSize;
+	for (uint32_t i = 0; i < BO(m_pHeader->ncmds); i++)
+	{
+		load_command *plc = (load_command *)pLoadCommand;
+		if (LC_LOAD_DYLIB == BO(plc->cmd))
+		{
+			dylib_command *dlc = (dylib_command *)pLoadCommand;
+			const char *szDyLib = (const char *)(pLoadCommand + BO(dlc->dylib.name.offset));
+			ZLog::PrintV("\t\t\t%s\n", szDyLib);
+		}
+		else if (LC_LOAD_WEAK_DYLIB == BO(plc->cmd))
+		{
+			bHasWeakDylib = true;
+		}
+		pLoadCommand += BO(plc->cmdsize);
+	}
+
+	if(bHasWeakDylib)
+	{
+		ZLog::PrintV("\tLC_LOAD_WEAK_DYLIB: \n");
+		pLoadCommand = m_pBase + m_uHeaderSize;
+		for (uint32_t i = 0; i < BO(m_pHeader->ncmds); i++)
+		{
+			load_command *plc = (load_command *)pLoadCommand;
+			if (LC_LOAD_WEAK_DYLIB == BO(plc->cmd))
+			{
+				dylib_command *dlc = (dylib_command *)pLoadCommand;
+				const char *szDyLib = (const char *)(pLoadCommand + BO(dlc->dylib.name.offset));
+				ZLog::PrintV("\t\t\t%s (weak)\n", szDyLib);
+			}
+			pLoadCommand += BO(plc->cmdsize);
+		}
+	}
 
 	if (!m_strInfoPlist.empty())
 	{

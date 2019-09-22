@@ -239,7 +239,7 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	}
 	else
 	{
-		ZLog::Print("\tCodeSlots: omitted. (use -d option for detail)\n");
+		ZLog::Print("\tCodeSlots: \tomitted. (use -d option for details)\n");
 	}
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
