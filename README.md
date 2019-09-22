@@ -1,5 +1,5 @@
 # zsign
-Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform, more features.  
+Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform ( Linux & macOS ), more features.  
 If this tool can help you, please don't forget to star me. :) 
 
 ### Compile
