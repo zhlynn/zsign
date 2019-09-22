@@ -2,12 +2,25 @@
 #include "base64.h"
 #include <openssl/sha.h>
 
-#define PARSEVALIST(szFormatArgs, szArgs)            \
-	char szArgs[PATH_MAX] = {0};                     \
-	va_list args;                                    \
-	va_start(args, szFormatArgs);                    \
-	vsnprintf(szArgs, PATH_MAX, szFormatArgs, args); \
-	va_end(args);
+#define PARSEVALIST(szFormatArgs, szArgs)                       \
+	ZBuffer buffer;                                             \
+	char szBuffer[PATH_MAX] = {0};                              \
+	char *szArgs = szBuffer;                                    \
+	va_list args;                                               \
+	va_start(args, szFormatArgs);                               \
+	int nRet = vsnprintf(szArgs, PATH_MAX, szFormatArgs, args); \
+	va_end(args);                                               \
+	if (nRet > PATH_MAX - 1)                                    \
+	{                                                           \
+		char *szNewBuffer = buffer.GetBuffer(nRet + 1);         \
+		if (NULL != szNewBuffer)                                \
+		{                                                       \
+			szArgs = szNewBuffer;                               \
+			va_start(args, szFormatArgs);                       \
+			vsnprintf(szArgs, nRet + 1, szFormatArgs, args);    \
+			va_end(args);                                       \
+		}                                                       \
+	}
 
 void *MapFile(const char *path, size_t offset, size_t size, size_t *psize, bool ro)
 {
@@ -583,6 +596,46 @@ bool SHASumBase64File(const char *szFile, string &strSHA1Base64, string &strSHA2
 	strSHA1Base64 = b64.Encode(strSHA1);
 	strSHA256Base64 = b64.Encode(strSHA256);
 	return (!strSHA1Base64.empty() && !strSHA256Base64.empty());
+}
+
+ZBuffer::ZBuffer()
+{
+	m_pData = NULL;
+	m_uSize = 0;
+}
+
+ZBuffer::~ZBuffer()
+{
+	Free();
+}
+
+char *ZBuffer::GetBuffer(uint32_t uSize)
+{
+	if (uSize <= m_uSize)
+	{
+		return m_pData;
+	}
+
+	char *pData = (char *)realloc(m_pData, uSize);
+	if (NULL == pData)
+	{
+		Free();
+		return NULL;
+	}
+
+	m_pData = pData;
+	m_uSize = uSize;
+	return m_pData;
+}
+
+void ZBuffer::Free()
+{
+	if (NULL != m_pData)
+	{
+		free(m_pData);
+	}
+	m_pData = NULL;
+	m_uSize = 0;
 }
 
 ZTimer::ZTimer()

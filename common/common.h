@@ -90,6 +90,23 @@ void PrintSHASum(const char *prefix, const string &strSHASum, const char *suffix
 void PrintDataSHASum(const char *prefix, int nSumType, const string &strData, const char *suffix = "\n");
 void PrintDataSHASum(const char *prefix, int nSumType, uint8_t *data, size_t size, const char *suffix = "\n");
 
+class ZBuffer
+{
+public:
+    ZBuffer();
+    ~ZBuffer();
+
+public:
+    char* GetBuffer(uint32_t uSize);
+
+private:
+    void Free();
+
+private:
+    char*       m_pData;
+    uint32_t    m_uSize;
+};
+
 class ZTimer
 {
 public:
