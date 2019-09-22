@@ -49,7 +49,7 @@ options:
 -h, --help          Show help.
 ```
 
-1. Show CodeSignature segment info.
+1. Show mach-o and codesignature segment info.
 ```bash
 ./zsign demo.app/execute
 ```
