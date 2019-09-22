@@ -229,10 +229,17 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 		PrintSHASum("\t\t\t", arrSpecialSlots[i], cdHeader.hashSize, suffix);
 	}
 
-	ZLog::Print("\tCodeSlots:\n");
-	for (uint32_t i = 0; i < LE(cdHeader.nCodeSlots); i++)
+	if(ZLog::IsDebug())
 	{
-		//PrintSHASum("\t\t\t", arrCodeSlots[i], cdHeader.hashSize);
+		ZLog::Print("\tCodeSlots:\n");
+		for (uint32_t i = 0; i < LE(cdHeader.nCodeSlots); i++)
+		{
+			PrintSHASum("\t\t\t", arrCodeSlots[i], cdHeader.hashSize);
+		}
+	}
+	else
+	{
+		ZLog::Print("\tCodeSlots: omitted. (use -d option for detail)\n");
 	}
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
