@@ -89,7 +89,7 @@ options:
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
 
-### How to sign quickly ?
+### How to sign quickly?
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.  
 At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.  
 When you re-sign the folder with other assets next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try！：）
