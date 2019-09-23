@@ -436,11 +436,139 @@ bool GetCMSInfo(uint8_t *pCMSData, uint32_t uCMSLength, JValue &jvOutput)
 		}
 	}
 
-	STACK_OF(CMS_SignerInfo) *signerinfos = CMS_get0_SignerInfos(cms);
-	for (int i = 0; i < sk_CMS_SignerInfo_num(signerinfos); i++)
+	STACK_OF(CMS_SignerInfo) *sis = CMS_get0_SignerInfos(cms);
+	for (int i = 0; i < sk_CMS_SignerInfo_num(sis); i++)
 	{
-		//CMS_SignerInfo* signerinfo = sk_CMS_SignerInfo_value(signerinfos, i);
+		CMS_SignerInfo* si = sk_CMS_SignerInfo_value(sis, i);
 		//int CMS_SignerInfo_get0_signer_id(CMS_SignerInfo *si, ASN1_OCTET_STRING **keyid, X509_NAME **issuer, ASN1_INTEGER **sno);
+
+		int nSignedAttsCount = CMS_signed_get_attr_count(si);
+		for(int j = 0; j < nSignedAttsCount; j++)
+		{
+			X509_ATTRIBUTE * attr = CMS_signed_get_attr(si, j);
+			if(!attr)
+			{
+				continue;
+			}
+			int nCount = X509_ATTRIBUTE_count(attr);
+			if(nCount <= 0)
+			{
+				continue;
+			}
+
+			ASN1_OBJECT * obj = X509_ATTRIBUTE_get0_object(attr);
+			if(!obj)
+			{
+				continue;
+			}
+
+			char txtobj[128] = {0};
+			OBJ_obj2txt(txtobj, 128, obj, 1);
+
+			if(0 == strcmp("1.2.840.113549.1.9.3", txtobj))
+			{//V_ASN1_OBJECT
+				ASN1_TYPE *av = X509_ATTRIBUTE_get0_type(attr, 0);
+				if(NULL != av)
+				{
+					jvOutput["attrs"]["ContentType"]["obj"] = txtobj;
+					jvOutput["attrs"]["ContentType"]["data"] = OBJ_nid2ln(OBJ_obj2nid(av->value.object));
+				}
+			}
+			else if(0 == strcmp("1.2.840.113549.1.9.4", txtobj))
+			{//V_ASN1_OCTET_STRING
+				ASN1_TYPE *av = X509_ATTRIBUTE_get0_type(attr, 0);
+				if(NULL != av)
+				{
+					string strSHASum;
+					char buf[16] = {0};
+					for (int m = 0; m < av->value.octet_string->length; m++)
+					{
+						sprintf(buf, "%02x", (uint8_t)av->value.octet_string->data[m]);
+						strSHASum += buf;
+					}
+					jvOutput["attrs"]["MessageDigest"]["obj"] = txtobj;
+					jvOutput["attrs"]["MessageDigest"]["data"] = strSHASum;
+				}
+			}
+			else if(0 == strcmp("1.2.840.113549.1.9.5", txtobj))
+			{//V_ASN1_UTCTIME
+				ASN1_TYPE *av = X509_ATTRIBUTE_get0_type(attr, 0);
+				if(NULL != av)
+				{
+					BIO *mem = BIO_new(BIO_s_mem());
+					ASN1_UTCTIME_print(mem, av->value.utctime);
+					BUF_MEM *bptr = NULL;
+					BIO_get_mem_ptr(mem, &bptr);
+					BIO_set_close(mem, BIO_NOCLOSE);
+					string strTime;
+					strTime.append(bptr->data, bptr->length);
+					BIO_free_all(mem);
+
+					jvOutput["attrs"]["SigningTime"]["obj"] = txtobj;
+					jvOutput["attrs"]["SigningTime"]["data"] = strTime;
+				}
+			}
+			else if(0 == strcmp("1.2.840.113635.100.9.2", txtobj))
+			{//V_ASN1_SEQUENCE
+				jvOutput["attrs"]["CDHashes2"]["obj"] =  txtobj;
+				for(int m = 0; m < nCount; m++)
+				{
+					ASN1_TYPE *av = X509_ATTRIBUTE_get0_type(attr, m);
+					if(NULL != av)
+					{
+						ASN1_STRING *s = av->value.sequence;
+						
+						BIO *mem = BIO_new(BIO_s_mem());
+
+						ASN1_parse_dump(mem, s->data, s->length, 2, 0);
+						BUF_MEM *bptr = NULL;
+						BIO_get_mem_ptr(mem, &bptr);
+						BIO_set_close(mem, BIO_NOCLOSE);
+						string strData;
+						strData.append(bptr->data, bptr->length);
+						BIO_free_all(mem);
+
+
+						string strSHASum;
+						size_t pos1 = strData.find("[HEX DUMP]:");
+						if(string::npos != pos1)
+						{
+							size_t pos2 = strData.find("\n", pos1);
+							if(string::npos != pos2)
+							{
+								strSHASum = strData.substr(pos1 + 11, pos2 - pos1 - 11);
+							}
+						}
+						transform(strSHASum.begin(), strSHASum.end(), strSHASum.begin(), ::tolower);
+						jvOutput["attrs"]["CDHashes2"]["data"].push_back(strSHASum);
+					}
+				}
+			}
+			else if(0 == strcmp("1.2.840.113635.100.9.1", txtobj))
+			{//V_ASN1_OCTET_STRING
+				ASN1_TYPE *av = X509_ATTRIBUTE_get0_type(attr, 0);
+				if(NULL != av)
+				{
+					string strPList;
+					strPList.append((const char*)av->value.octet_string->data, av->value.octet_string->length);
+					jvOutput["attrs"]["CDHashes"]["obj"] =  txtobj;
+					jvOutput["attrs"]["CDHashes"]["data"] =  strPList;
+				}
+			}
+			else
+			{
+				ASN1_TYPE *av = X509_ATTRIBUTE_get0_type(attr, 0);
+				if(NULL != av)
+				{
+					JValue jvAttr;
+					jvAttr["obj"] = txtobj;
+					jvAttr["name"] = OBJ_nid2ln(OBJ_obj2nid(obj));
+					jvAttr["type"] = av->type;
+					jvAttr["count"] = nCount;
+					jvOutput["attrs"]["unknown"].push_back(jvAttr);
+				}
+			}
+		}
 	}
 
 	return true;

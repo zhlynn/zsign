@@ -436,10 +436,48 @@ bool SlotParseCMSSignature(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	GetCMSInfo(pSlotBase + 8, uSlotLength - 8, jvInfo);
 	//ZLog::PrintV("%s\n", jvInfo.styleWrite().c_str());
 
-	ZLog::PrintV("\tcerts: \n");
+	ZLog::Print("\tCertificates: \n");
 	for (size_t i = 0; i < jvInfo["certs"].size(); i++)
 	{
 		ZLog::PrintV("\t\t\t%s\t<=\t%s\n", jvInfo["certs"][i]["Subject"]["CN"].asCString(), jvInfo["certs"][i]["Issuer"]["CN"].asCString());
+	}
+
+	ZLog::Print("\tSignedAttrs: \n");
+	if(jvInfo["attrs"].has("ContentType"))
+	{
+		ZLog::PrintV("\t  ContentType: \t%s => %s\n", jvInfo["attrs"]["ContentType"]["obj"].asCString(), jvInfo["attrs"]["ContentType"]["data"].asCString());
+	}
+
+	if(jvInfo["attrs"].has("SigningTime"))
+	{
+		ZLog::PrintV("\t  SigningTime: \t%s => %s\n", jvInfo["attrs"]["SigningTime"]["obj"].asCString(), jvInfo["attrs"]["SigningTime"]["data"].asCString());
+	}
+
+	if(jvInfo["attrs"].has("MessageDigest"))
+	{
+		ZLog::PrintV("\t  MsgDigest: \t%s => %s\n", jvInfo["attrs"]["MessageDigest"]["obj"].asCString(), jvInfo["attrs"]["MessageDigest"]["data"].asCString());
+	}
+
+	if(jvInfo["attrs"].has("CDHashes"))
+	{
+		string strData = jvInfo["attrs"]["CDHashes"]["data"].asCString();
+		StringReplace(strData, "\n", "\n\t\t\t\t");
+		ZLog::PrintV("\t  CDHashes: \t%s => \n\t\t\t\t%s\n", jvInfo["attrs"]["CDHashes"]["obj"].asCString(), strData.c_str());
+	}
+
+	if(jvInfo["attrs"].has("CDHashes2"))
+	{
+		ZLog::PrintV("\t  CDHashes2: \t%s => \n", jvInfo["attrs"]["CDHashes2"]["obj"].asCString());
+		for(size_t i = 0; i < jvInfo["attrs"]["CDHashes2"]["data"].size(); i++)
+		{
+			ZLog::PrintV("\t\t\t\t%s\n", jvInfo["attrs"]["CDHashes2"]["data"][i].asCString());
+		}
+	}
+
+	for(size_t i = 0; i < jvInfo["attrs"]["unknown"].size(); i++)
+	{
+		JValue& jvAttr =  jvInfo["attrs"]["unknown"][i];
+		ZLog::PrintV("\t  UnknownAttr: \t%s => %s, type: %d, count: %d\n", jvAttr["obj"].asCString(), jvAttr["name"].asCString(), jvAttr["type"].asInt(), jvAttr["count"].asInt());
 	}
 	ZLog::Print("\n");
 
