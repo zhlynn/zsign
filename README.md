@@ -89,6 +89,9 @@ options:
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
 
+### Copyright
+zsign is completely free. Please mark the source of zsign in your commercial product if possible.
+
 ### How to sign quickly?
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.  
 At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.  
