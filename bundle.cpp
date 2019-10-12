@@ -93,7 +93,7 @@ bool ZAppBundle::GetObjectsToSign(const string &strFolder, JValue &jvInfo)
 				string strNode = strFolder + "/" + ptr->d_name;
 				if (DT_DIR == ptr->d_type)
 				{
-					if (IsPathSuffix(strNode, ".app") || IsPathSuffix(strNode, ".appex") || IsPathSuffix(strNode, ".framework"))
+					if (IsPathSuffix(strNode, ".app") || IsPathSuffix(strNode, ".appex") || IsPathSuffix(strNode, ".framework") || IsPathSuffix(strNode, ".xctest"))
 					{
 						JValue jvNode;
 						jvNode["path"] = strNode.substr(m_strAppFolder.size() + 1);
