@@ -14,7 +14,7 @@ and then (attention to replace your openssl version)
 g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl/1.0.2s/include -L/usr/local/Cellar/openssl/1.0.2s/lib -O3 -o zsign
 ```
 
-#### CentOS:
+#### CentOS7:
 ```bash
 yum install openssl-devel
 ```
