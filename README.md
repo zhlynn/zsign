@@ -104,7 +104,7 @@ docker run -v "$PWD:$PWD" -w "$PWD" zsign -k privkey.pem -m dev.prov -o output.i
 
 *If input files are outside current folder, you will need to mount different folder:*
 ```
-docker run -v "/source/input:/target/input" -w zsign "/target/input" -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
+docker run -v "/source/input:/target/input" -w "/target/input" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
 ```
 
 ### Copyright
