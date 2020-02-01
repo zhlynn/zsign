@@ -1,7 +1,12 @@
-FROM centos:7
+FROM alpine
 WORKDIR /zsign
-RUN yum -y install gcc gcc-c++ openssl-devel zip unzip
-COPY . .
-RUN g++ *.cpp common/*.cpp -lcrypto -O3 -o zsign
-ENTRYPOINT [ "/zsign/zsign" ]
-CMD [ "/zsign/zsign", "-v" ]
+COPY . src/
+
+RUN apk add --no-cache --virtual .build-deps g++ openssl-dev && \
+	apk add --no-cache libgcc libstdc++ zip unzip && \
+	g++ src/*.cpp src/common/*.cpp -lcrypto -O3 -o zsign && \
+	apk del .build-deps && \
+	rm -rf src
+
+ENTRYPOINT ["/zsign/zsign"]
+CMD ["-v"]
