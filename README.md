@@ -89,6 +89,24 @@ options:
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
 
+### Docker
+1. Build:
+```
+docker build -t zsign https://github.com/zhlynn/zsign.git
+```
+
+2. Run:
+
+*Mount current directory (stored in $PWD) to container and set WORKDIR to it:*
+```
+docker run -v "$PWD:$PWD" -w "$PWD" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
+```
+
+*If input files are outside current folder, you will need to mount different folder:*
+```
+docker run -v "/source/input:/target/input" -w zsign "/target/input" -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
+```
+
 ### Copyright
 zsign is completely free. Please mark the source of zsign in your commercial product if possible.
 
