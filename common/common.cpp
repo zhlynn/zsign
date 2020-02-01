@@ -1,5 +1,6 @@
 #include "common.h"
 #include "base64.h"
+#include <inttypes.h>
 #include <openssl/sha.h>
 
 #define PARSEVALIST(szFormatArgs, szArgs)                       \
@@ -352,7 +353,7 @@ string FormatSize(int64_t size, int64_t base)
 	}
 	else
 	{
-		sprintf(ret, "%lld B", size);
+		sprintf(ret, "%" PRId64 " B", size);
 	}
 	return ret;
 }

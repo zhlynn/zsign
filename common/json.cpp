@@ -5,6 +5,7 @@
 #include <time.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <inttypes.h>
 #include <math.h>
 #include <sys/stat.h>
 #include "base64.h"
@@ -388,7 +389,7 @@ string JValue::asString() const
 	case E_INT:
 	{
 		char buf[256];
-		sprintf(buf, "%lld", m_Value.vInt64);
+		sprintf(buf, "%" PRId64, m_Value.vInt64);
 		return buf;
 	}
 	break;
@@ -1889,7 +1890,7 @@ void JWriter::PushValue(const string &strval)
 string JWriter::v2s(int64_t val)
 {
 	char buf[32];
-	sprintf(buf, "%lld", val);
+	sprintf(buf, "%" PRId64, val);
 	return buf;
 }
 
@@ -3005,7 +3006,7 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 		strdoc += strindent;
 		strdoc += "<integer>";
 		char temp[32] = {0};
-		sprintf(temp, "%lld", pval.asInt64());
+		sprintf(temp, "%" PRId64, pval.asInt64());
 		strdoc += temp;
 		strdoc += "</integer>\n";
 	}
@@ -3024,7 +3025,7 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 			char temp[32] = {0};
 			if (floor(v) == v)
 			{
-				sprintf(temp, "%lld", (int64_t)v);
+				sprintf(temp, "%" PRId64, (int64_t)v);
 			}
 			else
 			{
