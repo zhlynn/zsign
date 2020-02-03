@@ -31,7 +31,7 @@ bool SlotParseRequirements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	if(IsFileExists("/usr/bin/csreq"))
 	{
 		string strTempFile;
-		StringFormat(strTempFile, "/tmp/Requirements_%llu.blob", GetMicroSencond());
+		StringFormat(strTempFile, "/tmp/Requirements_%llu.blob", GetMicroSecond());
 		WriteFile(strTempFile.c_str(), (const char *)pSlotBase, uSlotLength);
 
 		string strCommand;
