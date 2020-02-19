@@ -2047,6 +2047,10 @@ bool PReader::parse(const char *pdoc, size_t len, JValue &root)
 	}
 	else
 	{
+		string pdocStr(pdoc);
+		int index=pdocStr.find("<");
+		pdocStr=pdocStr.substr(index);
+		pdoc=pdocStr.c_str();
 		m_pBeg = pdoc;
 		m_pEnd = m_pBeg + len;
 		m_pCur = m_pBeg;
@@ -2101,7 +2105,7 @@ bool PReader::readValue(JValue &pval, Token &token)
 		ft.tm_year -= 1900;
 		pval.assignDate(mktime(&ft));
 	}
-	break;
+		break;
 	case Token::E_Data:
 	{
 		string strval;
@@ -2112,7 +2116,7 @@ bool PReader::readValue(JValue &pval, Token &token)
 		const char *data = b64.Decode(strval.data(), (int)strval.size(), &nDecLen);
 		pval.assignData(data, nDecLen);
 	}
-	break;
+		break;
 	case Token::E_String:
 	{
 		string strval;
@@ -2120,7 +2124,7 @@ bool PReader::readValue(JValue &pval, Token &token)
 		XMLUnescape(strval);
 		pval = strval.c_str();
 	}
-	break;
+		break;
 	default:
 		return addError("Syntax error: value, dictionary or array expected.", token.pbeg);
 		break;
