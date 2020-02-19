@@ -68,7 +68,7 @@ void StringSplit(const string &src, const string &split, vector<string> &dest);
 
 string FormatSize(int64_t size, int64_t base = 1024);
 time_t GetUnixStamp();
-uint64_t GetMicroSencond();
+uint64_t GetMicroSecond();
 bool SystemExec(const char *szFormatCmd, ...);
 uint32_t ByteAlign(uint32_t uValue, uint32_t uAlign);
 

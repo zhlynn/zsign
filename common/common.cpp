@@ -1,5 +1,6 @@
 #include "common.h"
 #include "base64.h"
+#include <inttypes.h>
 #include <openssl/sha.h>
 
 #define PARSEVALIST(szFormatArgs, szArgs)                       \
@@ -352,7 +353,7 @@ string FormatSize(int64_t size, int64_t base)
 	}
 	else
 	{
-		sprintf(ret, "%lld B", size);
+		sprintf(ret, "%" PRId64 " B", size);
 	}
 	return ret;
 }
@@ -377,7 +378,7 @@ time_t GetUnixStamp()
 	return ustime;
 }
 
-uint64_t GetMicroSencond()
+uint64_t GetMicroSecond()
 {
 	struct timeval tv = {0};
 	gettimeofday(&tv, NULL);
@@ -645,14 +646,14 @@ ZTimer::ZTimer()
 
 uint64_t ZTimer::Reset()
 {
-	m_uBeginTime = GetMicroSencond();
+	m_uBeginTime = GetMicroSecond();
 	return m_uBeginTime;
 }
 
 uint64_t ZTimer::Print(const char *szFormatArgs, ...)
 {
 	PARSEVALIST(szFormatArgs, szFormat)
-	uint64_t uElapse = GetMicroSencond() - m_uBeginTime;
+	uint64_t uElapse = GetMicroSecond() - m_uBeginTime;
 	ZLog::PrintV("%s (%.03fs, %lluus)\n", szFormat, uElapse / 1000000.0, uElapse);
 	return Reset();
 }
@@ -660,7 +661,7 @@ uint64_t ZTimer::Print(const char *szFormatArgs, ...)
 uint64_t ZTimer::PrintResult(bool bSuccess, const char *szFormatArgs, ...)
 {
 	PARSEVALIST(szFormatArgs, szFormat)
-	uint64_t uElapse = GetMicroSencond() - m_uBeginTime;
+	uint64_t uElapse = GetMicroSecond() - m_uBeginTime;
 	ZLog::PrintResultV(bSuccess, "%s (%.03fs, %lluus)\n", szFormat, uElapse / 1000000.0, uElapse);
 	return Reset();
 }
