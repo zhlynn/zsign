@@ -3,3 +3,5 @@ zsign
 *.dSYM
 *.ipa
 .zsign*
+.xmake
+build
