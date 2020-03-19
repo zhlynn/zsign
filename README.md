@@ -32,7 +32,7 @@ xmake install -o outputdir
 
 binary: `outputdir/bin/zsign`
 
-### Compile
+### Compile（Linux & macOS）
 
 You must install openssl library at first.
 
