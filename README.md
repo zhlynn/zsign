@@ -2,37 +2,7 @@
 Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform ( Linux & macOS ), more features.  
 If this tool can help you, please don't forget to star me. :) 
 
-### Use xmake to compile
-
-If you have [xmake](https://xmake.io) installed, you can use xmake to quickly compile and run it.
-
-#### Build
-
-```console
-xmake
-```
-
-#### Run
-
-```console
-xmake run zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
-```
-
-#### Install
-
-```console
-xmake install
-```
-
-#### Get zsign binary
-
-```console
-xmake install -o outputdir
-```
-
-binary: `outputdir/bin/zsign`
-
-### Compile（Linux & macOS）
+### Compile
 
 You must install openssl library at first.
 
@@ -121,6 +91,36 @@ options:
 ```bash
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
+
+### Use xmake to compile
+
+If you have [xmake](https://xmake.io) installed, you can use xmake to quickly compile and run it.
+
+#### Build
+
+```console
+xmake
+```
+
+#### Run
+
+```console
+xmake run zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
+```
+
+#### Install
+
+```console
+xmake install
+```
+
+#### Get zsign binary
+
+```console
+xmake install -o outputdir
+```
+
+binary: `outputdir/bin/zsign`
 
 ### Docker
 1. Build:
