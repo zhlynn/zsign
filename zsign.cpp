@@ -228,11 +228,6 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 
-		if (!IsPathSuffix(strOutputFile, ".ipa"))
-		{
-			strOutputFile += ".ipa";
-		}
-
 		ZLog::PrintV(">>> Archiving: \t%s ... \n", strOutputFile.c_str());
 		string strBaseFolder = bundle.m_strAppFolder.substr(0, pos);
 		char szOldFolder[PATH_MAX] = {0};
