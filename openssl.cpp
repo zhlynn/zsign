@@ -348,47 +348,6 @@ bool GetCertInfo(X509 *cert, JValue &jvCertInfo)
 
 	jvCertInfo["Validity"]["NotBefore"] = ASN1_TIMEtoString(X509_get_notBefore(cert));
 	jvCertInfo["Validity"]["NotAfter"] = ASN1_TIMEtoString(X509_get_notAfter(cert));
-	
-	/*
-	uint32_t ex_kusage = X509_get_key_usage(cert);
-	if(KU_DATA_ENCIPHERMENT == (ex_kusage & KU_DATA_ENCIPHERMENT))
-	{
-
-	}
-	else if(KU_DIGITAL_SIGNATURE == (ex_kusage & KU_DIGITAL_SIGNATURE))
-	{
-
-	}
-
-	const STACK_OF(X509_EXTENSION)* exts = X509_get0_extensions(cert);
-	for (int i = 0; i < sk_X509_EXTENSION_num(exts); i++) 
-	{
-		X509_EXTENSION* ext = sk_X509_EXTENSION_value(exts, i);
-
-		ASN1_OBJECT* obj = X509_EXTENSION_get_object(ext);
-		const char* sn = OBJ_nid2ln(OBJ_obj2nid(obj));
-		if(0 == strcmp("UNDEF", sn) || 0 == strcmp("undefined", sn))
-		{
-			char buff[1024] = {0};
-			OBJ_obj2txt(buff, 1024, obj, 0); // 0 means it will prefer a textual representation (if available) rather than the numerical one
-			jvCertInfo["Extensions"].push_back(buff);
-		}
-		else
-		{
-			jvCertInfo["Extensions"].push_back(sn);
-		}
-		
-		int bcritical = X509_EXTENSION_get_critical(ext);
-	   	ASN1_OCTET_STRING* data = X509_EXTENSION_get_data(ext);
-*/
-	/*
-        if (!X509V3_EXT_print(bp, ex, flag, indent + 4)) {
-            BIO_printf(bp, "%*s", indent + 4, "");
-            ASN1_STRING_print(bp, X509_EXTENSION_get_data(ex));
-        }   
-*/
-
-	//	}
 
 	string strIssuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 	string strSubject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
