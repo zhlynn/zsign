@@ -86,38 +86,66 @@ bool ZAppBundle::GetObjectsToSign(const string &strFolder, JValue &jvInfo)
 	if (NULL != dir)
 	{
 		dirent *ptr = readdir(dir);
+        
+        
+        
+        JValue fInfo;
+        string strInfoPlistData;
+        string strInfoPlistPath = m_strAppFolder + "/Info.plist";
+        ReadFile(strInfoPlistPath.c_str(), strInfoPlistData);
+        fInfo.readPList(strInfoPlistData);
+        string strBundleExe = fInfo["CFBundleExecutable"];
+        
+        
+        
 		while (NULL != ptr)
 		{
 			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, ".."))
 			{
 				string strNode = strFolder + "/" + ptr->d_name;
-				if (DT_DIR == ptr->d_type)
-				{
-					if (IsPathSuffix(strNode, ".app") || IsPathSuffix(strNode, ".appex") || IsPathSuffix(strNode, ".framework") || IsPathSuffix(strNode, ".xctest"))
-					{
-						JValue jvNode;
-						jvNode["path"] = strNode.substr(m_strAppFolder.size() + 1);
-						if (!GetSignFolderInfo(strNode, jvNode))
-						{
-							return false;
-						}
-						if (!GetObjectsToSign(strNode, jvNode))
-						{
-							return false;
-						}
-						jvInfo["folders"].push_back(jvNode);
-					}
-					else
-					{
-						GetObjectsToSign(strNode, jvInfo);
-					}
-				}
+                
+                
+                if (DT_DIR == ptr->d_type)
+                {
+                    if (IsPathSuffix(strNode, ".app") || IsPathSuffix(strNode, ".appex") || IsPathSuffix(strNode, ".framework") || IsPathSuffix(strNode, ".xctest"))
+                    {
+                        JValue jvNode;
+                        jvNode["path"] = strNode.substr(m_strAppFolder.size() + 1);
+                        if (GetSignFolderInfo(strNode, jvNode))
+                        {
+                            if (GetObjectsToSign(strNode, jvNode))
+                            {
+                                jvInfo["folders"].push_back(jvNode);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        GetObjectsToSign(strNode, jvInfo);
+                    }
+                }
 				else if (DT_REG == ptr->d_type)
 				{
-					if (IsPathSuffix(strNode, ".dylib"))
-					{
-						jvInfo["files"].push_back(strNode.substr(m_strAppFolder.size() + 1));
-					}
+                     string file = strNode.substr(m_strAppFolder.size() + 1);
+                    if (strBundleExe != file) {
+                        bool framefloder = true;
+                        if (file.find(".framework/") != string::npos) {
+                            size_t pos =strNode.find_last_of('/');
+                            string name = strNode.substr(pos + 1);
+                            string framestr = strNode.substr(pos - (name.length()+10));
+                            if (framestr == (name+".framework/"+name)) {
+                                framefloder = false;
+                            }
+                        }
+                        if (framefloder) {
+                                ZMachO macho;
+                                if(macho.Init(strNode.c_str())){
+                                    jvInfo["files"].push_back(strNode.substr(m_strAppFolder.size() + 1));
+                                }
+                            
+                            
+                            }   
+                    }
 				}
 			}
 			ptr = readdir(dir);
@@ -126,6 +154,7 @@ bool ZAppBundle::GetObjectsToSign(const string &strFolder, JValue &jvInfo)
 	}
 	return true;
 }
+
 
 void ZAppBundle::GetFolderFiles(const string &strFolder, const string &strBaseFolder, set<string> &setFiles)
 {
