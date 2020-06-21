@@ -1,5 +1,7 @@
 #include "common.h"
 #include "base64.h"
+#include <cinttypes>
+#include <sys/stat.h>
 #include <inttypes.h>
 #include <openssl/sha.h>
 
@@ -22,6 +24,13 @@
 			va_end(args);                                       \
 		}                                                       \
 	}
+
+
+bool IsRegularFile(const char *file) {
+    struct stat info;
+    stat(file, &info);
+    return S_ISREG(info.st_mode) ;
+}
 
 void *MapFile(const char *path, size_t offset, size_t size, size_t *psize, bool ro)
 {
@@ -191,7 +200,11 @@ bool CreateFolder(const char *szFolder)
 {
 	if (!IsFolder(szFolder))
 	{
+	    #if defined(WINDOWS)
+	    return (0 == mkdir(szFolder));
+	    #else
 		return (0 == mkdir(szFolder, 0755));
+		#endif
 	}
 	return false;
 }
@@ -269,6 +282,7 @@ bool IsZipFile(const char *szFile)
 	}
 	return false;
 }
+#define PATH_BUFFER_LENGTH 1024
 
 string GetCanonicalizePath(const char *szPath)
 {
@@ -278,12 +292,24 @@ string GetCanonicalizePath(const char *szPath)
 		if ('/' != szPath[0])
 		{
 			char path[PATH_MAX] = {0};
+
+			#if defined(WINDOWS)
+
+			if (NULL != _fullpath((char *)"./", path, PATH_BUFFER_LENGTH))
+			{
+				strPath = path;
+				strPath += "/";
+				strPath += szPath;
+			}
+			#else
 			if (NULL != realpath("./", path))
 			{
 				strPath = path;
 				strPath += "/";
 				strPath += szPath;
 			}
+			#endif
+
 		}
 		StringReplace(strPath, "/./", "/");
 	}
@@ -403,6 +429,7 @@ bool SystemExec(const char *szFormatCmd, ...)
 	}
 	else
 	{
+	    #if !defined(WINDOWS)
 		if (WIFEXITED(status))
 		{
 			if (0 == WEXITSTATUS(status))
@@ -419,6 +446,7 @@ bool SystemExec(const char *szFormatCmd, ...)
 		{
 			return true;
 		}
+		#endif
 	}
 	return false;
 }

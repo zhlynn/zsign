@@ -16,7 +16,52 @@ and then (attention to replace your openssl version)
 g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl/1.0.2s/include -L/usr/local/Cellar/openssl/1.0.2s/lib -O3 -o zsign
 ```
 
+#### Windows/MingW:
+Note:  These instructions describe how to cross-compile for Windows from
+Linux.  I haven't tested these steps compiling for Windows from Windows,
+but it should mostly work.
+
+These instructions assume that mman-win32, zsign, and openssl are all
+sibling directories
+
+1.  Install MingW
+```bash
+apt-get install mingw-w64
+
+```
+2. Build mman-win32
+
+```bash
+git clone git@github.com:witwall/mman-win32
+cd mman-win32
+./configure ----cross-prefix=x86_64-w64-mingw32-
+make
+```
+
+3.  Build openssl
+```
+git clone github.com:openssl/openssl
+cd openssl
+git checkout OpenSSL_1_0_2s
+./Configure --cross-compile-prefix=x86_64-w64-mingw32 mingw64
+make
+
+```
+
+4. Build zsign
+```bash
+x86_64-w64-mingw32-g++  \
+*.cpp common/*.cpp -o zsign.exe 
+-lcrypto -I../mman-win32 
+-std=c++11  -I../openssl/include/  
+-DWINDOWS -L../openssl 
+-L../mman-win32 
+-lmman -lgdi32  
+-m64 -static -static-libgcc
+```
+
 #### CentOS7:
+
 
 ```bash
 yum install openssl-devel
