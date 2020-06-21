@@ -96,6 +96,19 @@ void PrintSHASum(const char *prefix, const string &strSHASum, const char *suffix
 void PrintDataSHASum(const char *prefix, int nSumType, const string &strData, const char *suffix = "\n");
 void PrintDataSHASum(const char *prefix, int nSumType, uint8_t *data, size_t size, const char *suffix = "\n");
 
+
+/**
+surprised that these symbols aren't defined in MingW
+*/
+#if !defined(WIFEXITED)
+#define WIFEXITED(stat_val)   (((stat_val) & 0xC0000000) == 0)
+#endif
+
+#if !defined(WEXITSTATUS)
+#define WEXITSTATUS(stat_val) ((stat_val) & 255)
+#endif
+
+
 class ZBuffer
 {
 public:
