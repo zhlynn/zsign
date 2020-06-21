@@ -26,9 +26,9 @@
 	}
 
 
-bool IsRegularFile(const string &stringFolder) {
+bool IsRegularFile(const char *file) {
     struct stat info;
-    stat(stringFolder.c_str(), &info);
+    stat(file, &info);
     return S_ISREG(info.st_mode) ;
 }
 
