@@ -23,7 +23,7 @@ bool ZAppBundle::FindAppFolder(const string &strFolder, string &strAppFolder)
 		dirent *ptr = readdir(dir);
 		while (NULL != ptr)
 		{
-			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, ".."))
+			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, "..") && 0 != strcmp(ptr->d_name, "__MACOSX"))
 			{
 				if (DT_DIR == ptr->d_type)
 				{
