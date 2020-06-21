@@ -24,9 +24,13 @@ typedef unsigned long long int uint64_t;
 #include <queue>
 #include <vector>
 #include <string>
+#include <string.h>
 #include <limits>
 #include <algorithm>
+#include <cinttypes>
 using namespace std;
+
+
 
 class JValue
 {
