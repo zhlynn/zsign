@@ -1,7 +1,6 @@
 #include "common.h"
 #include "base64.h"
 #include <cinttypes>
-#include <sys/wait.h>
 #include <sys/stat.h>
 #include <inttypes.h>
 #include <openssl/sha.h>
@@ -430,6 +429,7 @@ bool SystemExec(const char *szFormatCmd, ...)
 	}
 	else
 	{
+	    #if !defined(WINDOWS)
 		if (WIFEXITED(status))
 		{
 			if (0 == WEXITSTATUS(status))
@@ -446,6 +446,7 @@ bool SystemExec(const char *szFormatCmd, ...)
 		{
 			return true;
 		}
+		#endif
 	}
 	return false;
 }
