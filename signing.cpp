@@ -297,7 +297,7 @@ bool SlotBuildCodeDirectory(
 		return false;
 	}
 
-	uint32_t uVersion = 0x20200;
+	uint32_t uVersion = 0x20400;
 
 	CS_CodeDirectory cdHeader;
 	memset(&cdHeader, 0, sizeof(cdHeader));
