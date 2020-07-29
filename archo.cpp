@@ -30,7 +30,7 @@ bool ZArchO::Init(uint8_t *pBase, uint32_t uLength)
 
 	m_pBase = pBase;
 	m_uLength = uLength;
-	m_uCodeLength = uLength;
+	m_uCodeLength = m_uCodeLength = uLength + 16 - (uLength % 16);;
 	m_pHeader = (mach_header *)m_pBase;
 	m_b64 = (MH_MAGIC_64 == m_pHeader->magic || MH_CIGAM_64 == m_pHeader->magic) ? true : false;
 	m_bBigEndian = (MH_CIGAM == m_pHeader->magic || MH_CIGAM_64 == m_pHeader->magic) ? true : false;
