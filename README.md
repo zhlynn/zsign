@@ -60,7 +60,7 @@ x86_64-w64-mingw32-g++  \
 -m64 -static -static-libgcc
 ```
 
-ref for chinese: https://blog.csdn.net/a513436535/article/details/108539238
+another ref for chinese: https://blog.csdn.net/a513436535/article/details/108539238
 
 #### CentOS7:
 
