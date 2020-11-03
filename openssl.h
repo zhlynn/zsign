@@ -14,7 +14,7 @@ public:
 public:
 	bool GenerateCMS(const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput);
 	bool Init(const string &strSignerCertFile, const string &strSignerPKeyFile, const string &strProvisionFile, const string &strEntitlementsFile, const string &strPassword);
-
+	bool writePlist(const string &strProvisionFile, const string &strSavePath);
 public:
 	string m_strTeamId;
 	string m_strSubjectCN;

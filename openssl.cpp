@@ -670,3 +670,22 @@ bool ZSignAsset::GenerateCMS(const string &strCDHashData, const string &strCDHas
 {
 	return ::GenerateCMS((X509 *)m_x509Cert, (EVP_PKEY *)m_evpPkey, strCDHashData, strCDHashesPlist, strCMSOutput);
 }
+
+bool ZSignAsset::writePlist(const string &strProvisionFile, const string &strSavePath)
+{
+	ReadFile(strProvisionFile.c_str(), m_strProvisionData);
+	JValue jvProv;
+	string strProvContent;
+	if (GetCMSContent(m_strProvisionData, strProvContent))
+	{
+		if (jvProv.readPList(strProvContent))
+		{
+			jvProv["Entitlements"].writePListPath("%s/Entitlements.plist", strSavePath.c_str());
+		}
+	}
+	// delete mac file
+	#if !defined(WINDOWS)
+		SystemExec("find %s -regex '.*\\._\\.DS_Store\\|.*\\.DS_Store\\|.*\\__MACOSX' -exec rm -rf {} \\;", strSavePath.c_str());
+	#endif
+	return true;
+}

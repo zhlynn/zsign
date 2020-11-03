@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include <sys/mman.h>
+#if defined(WINDOWS)
+#include<mman.h>
+#else
+#include<sys/mman.h>
+#endif
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -95,6 +99,14 @@ void PrintSHASum(const char *prefix, const uint8_t *hash, uint32_t size, const c
 void PrintSHASum(const char *prefix, const string &strSHASum, const char *suffix = "\n");
 void PrintDataSHASum(const char *prefix, int nSumType, const string &strData, const char *suffix = "\n");
 void PrintDataSHASum(const char *prefix, int nSumType, uint8_t *data, size_t size, const char *suffix = "\n");
+
+#if !defined(WIFEXITED)
+#define WIFEXITED(stat_val)   (((stat_val) & 0xC0000000) == 0)
+#endif
+
+#if !defined(WEXITSTATUS)
+#define WEXITSTATUS(stat_val) ((stat_val) & 255)
+#endif
 
 class ZBuffer
 {

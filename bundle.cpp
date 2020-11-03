@@ -458,7 +458,7 @@ void ZAppBundle::GetPlugIns(const string &strFolder, vector<string> &arrPlugIns)
 	}
 }
 
-bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache)
+bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache, const string &formatPlist)
 {
 	m_bForceSign = bForce;
 	m_pSignAsset = pSignAsset;
@@ -474,8 +474,24 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder, con
 		return false;
 	}
 
+	// format plist fix error
+	JValue jvTestInfoPlist;
+	if (!jvTestInfoPlist.readPListPath("%s/Info.plist", m_strAppFolder.c_str()))
+	{
+		if (IsFileExistsV("%s/Info.plist", m_strAppFolder.c_str()) && IsFileExistsV(formatPlist.c_str()))
+		{
+			ZLog::PrintV(">>> Fix plist:\t %s/Info.plist\n", strFolder.c_str());
+			SystemExec("%s %s/Info.plist", formatPlist.c_str(), m_strAppFolder.c_str());
+		}else{
+			ZLog::ErrorV(">>> Can't Read App's Info.plist! %s\n", strFolder.c_str());
+			return false;
+		}
+	}
+
 	if (!strBundleID.empty() || !strDisplayName.empty())
-	{ //modify bundle id
+	{ 
+		
+		//modify bundle id
 		JValue jvInfoPlist;
 		if (jvInfoPlist.readPListPath("%s/Info.plist", m_strAppFolder.c_str()))
 		{
