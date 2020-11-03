@@ -4,6 +4,9 @@
 #include <sys/stat.h>
 #include <inttypes.h>
 #include <openssl/sha.h>
+#if defined(WINDOWS)
+#include <io.h>
+#endif
 
 #define PARSEVALIST(szFormatArgs, szArgs)                       \
 	ZBuffer buffer;                                             \
@@ -258,7 +261,11 @@ bool IsFileExists(const char *szFile)
 	{
 		return false;
 	}
-	return (0 == access(szFile, F_OK));
+	#if defined(WINDOWS)
+		return (0 == _access(szFile, F_OK));
+	#else
+		return (0 == access(szFile, F_OK));
+	#endif
 }
 
 bool IsFileExistsV(const char *szFormatPath, ...)
@@ -289,28 +296,31 @@ string GetCanonicalizePath(const char *szPath)
 	string strPath = szPath;
 	if (!strPath.empty())
 	{
-		if ('/' != szPath[0])
-		{
-			char path[PATH_MAX] = {0};
-
-			#if defined(WINDOWS)
-
-			if (NULL != _fullpath((char *)"./", path, PATH_BUFFER_LENGTH))
-			{
-				strPath = path;
-				strPath += "/";
-				strPath += szPath;
+		char path[PATH_MAX] = {0};		
+		#if defined(WINDOWS)
+			// specify the path
+			if(strPath.npos == strPath.find(":")){
+				if (NULL != _fullpath(path, (char *)"./", PATH_BUFFER_LENGTH))
+				{
+					strPath = path;
+					if(strPath.back() != '/' && strPath.back() != '\\'){
+						strPath += "/";
+					}
+					strPath += szPath;
+				}
 			}
-			#else
-			if (NULL != realpath("./", path))
+			StringReplace(strPath, "\\", "/");
+		#else
+			if ('/' != szPath[0])
 			{
-				strPath = path;
-				strPath += "/";
-				strPath += szPath;
+				if (NULL != realpath("./", path))
+				{
+					strPath = path;
+					strPath += "/";
+					strPath += szPath;
+				}
 			}
-			#endif
-
-		}
+		#endif
 		StringReplace(strPath, "/./", "/");
 	}
 	return strPath;
@@ -429,7 +439,6 @@ bool SystemExec(const char *szFormatCmd, ...)
 	}
 	else
 	{
-	    #if !defined(WINDOWS)
 		if (WIFEXITED(status))
 		{
 			if (0 == WEXITSTATUS(status))
@@ -446,7 +455,6 @@ bool SystemExec(const char *szFormatCmd, ...)
 		{
 			return true;
 		}
-		#endif
 	}
 	return false;
 }

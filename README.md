@@ -57,10 +57,18 @@ x86_64-w64-mingw32-g++  \
 -DWINDOWS -L../openssl 
 -L../mman-win32 
 -lmman -lgdi32  
--m64 -static -static-libgcc
+-m64  -static-libstdc++ -static-libgcc
 ```
 
 another ref for chinese: https://blog.csdn.net/a513436535/article/details/108539238
+
+> directory has been compiled `zsign.exe`, if the dll file is missing, you can use the DLL in the directory.
+>
+> if windows you need to install 7-Zip and add it to PATH. downloads url: [https://www.7-zip.org/](https://www.7-zip.org/)
+>
+> Fixed reading plist error, but you must install Python and `biplist` module and add `plistFormat.py` to your executable path
+
+
 
 #### CentOS7:
 

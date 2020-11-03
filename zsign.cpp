@@ -6,6 +6,9 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <getopt.h>
+#if defined(WINDOWS)
+#include <windows.h>
+#endif
 
 const struct option options[] = {
 	{ "debug",			no_argument,			NULL, 'd' },
@@ -51,7 +54,7 @@ int usage()
 	ZLog::Print("-h, --help\t\tShow help.\n");
 
 	return -1;
-}
+};
 
 int main(int argc, char *argv[])
 {
@@ -71,6 +74,8 @@ int main(int argc, char *argv[])
 	string strOutputFile;
 	string strDisplayName;
 	string strEntitlementsFile;
+	string strRunPath;
+	string strExecPath;
 
 	int opt = 0;
 	int argslot = -1;
@@ -142,7 +147,7 @@ int main(int argc, char *argv[])
 	{
 		return usage();
 	}
-
+	
 	if (ZLog::IsDebug())
 	{
 		CreateFolder("./.zsign_debug");
@@ -190,32 +195,80 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	// windows support - runtime path
+	#if defined(WINDOWS)
+		// windows runtime path
+		char runtimePath[PATH_MAX] = {0};
+		if (NULL != getcwd(runtimePath, PATH_MAX))
+		{
+			StringFormat(strRunPath, "%s/sign", runtimePath);
+		}else{
+			strRunPath = "./sign";
+		}
+		// exec path
+		char exeFullPath[MAX_PATH] = {0};
+		GetModuleFileName(NULL, exeFullPath, MAX_PATH);
+		string execPath = (string)exeFullPath;
+		 
+		int pos = execPath.find_last_of('\\', execPath.length());
+		if( pos != 0 )
+		{
+			strExecPath = execPath.substr(0, pos+1) + "plistFormat.py";
+		}else{
+			strExecPath = strRunPath + "/plistFormat.py";
+		}
+	#else
+		strRunPath = "/sign";
+		strExecPath = "/usr/bin/plistFormat";
+	#endif
+	// create runtime folder
+	if (!IsFolder(strRunPath.c_str()))
+	{
+		CreateFolder(strRunPath.c_str());
+	}
+	// end windows support
+
 	bool bEnableCache = true;
 	string strFolder = strPath;
 	if (bZipFile)
 	{ //ipa file
 		bForce = true;
 		bEnableCache = false;
-		StringFormat(strFolder, "/tmp/zsign_folder_%llu", timer.Reset());
+		StringFormat(strFolder, "%s/zsign_folder_%llu", strRunPath.c_str(), timer.Reset());
+		#if defined(WINDOWS)
+		StringReplace(strFolder, "\\", "/");
+		#endif
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
-		if (!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
-		{
-			RemoveFolder(strFolder.c_str());
-			ZLog::ErrorV(">>> Unzip Failed!\n");
-			return -1;
-		}
+		#if !defined(WINDOWS)
+			if (!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
+			{
+				RemoveFolder(strFolder.c_str());
+				ZLog::ErrorV(">>> Unzip Failed!\n");
+				return -1;
+			}
+		#else
+			if (!SystemExec("7z x %s -o%s -aoa -xr!*.DS_Store -xr!__MACOSX -bso0", strPath.c_str(), strFolder.c_str()))
+			{
+				RemoveFolder(strFolder.c_str());
+				ZLog::ErrorV(">>> Unzip Failed!\n");
+				return -1;
+			}
+		#endif
+		// write plist and delete other file fix install error
+		zSignAsset.writePlist(strProvFile, strFolder);
+		// unzip ok
 		timer.PrintResult(true, ">>> Unzip OK!");
 	}
 
 	timer.Reset();
 	ZAppBundle bundle;
-	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache);
+	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache, strExecPath);
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	if (bInstall && strOutputFile.empty())
 	{
-		StringFormat(strOutputFile, "/tmp/zsign_temp_%llu.ipa", GetMicroSecond());
+		StringFormat(strOutputFile, "%s/zsign_temp_%llu.ipa", strRunPath.c_str(), GetMicroSecond());
 	}
 
 	if (!strOutputFile.empty())
@@ -237,7 +290,12 @@ int main(int argc, char *argv[])
 			{
 				uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
 				RemoveFile(strOutputFile.c_str());
-				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
+				#if !defined(WINDOWS)
+					SystemExec("zip -q -%u -r '%s' Payload Entitlements.plist", uZipLevel, strOutputFile.c_str());
+				#else
+					uZipLevel = uZipLevel == 0 ? 5 : uZipLevel;
+					SystemExec("7z a %s Payload Entitlements.plist -mx=%u -tzip -bso0", strOutputFile.c_str(), uZipLevel);
+				#endif
 				chdir(szOldFolder);
 				if (!IsFileExists(strOutputFile.c_str()))
 				{
@@ -254,12 +312,12 @@ int main(int argc, char *argv[])
 		SystemExec("ideviceinstaller -i '%s'", strOutputFile.c_str());
 	}
 
-	if (0 == strOutputFile.find("/tmp/zsign_tmp_"))
+	if (strOutputFile.npos != strOutputFile.find("zsign_tmp_"))
 	{
 		RemoveFile(strOutputFile.c_str());
 	}
 
-	if (0 == strFolder.find("/tmp/zsign_folder_"))
+	if (strOutputFile.npos != strFolder.find("zsign_folder_"))
 	{
 		RemoveFolder(strFolder.c_str());
 	}
