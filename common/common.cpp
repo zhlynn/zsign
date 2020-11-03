@@ -289,28 +289,33 @@ string GetCanonicalizePath(const char *szPath)
 	string strPath = szPath;
 	if (!strPath.empty())
 	{
-		if ('/' != szPath[0])
-		{
-			char path[PATH_MAX] = {0};
+		char path[PATH_MAX] = {0};
 
-			#if defined(WINDOWS)
-
-			if (NULL != _fullpath((char *)"./", path, PATH_BUFFER_LENGTH))
+		#if defined(WINDOWS)
+		// fix windows path error
+		if(strPath.npos == strPath.find(":")){
+			if (NULL != _fullpath(path, (char *)"./", PATH_BUFFER_LENGTH))
 			{
 				strPath = path;
-				strPath += "/";
+				if(strPath.back() != '/' && strPath.back() != '\\'){
+					strPath += "/";
+				}
 				strPath += szPath;
 			}
-			#else
+		}
+		StringReplace(strPath, "\\", "/");
+		#else
+		if ('/' != szPath[0])
+		{
 			if (NULL != realpath("./", path))
 			{
 				strPath = path;
 				strPath += "/";
 				strPath += szPath;
 			}
-			#endif
-
 		}
+		#endif
+		
 		StringReplace(strPath, "/./", "/");
 	}
 	return strPath;
