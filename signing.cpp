@@ -283,6 +283,8 @@ bool SlotBuildCodeDirectory(
 	uint32_t uCodeLength,
 	uint8_t *pCodeSlotsData,
 	uint32_t uCodeSlotsDataLength,
+	size_t execSegLimit,
+	uint64_t execSegFlags,
 	const string &strBundleId,
 	const string &strTeamId,
 	const string &strInfoPlistSHA,
@@ -317,6 +319,9 @@ bool SlotBuildCodeDirectory(
 	cdHeader.spare2 = 0;
 	cdHeader.scatterOffset = 0;
 	cdHeader.teamOffset = 0;
+	cdHeader.execSegBase = _Swap(uint64_t(0));
+	cdHeader.execSegLimit = _Swap(uint64_t(execSegLimit));
+	cdHeader.execSegFlags = _Swap(execSegFlags);
 
 	string strEmptySHA;
 	strEmptySHA.append(cdHeader.hashSize, 0);

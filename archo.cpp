@@ -3,6 +3,8 @@
 #include "archo.h"
 #include "signing.h"
 
+size_t execSegLimit = 0;
+
 ZArchO::ZArchO()
 {
 	m_pBase = NULL;
@@ -47,6 +49,7 @@ bool ZArchO::Init(uint8_t *pBase, uint32_t uLength)
 			segment_command *seglc = (segment_command *)pLoadCommand;
 			if (0 == strcmp("__TEXT", seglc->segname))
 			{
+				execSegLimit = seglc->vmsize;
 				for (uint32_t j = 0; j < BO(seglc->nsects); j++)
 				{
 					section *sect = (section *)((pLoadCommand + sizeof(segment_command)) + sizeof(section) * j);
@@ -74,6 +77,7 @@ bool ZArchO::Init(uint8_t *pBase, uint32_t uLength)
 			segment_command_64 *seglc = (segment_command_64 *)pLoadCommand;
 			if (0 == strcmp("__TEXT", seglc->segname))
 			{
+				execSegLimit = seglc->vmsize;
 				for (uint32_t j = 0; j < BO(seglc->nsects); j++)
 				{
 					section_64 *sect = (section_64 *)((pLoadCommand + sizeof(segment_command_64)) + sizeof(section_64) * j);
@@ -395,11 +399,17 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 		GetCodeSignatureExistsCodeSlotsData(m_pSignBase, pCodeSlots1Data, uCodeSlots1DataLength, pCodeSlots256Data, uCodeSlots256DataLength);
 	}
 
+	uint64_t execSegFlags = 0;
+	if (strstr(strEntitlementsSlot.data() + 8, "<key>get-task-allow</key>") != NULL) {
+		// TODO: Check if get-task-allow is actually set to true
+		execSegFlags = CS_EXECSEG_MAIN_BINARY | CS_EXECSEG_ALLOW_UNSIGNED;
+	}
+
 	string strCMSSignatureSlot;
 	string strCodeDirectorySlot;
 	string strAltnateCodeDirectorySlot;
-	SlotBuildCodeDirectory(false, m_pBase, m_uCodeLength, pCodeSlots1Data, uCodeSlots1DataLength, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA1, strRequirementsSlotSHA1, strCodeResourcesSHA1, strEntitlementsSlotSHA1, strCodeDirectorySlot);
-	SlotBuildCodeDirectory(true, m_pBase, m_uCodeLength, pCodeSlots256Data, uCodeSlots256DataLength, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA256, strRequirementsSlotSHA256, strCodeResourcesSHA256, strEntitlementsSlotSHA256, strAltnateCodeDirectorySlot);
+	SlotBuildCodeDirectory(false, m_pBase, m_uCodeLength, pCodeSlots1Data, uCodeSlots1DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA1, strRequirementsSlotSHA1, strCodeResourcesSHA1, strEntitlementsSlotSHA1, strCodeDirectorySlot);
+	SlotBuildCodeDirectory(true, m_pBase, m_uCodeLength, pCodeSlots256Data, uCodeSlots256DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA256, strRequirementsSlotSHA256, strCodeResourcesSHA256, strEntitlementsSlotSHA256, strAltnateCodeDirectorySlot);
 	SlotBuildCMSSignature(pSignAsset, strCodeDirectorySlot, strAltnateCodeDirectorySlot, strCMSSignatureSlot);
 
 	uint32_t uCodeDirectorySlotLength = (uint32_t)strCodeDirectorySlot.size();
