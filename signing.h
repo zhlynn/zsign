@@ -12,6 +12,8 @@ bool SlotBuildCodeDirectory(
 	uint32_t uCodeLength,
 	uint8_t *pCodeSlotsData,
 	uint32_t uCodeSlotsDataLength,
+	size_t execSegLimit,
+	uint64_t execSegFlags,
 	const string &strBundleId,
 	const string &strTeamId,
 	const string &strInfoPlistSHA,

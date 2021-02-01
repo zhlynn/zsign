@@ -486,12 +486,16 @@ enum {
 	CS_SHA256_TRUNCATED_LEN = 20,
 	CS_CDHASH_LEN = 20,						/* always - larger hashes are truncated */
 	CS_HASH_MAX_SIZE = 48, /* max size of the hash we'll support */
+	CS_EXECSEG_MAIN_BINARY = 0x1,
+	CS_EXECSEG_ALLOW_UNSIGNED = 0x10,
+
 /*
  * Currently only to support Legacy VPN plugins,
  * but intended to replace all the various platform code, dev code etc. bits.
  */
 	CS_SIGNER_TYPE_UNKNOWN = 0,
 	CS_SIGNER_TYPE_LEGACYVPN = 5,
+
 };
 
 #pragma pack(push, 1)
