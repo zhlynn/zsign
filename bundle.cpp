@@ -16,7 +16,7 @@ ZAppBundle::ZAppBundle()
 
 bool ZAppBundle::FindAppFolder(const string &strFolder, string &strAppFolder)
 {
-	if (IsPathSuffix(strFolder, ".app"))
+	if (IsPathSuffix(strFolder, ".app") || IsPathSuffix(strFolder, ".appex"))
 	{
 		strAppFolder = strFolder;
 		return true;
