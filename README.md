@@ -1,6 +1,6 @@
 # zsign
-Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform ( Linux & macOS ), more features.  
-If this tool can help you, please don't forget to star me. :) 
+Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform ( Linux & macOS ), more features.
+If this tool can help you, please don't forget to star me. :)
 
 ### Compile
 
@@ -51,12 +51,12 @@ make
 4. Build zsign
 ```bash
 x86_64-w64-mingw32-g++  \
-*.cpp common/*.cpp -o zsign.exe 
--lcrypto -I../mman-win32 
--std=c++11  -I../openssl/include/  
--DWINDOWS -L../openssl 
--L../mman-win32 
--lmman -lgdi32  
+*.cpp common/*.cpp -o zsign.exe
+-lcrypto -I../mman-win32
+-std=c++11  -I../openssl/include/
+-DWINDOWS -L../openssl
+-L../mman-win32
+-lmman -lgdi32
 -m64 -static -static-libgcc
 ```
 
@@ -121,7 +121,7 @@ options:
 
 5. Inject dylib into ipa and re-sign.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -l demo.dylib demo.ipa 
+./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -l demo.dylib demo.ipa
 ```
 
 6. Change bundle id and bundle name
@@ -187,10 +187,17 @@ docker run -v "$PWD:$PWD" -w "$PWD" zsign -k privkey.pem -m dev.prov -o output.i
 docker run -v "/source/input:/target/input" -w "/target/input" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
 ```
 
+3. Extract the zsign executable
+
+*You can extract the static linked zsign executable from the container image and deploy it to other server:*
+```
+docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
+```
+
 ### Copyright
 zsign is completely free. Please mark the source of zsign in your commercial product if possible.
 
 ### How to sign quickly?
-You can unzip the ipa file at first, and then using zsign to sign folder with assets.  
-At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.  
+You can unzip the ipa file at first, and then using zsign to sign folder with assets.
+At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.
 When you re-sign the folder with other assets next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try！：）
