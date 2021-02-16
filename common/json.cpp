@@ -2117,7 +2117,8 @@ bool PReader::readValue(JValue &pval, Token &token)
 	case Token::E_String:
 	{
 		string strval;
-		decodeString(token, strval);
+		//decodeString(token, strval);
+		decodeStringValue(token, strval);
 		XMLUnescape(strval);
 		pval = strval.c_str();
 	}
@@ -2468,6 +2469,21 @@ bool PReader::decodeString(Token &token, string &strdec)
 		{
 			strdec += c;
 		}
+	}
+	return true;
+}
+bool PReader::decodeStringValue(Token &token, string &strdec)
+{
+	const char *pcur = token.pbeg;
+	const char *pend = token.pend;
+	strdec.reserve(size_t(token.pend - token.pbeg) + 6);
+	while (pcur != pend)
+	{
+		char c = *pcur++;
+		//if ('\n' != c && '\r' != c && '\t' != c)
+		//{
+			strdec += c;
+		//}
 	}
 	return true;
 }

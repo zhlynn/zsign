@@ -366,6 +366,7 @@ private:
 
 	bool decodeNumber(Token &token, JValue &jval);
 	bool decodeString(Token &token, string &decoded);
+	bool decodeStringValue(Token &token, string &strdec);//用于获取string类型的value
 	bool decodeDouble(Token &token, JValue &jval);
 
 	void skipSpaces();
