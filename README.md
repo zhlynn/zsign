@@ -13,7 +13,7 @@ brew install openssl
 ```
 and then (attention to replace your openssl version)
 ```bash
-g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl/1.0.2s/include -L/usr/local/Cellar/openssl/1.0.2s/lib -O3 -o zsign
+g++ *.cpp common/*.cpp -lcrypto -I/opt/homebrew/opt/openssl@1.1/include -L/opt/homebrew/opt/openssl@1.1/lib -O3 -o zsign
 ```
 
 #### Windows/MingW:
