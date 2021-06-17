@@ -20,6 +20,8 @@ bool SlotBuildCodeDirectory(
 	const string &strRequirementsSlotSHA,
 	const string &strCodeResourcesSHA,
 	const string &strEntitlementsSlotSHA,
+	const string &strEntitlementsDerSHA,
+    bool isExecuteArch,
 	string &strOutput);
 bool SlotBuildCMSSignature(ZSignAsset *pSignAsset, const string &strCodeDirectorySlot, const string &strAltnateCodeDirectorySlot, string &strOutput);
 bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase, uint8_t *&pCodeSlots1Data, uint32_t &uCodeSlots1DataLength, uint8_t *&pCodeSlots256Data, uint32_t &uCodeSlots256DataLength);

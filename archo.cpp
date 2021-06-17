@@ -2,8 +2,238 @@
 #include "common/json.h"
 #include "archo.h"
 #include "signing.h"
+#include <sstream>
 
 size_t execSegLimit = 0;
+
+static inline void put(std::streambuf& stream, const void* data, size_t size) {
+    stream.sputn(static_cast<const char*>(data), size);
+}
+
+struct EntitlementValue
+{
+    enum Type
+    {
+        Boolean = 0x01,
+        String = 0x0c,
+    };
+
+    Type type;
+    uint8_t length; // Excludes .type and .length
+    std::string value;
+
+    EntitlementValue(Type type, std::string value) : type(type), length(value.length()), value(value)
+    {
+    }
+
+    uint8_t totalLength()
+    {
+        return this->length + 2;
+    }
+
+    std::string data()
+    {
+        std::stringbuf data;
+
+        put(data, (char*)& this->type, 1);
+        put(data, (char*)& this->length, 1);
+        
+        if (this->type == EntitlementValue::Type::Boolean) {
+            if (this->value == "0") {
+                char c_empty = '\0';
+                const void * tmp = &c_empty;
+                put(data, tmp, 1);
+            } else {
+                char c_empty = '\1';
+                const void * tmp = &c_empty;
+                put(data, tmp, 1);
+            }
+        } else {
+            put(data, this->value.c_str(), this->value.length());
+        }
+
+        return data.str();
+    }
+};
+
+struct EntitlementBlob
+{
+    uint8_t padding = 0x30;
+    uint8_t length; // Excludes .padding and .length
+
+    EntitlementValue key;
+    std::vector<EntitlementValue> values;
+
+    EntitlementBlob(std::string key, std::string v) : key(EntitlementValue::Type::String, key)
+    {
+        EntitlementValue value(EntitlementValue::Type::String, v);
+        this->values.push_back(value);
+
+        this->length = this->key.totalLength() + value.totalLength();
+    }
+
+    EntitlementBlob(std::string key, bool v) : key(EntitlementValue::Type::String, key)
+    {
+//        EntitlementValue value(EntitlementValue::Type::Boolean, v ? "\1" : "\0");
+        EntitlementValue value(EntitlementValue::Type::Boolean, v ? "1" : "0");
+        this->values.push_back(value);
+
+        this->length = this->key.totalLength() + value.totalLength();
+    }
+
+    EntitlementBlob(std::string key, std::vector<std::string> values) : key(EntitlementValue::Type::String, key), isArray(true)
+    {
+        int8_t valuesLength = 0;
+        for (auto& value : values)
+        {
+            EntitlementValue entitlementValue(EntitlementValue::Type::String, value);
+            this->values.push_back(entitlementValue);
+
+            valuesLength += entitlementValue.totalLength();
+        }
+
+        this->length = this->key.totalLength() + valuesLength + 2; // Arrays require 2 extra bytes.
+    }
+
+    uint8_t totalLength()
+    {
+        return this->length + 2;
+    }
+
+    std::string data()
+    {
+        std::stringbuf data;
+        put(data, (char*)& this->padding, 1);
+        put(data, (char*)& this->length, 1);
+        put(data, this->key.data().data(), this->key.totalLength());
+
+        if (this->isArray)
+        {
+            // Arrays need 2 extra bytes:
+            // - 0x30
+            // - Total length of all values in array (including their 2 byte headers)
+
+            int8_t padding = 0x30;
+            int8_t length = 0;
+
+            for (auto& value : this->values)
+            {
+                length += value.totalLength();
+            }
+
+            put(data, (char*)& padding, 1);
+            put(data, (char*)& length, 1);
+        }
+
+        for (auto& value : this->values)
+        {
+            put(data, value.data().data(), value.totalLength());
+        }
+
+        return data.str();
+    }
+
+private:
+    bool isArray = false;
+};
+
+struct EntitlementsSuperBlob
+{
+    uint32_t magic = MAGIC_EMBEDDED_ENTITLEMENTS_DER;
+    uint32_t length; // Total length, _including_ .magic and .length
+
+    uint8_t byte1 = 0x31;
+    uint8_t byte2;
+
+    uint16_t blobsLength;
+    std::vector<EntitlementBlob> blobs;
+
+    EntitlementsSuperBlob(std::vector<EntitlementBlob> blobs) : blobs(blobs)
+    {
+        uint32_t blobsLength = 0;
+        for (auto& blob : blobs)
+        {
+            blobsLength += blob.totalLength();
+        }
+
+        this->blobsLength = blobsLength;
+
+        if (this->blobsLength > UCHAR_MAX)
+        {
+            this->length = blobsLength + 10 + 2; // blobsLength is > 255, so we need 2 bytes to encode it.
+            this->byte2 = 0x82;
+        }
+        else
+        {
+            this->length = blobsLength + 10 + 1; // blobsLength is <= 255, so we only need 1 byte to encode it.
+            this->byte2 = 0x81;
+        }
+    }
+
+    std::string data()
+    {
+        std::stringbuf data;
+
+        uint32_t swappedMagic = BE(this->magic);
+        uint32_t swappedLength = BE(this->length);
+
+        put(data, (char*)& swappedMagic, 4);
+        put(data, (char*)& swappedLength, 4);
+        put(data, (char*)& this->byte1, 1);
+        put(data, (char*)& this->byte2, 1);
+
+        if (this->blobsLength > UCHAR_MAX)
+        {
+            uint32_t swappedBlobsLength = BE(this->blobsLength);
+            put(data, (char*)& swappedBlobsLength, 2);
+        }
+        else
+        {
+            put(data, (char*)& this->blobsLength, 1);
+        }
+
+        for (auto& blob : this->blobs)
+        {
+            put(data, blob.data().data(), blob.totalLength());
+        }
+
+        return data.str();
+    }
+};
+
+void parseEntitlement(std::vector<EntitlementBlob> &entitlementBlobs, JValue jvInfo) {
+    if (!jvInfo.isNull()) {
+        std::vector<string> keys;
+        bool get_keys = jvInfo.keys(keys);
+        if (get_keys) {
+            for (auto iter = keys.begin(); iter != keys.end(); iter++) {
+                string key = *iter;
+                if (jvInfo[key].isString()) {
+                    string value = jvInfo[key].asString();
+                    EntitlementBlob blob(key, value);
+                    entitlementBlobs.push_back(blob);
+                } else if (jvInfo[key].isBool()) {
+                    bool value = jvInfo[key].asBool();
+                    EntitlementBlob blob(key, value);
+                    entitlementBlobs.push_back(blob);
+                } else if (jvInfo[key].isArray()) {
+                    std::vector<std::string> values;
+                    for (size_t i = 0; i < jvInfo[key].size(); i++)
+                    {
+                        JValue jvSubNode = jvInfo[key][i];
+                        values.push_back(jvSubNode.asString());
+                    }
+                    EntitlementBlob blob(key, values);
+                    entitlementBlobs.push_back(blob);
+                }
+            }
+            
+            ZLog::PrintV("Entitlement Plist Parse Successfully\n");
+        } else {
+            ZLog::PrintV("Entitlement Plist Parse failed, reason: get keys error\n");
+        }
+    }
+}
 
 ZArchO::ZArchO()
 {
@@ -363,8 +593,25 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 {
 	string strRequirementsSlot;
 	string strEntitlementsSlot;
+	string strEntitlementsDerFormatSlot;
+
+	string emptyEntitlementStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict/>\n</plist>\n";
 	SlotBuildRequirements(strBundleId, pSignAsset->m_strSubjectCN, strRequirementsSlot);
-	SlotBuildEntitlements(IsExecute() ? pSignAsset->m_strEntitlementsData : "", strEntitlementsSlot);
+	SlotBuildEntitlements(IsExecute() ? pSignAsset->m_strEntitlementsData : emptyEntitlementStr, strEntitlementsSlot);
+
+	if (IsExecute() && !pSignAsset->m_strEntitlementsData.empty()) {
+        std::vector<EntitlementBlob> entitlementBlobs;
+        
+        //parse entitlementDataStr to entitlementBlobs
+        JValue jvInfo;
+        jvInfo.readPList(pSignAsset->m_strEntitlementsData);
+        parseEntitlement(entitlementBlobs, jvInfo);
+        EntitlementsSuperBlob superBlob(entitlementBlobs);
+        
+        //
+        strEntitlementsDerFormatSlot.clear();
+        strEntitlementsDerFormatSlot.append(superBlob.data().data(), superBlob.data().size());
+    }
 
 	string strRequirementsSlotSHA1;
 	string strRequirementsSlotSHA256;
@@ -390,6 +637,15 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 		SHASum(strEntitlementsSlot, strEntitlementsSlotSHA1, strEntitlementsSlotSHA256);
 	}
 
+	string strEntitlementsDerSHA1;
+    string strEntitlementsDerSHA256;
+    if (strEntitlementsDerFormatSlot.empty()) {//empty
+        strEntitlementsDerSHA1.append(20, 0);
+        strEntitlementsDerSHA256.append(32, 0);
+    } else {
+        SHASum(strEntitlementsDerFormatSlot, strEntitlementsDerSHA1, strEntitlementsDerSHA256);
+    }
+
 	uint8_t *pCodeSlots1Data = NULL;
 	uint8_t *pCodeSlots256Data = NULL;
 	uint32_t uCodeSlots1DataLength = 0;
@@ -408,13 +664,14 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	string strCMSSignatureSlot;
 	string strCodeDirectorySlot;
 	string strAltnateCodeDirectorySlot;
-	SlotBuildCodeDirectory(false, m_pBase, m_uCodeLength, pCodeSlots1Data, uCodeSlots1DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA1, strRequirementsSlotSHA1, strCodeResourcesSHA1, strEntitlementsSlotSHA1, strCodeDirectorySlot);
-	SlotBuildCodeDirectory(true, m_pBase, m_uCodeLength, pCodeSlots256Data, uCodeSlots256DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA256, strRequirementsSlotSHA256, strCodeResourcesSHA256, strEntitlementsSlotSHA256, strAltnateCodeDirectorySlot);
+	SlotBuildCodeDirectory(false, m_pBase, m_uCodeLength, pCodeSlots1Data, uCodeSlots1DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA1, strRequirementsSlotSHA1, strCodeResourcesSHA1, strEntitlementsSlotSHA1, strEntitlementsDerSHA1, IsExecute(), strCodeDirectorySlot);
+	SlotBuildCodeDirectory(true, m_pBase, m_uCodeLength, pCodeSlots256Data, uCodeSlots256DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA256, strRequirementsSlotSHA256, strCodeResourcesSHA256, strEntitlementsSlotSHA256, strEntitlementsDerSHA256, IsExecute(), strAltnateCodeDirectorySlot);
 	SlotBuildCMSSignature(pSignAsset, strCodeDirectorySlot, strAltnateCodeDirectorySlot, strCMSSignatureSlot);
 
 	uint32_t uCodeDirectorySlotLength = (uint32_t)strCodeDirectorySlot.size();
 	uint32_t uRequirementsSlotLength = (uint32_t)strRequirementsSlot.size();
 	uint32_t uEntitlementsSlotLength = (uint32_t)strEntitlementsSlot.size();
+	uint32_t uEntitlementsDerLength = (uint32_t)strEntitlementsDerFormatSlot.size();
 	uint32_t uAltnateCodeDirectorySlotLength = (uint32_t)strAltnateCodeDirectorySlot.size();
 	uint32_t uCMSSignatureSlotLength = (uint32_t)strCMSSignatureSlot.size();
 
@@ -422,11 +679,12 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	uCodeSignBlobCount += (uCodeDirectorySlotLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uRequirementsSlotLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uEntitlementsSlotLength > 0) ? 1 : 0;
+	uCodeSignBlobCount += (uEntitlementsDerLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uAltnateCodeDirectorySlotLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uCMSSignatureSlotLength > 0) ? 1 : 0;
 
 	uint32_t uSuperBlobHeaderLength = sizeof(CS_SuperBlob) + uCodeSignBlobCount * sizeof(CS_BlobIndex);
-	uint32_t uCodeSignLength = uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uAltnateCodeDirectorySlotLength + uCMSSignatureSlotLength;
+	uint32_t uCodeSignLength = uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uEntitlementsDerLength + uAltnateCodeDirectorySlotLength + uCMSSignatureSlotLength;
 
 	vector<CS_BlobIndex> arrBlobIndexes;
 	if (uCodeDirectorySlotLength > 0)
@@ -450,18 +708,24 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
+	if (uEntitlementsDerLength > 0) {
+        CS_BlobIndex blob;
+        blob.type = BE(CSSLOT_ENTITLEMENTS_DER);
+        blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength+ uEntitlementsSlotLength);
+        arrBlobIndexes.push_back(blob);
+    }
 	if (uAltnateCodeDirectorySlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_ALTERNATE_CODEDIRECTORIES);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uEntitlementsDerLength);
 		arrBlobIndexes.push_back(blob);
 	}
 	if (uCMSSignatureSlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_SIGNATURESLOT);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uAltnateCodeDirectorySlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uEntitlementsDerLength + uAltnateCodeDirectorySlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
 
@@ -481,6 +745,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	strOutput += strCodeDirectorySlot;
 	strOutput += strRequirementsSlot;
 	strOutput += strEntitlementsSlot;
+	strOutput += strEntitlementsDerFormatSlot;
 	strOutput += strAltnateCodeDirectorySlot;
 	strOutput += strCMSSignatureSlot;
 
