@@ -6,233 +6,170 @@
 
 size_t execSegLimit = 0;
 
-static inline void put(std::streambuf& stream, const void* data, size_t size) {
-    stream.sputn(static_cast<const char*>(data), size);
+static inline void put(std::streambuf &stream, uint8_t value) {
+    assert(stream.sputc(value) != EOF);
 }
 
-struct EntitlementValue
-{
-    enum Type
-    {
-        Boolean = 0x01,
-        String = 0x0c,
-    };
+static inline void put(std::streambuf &stream, const void *data, size_t size) {
+    assert(stream.sputn(static_cast<const char *>(data), size) == size);
+}
 
-    Type type;
-    uint8_t length; // Excludes .type and .length
-    std::string value;
+static inline void put(std::streambuf &stream, const std::string &data) {
+    return put(stream, data.data(), data.size());
+}
 
-    EntitlementValue(Type type, std::string value) : type(type), length(value.length()), value(value)
-    {
+static inline unsigned bytes(uint64_t value) {
+    return (64 - __builtin_clzll(value) + 7) / 8;
+}
+
+static void put(std::streambuf &stream, uint64_t value, size_t length) {
+    length *= 8;
+    do put(stream, uint8_t(value >> (length -= 8)));
+    while (length != 0);
+}
+
+static void der(std::streambuf &stream, uint64_t value) {
+    if (value < 128)
+        put(stream, value);
+    else {
+        unsigned length(bytes(value));
+        put(stream, 0x80 | length);
+        put(stream, value, length);
     }
+}
 
-    uint8_t totalLength()
-    {
-        return this->length + 2;
+static std::string der(uint8_t tag, const char *value, size_t length) {
+    std::stringbuf data;
+    put(data, tag);
+    der(data, length);
+    put(data, value, length);
+    return data.str();
+}
+
+static std::string der(uint8_t tag, const char *value) {
+    return der(tag, value, strlen(value)); }
+static std::string der(uint8_t tag, const std::string &value) {
+    return der(tag, value.data(), value.size()); }
+
+template <typename Type_>
+static void der_(std::stringbuf &data, const Type_ &values) {
+    size_t size(0);
+    for (const auto &value : values)
+        size += value.size();
+    der(data, size);
+    for (const auto &value : values)
+        put(data, value);
+}
+
+static std::string der(const std::vector<std::string> &values) {
+    std::stringbuf data;
+    put(data, 0x30);
+    der_(data, values);
+    return data.str();
+}
+
+static std::string der(const std::multiset<std::string> &values) {
+    std::stringbuf data;
+    put(data, 0x31);
+    der_(data, values);
+    return data.str();
+}
+
+static std::string der(const std::pair<std::string, std::string> &value) {
+    const auto key(der(0x0c, value.first));
+    std::stringbuf data;
+    put(data, 0x30);
+    der(data, key.size() + value.second.size());
+    put(data, key);
+    put(data, value.second);
+    return data.str();
+}
+
+static std::string der(JValue data) {
+    switch (const auto type = data.type()) {
+        case JValue::E_BOOL: {
+            bool value = data.asBool();
+
+            std::stringbuf data;
+            put(data, 0x01);
+            der(data, 1);
+            put(data, value ? 1 : 0);
+            return data.str();
+        } break;
+
+        case JValue::E_INT: {
+            uint64_t value;
+			value = data.asInt64();
+            const auto length(bytes(value));
+
+            std::stringbuf data;
+            put(data, 0x02);
+            der(data, length);
+            put(data, value, length);
+            return data.str();
+        } break;
+
+        case JValue::E_FLOAT: {
+            assert(false);
+        } break;
+
+        case JValue::E_DATE: {
+            assert(false);
+        } break;
+
+        case JValue::E_DATA: {
+			assert(false);
+        } break;
+
+        case JValue::E_STRING: {
+            const char *value;
+			value = data.asCString();
+            return der(0x0c, value);
+        } break;
+
+        case JValue::E_ARRAY: {
+            std::vector<std::string> values;
+			for (size_t i = 0; i < data.size(); i++)
+			{
+				values.push_back(der(data[i]));
+			}
+
+            return der(values);
+        } break;
+
+        case JValue::E_OBJECT: {
+            std::multiset<std::string> values;
+
+			std::vector<string> keys;
+			data.keys(keys);
+			for (auto iter = keys.begin(); iter != keys.end(); iter++)
+			{
+				string key = *iter;
+				values.insert(der(std::make_pair(key, der(data[key]))));
+			}
+
+			return der(values);
+        } break;
+
+        default: {
+            assert(false && "unsupported plist type");
+        } break;
     }
+}
 
-    std::string data()
-    {
-        std::stringbuf data;
+static std::string der_blob(JValue data) {
+	string strEntitlements = der(data);
 
-        put(data, (char*)& this->type, 1);
-        put(data, (char*)& this->length, 1);
-        
-        if (this->type == EntitlementValue::Type::Boolean) {
-            if (this->value == "0") {
-                char c_empty = '\0';
-                const void * tmp = &c_empty;
-                put(data, tmp, 1);
-            } else {
-                char c_empty = '\1';
-                const void * tmp = &c_empty;
-                put(data, tmp, 1);
-            }
-        } else {
-            put(data, this->value.c_str(), this->value.length());
-        }
-
-        return data.str();
-    }
-};
-
-struct EntitlementBlob
-{
-    uint8_t padding = 0x30;
-    uint8_t length; // Excludes .padding and .length
-
-    EntitlementValue key;
-    std::vector<EntitlementValue> values;
-
-    EntitlementBlob(std::string key, std::string v) : key(EntitlementValue::Type::String, key)
-    {
-        EntitlementValue value(EntitlementValue::Type::String, v);
-        this->values.push_back(value);
-
-        this->length = this->key.totalLength() + value.totalLength();
-    }
-
-    EntitlementBlob(std::string key, bool v) : key(EntitlementValue::Type::String, key)
-    {
-//        EntitlementValue value(EntitlementValue::Type::Boolean, v ? "\1" : "\0");
-        EntitlementValue value(EntitlementValue::Type::Boolean, v ? "1" : "0");
-        this->values.push_back(value);
-
-        this->length = this->key.totalLength() + value.totalLength();
-    }
-
-    EntitlementBlob(std::string key, std::vector<std::string> values) : key(EntitlementValue::Type::String, key), isArray(true)
-    {
-        int8_t valuesLength = 0;
-        for (auto& value : values)
-        {
-            EntitlementValue entitlementValue(EntitlementValue::Type::String, value);
-            this->values.push_back(entitlementValue);
-
-            valuesLength += entitlementValue.totalLength();
-        }
-
-        this->length = this->key.totalLength() + valuesLength + 2; // Arrays require 2 extra bytes.
-    }
-
-    uint8_t totalLength()
-    {
-        return this->length + 2;
-    }
-
-    std::string data()
-    {
-        std::stringbuf data;
-        put(data, (char*)& this->padding, 1);
-        put(data, (char*)& this->length, 1);
-        put(data, this->key.data().data(), this->key.totalLength());
-
-        if (this->isArray)
-        {
-            // Arrays need 2 extra bytes:
-            // - 0x30
-            // - Total length of all values in array (including their 2 byte headers)
-
-            int8_t padding = 0x30;
-            int8_t length = 0;
-
-            for (auto& value : this->values)
-            {
-                length += value.totalLength();
-            }
-
-            put(data, (char*)& padding, 1);
-            put(data, (char*)& length, 1);
-        }
-
-        for (auto& value : this->values)
-        {
-            put(data, value.data().data(), value.totalLength());
-        }
-
-        return data.str();
-    }
-
-private:
-    bool isArray = false;
-};
-
-struct EntitlementsSuperBlob
-{
-    uint32_t magic = MAGIC_EMBEDDED_ENTITLEMENTS_DER;
+	uint32_t magic = MAGIC_EMBEDDED_ENTITLEMENTS_DER;
     uint32_t length; // Total length, _including_ .magic and .length
+	length = sizeof(uint32_t) * 2 + strEntitlements.size();
 
-    uint8_t byte1 = 0x31;
-    uint8_t byte2;
+	std::stringbuf blobData;
+	put(blobData, magic, sizeof(uint32_t));
+	put(blobData, length, sizeof(uint32_t));
+	put(blobData, strEntitlements);
 
-    uint16_t blobsLength;
-    std::vector<EntitlementBlob> blobs;
-
-    EntitlementsSuperBlob(std::vector<EntitlementBlob> blobs) : blobs(blobs)
-    {
-        uint32_t blobsLength = 0;
-        for (auto& blob : blobs)
-        {
-            blobsLength += blob.totalLength();
-        }
-
-        this->blobsLength = blobsLength;
-
-        if (this->blobsLength > UCHAR_MAX)
-        {
-            this->length = blobsLength + 10 + 2; // blobsLength is > 255, so we need 2 bytes to encode it.
-            this->byte2 = 0x82;
-        }
-        else
-        {
-            this->length = blobsLength + 10 + 1; // blobsLength is <= 255, so we only need 1 byte to encode it.
-            this->byte2 = 0x81;
-        }
-    }
-
-    std::string data()
-    {
-        std::stringbuf data;
-
-        uint32_t swappedMagic = BE(this->magic);
-        uint32_t swappedLength = BE(this->length);
-
-        put(data, (char*)& swappedMagic, 4);
-        put(data, (char*)& swappedLength, 4);
-        put(data, (char*)& this->byte1, 1);
-        put(data, (char*)& this->byte2, 1);
-
-        if (this->blobsLength > UCHAR_MAX)
-        {
-            uint32_t swappedBlobsLength = BE(this->blobsLength);
-            put(data, (char*)& swappedBlobsLength, 2);
-        }
-        else
-        {
-            put(data, (char*)& this->blobsLength, 1);
-        }
-
-        for (auto& blob : this->blobs)
-        {
-            put(data, blob.data().data(), blob.totalLength());
-        }
-
-        return data.str();
-    }
-};
-
-void parseEntitlement(std::vector<EntitlementBlob> &entitlementBlobs, JValue jvInfo) {
-    if (!jvInfo.isNull()) {
-        std::vector<string> keys;
-        bool get_keys = jvInfo.keys(keys);
-        if (get_keys) {
-            for (auto iter = keys.begin(); iter != keys.end(); iter++) {
-                string key = *iter;
-                if (jvInfo[key].isString()) {
-                    string value = jvInfo[key].asString();
-                    EntitlementBlob blob(key, value);
-                    entitlementBlobs.push_back(blob);
-                } else if (jvInfo[key].isBool()) {
-                    bool value = jvInfo[key].asBool();
-                    EntitlementBlob blob(key, value);
-                    entitlementBlobs.push_back(blob);
-                } else if (jvInfo[key].isArray()) {
-                    std::vector<std::string> values;
-                    for (size_t i = 0; i < jvInfo[key].size(); i++)
-                    {
-                        JValue jvSubNode = jvInfo[key][i];
-                        values.push_back(jvSubNode.asString());
-                    }
-                    EntitlementBlob blob(key, values);
-                    entitlementBlobs.push_back(blob);
-                }
-            }
-            
-            ZLog::PrintV("Entitlement Plist Parse Successfully\n");
-        } else {
-            ZLog::PrintV("Entitlement Plist Parse failed, reason: get keys error\n");
-        }
-    }
+	return blobData.str();
 }
 
 ZArchO::ZArchO()
@@ -600,17 +537,14 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	SlotBuildEntitlements(IsExecute() ? pSignAsset->m_strEntitlementsData : emptyEntitlementStr, strEntitlementsSlot);
 
 	if (IsExecute() && !pSignAsset->m_strEntitlementsData.empty()) {
-        std::vector<EntitlementBlob> entitlementBlobs;
-        
         //parse entitlementDataStr to entitlementBlobs
         JValue jvInfo;
         jvInfo.readPList(pSignAsset->m_strEntitlementsData);
-        parseEntitlement(entitlementBlobs, jvInfo);
-        EntitlementsSuperBlob superBlob(entitlementBlobs);
+		string strDerBlob = der_blob(jvInfo);
         
         //
         strEntitlementsDerFormatSlot.clear();
-        strEntitlementsDerFormatSlot.append(superBlob.data().data(), superBlob.data().size());
+        strEntitlementsDerFormatSlot.append(strDerBlob.data(), strDerBlob.size());
     }
 
 	string strRequirementsSlotSHA1;
@@ -909,7 +843,7 @@ bool ZArchO::InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreat
 	uint32_t uDylibPathLength = strlen(szDyLibPath);
 	uint32_t uDylibPathPadding = (8 - uDylibPathLength % 8);
 	uint32_t uDyLibCommandSize = sizeof(dylib_command) + uDylibPathLength + uDylibPathPadding;
-	if (m_uLoadCommandsFreeSpace < uDyLibCommandSize)
+	if (m_uLoadCommandsFreeSpace > 0 && m_uLoadCommandsFreeSpace < uDyLibCommandSize) // some bin doesn't have '__text'
 	{
 		ZLog::Error(">>> Can't Find Free Space Of LoadCommands For LC_LOAD_DYLIB Or LC_LOAD_WEAK_DYLIB!\n");
 		return false;
