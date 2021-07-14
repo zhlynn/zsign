@@ -2,8 +2,175 @@
 #include "common/json.h"
 #include "archo.h"
 #include "signing.h"
+#include <sstream>
 
 size_t execSegLimit = 0;
+
+static inline void put(std::streambuf &stream, uint8_t value) {
+    assert(stream.sputc(value) != EOF);
+}
+
+static inline void put(std::streambuf &stream, const void *data, size_t size) {
+    assert(stream.sputn(static_cast<const char *>(data), size) == size);
+}
+
+static inline void put(std::streambuf &stream, const std::string &data) {
+    return put(stream, data.data(), data.size());
+}
+
+static inline unsigned bytes(uint64_t value) {
+    return (64 - __builtin_clzll(value) + 7) / 8;
+}
+
+static void put(std::streambuf &stream, uint64_t value, size_t length) {
+    length *= 8;
+    do put(stream, uint8_t(value >> (length -= 8)));
+    while (length != 0);
+}
+
+static void der(std::streambuf &stream, uint64_t value) {
+    if (value < 128)
+        put(stream, value);
+    else {
+        unsigned length(bytes(value));
+        put(stream, 0x80 | length);
+        put(stream, value, length);
+    }
+}
+
+static std::string der(uint8_t tag, const char *value, size_t length) {
+    std::stringbuf data;
+    put(data, tag);
+    der(data, length);
+    put(data, value, length);
+    return data.str();
+}
+
+static std::string der(uint8_t tag, const char *value) {
+    return der(tag, value, strlen(value)); }
+static std::string der(uint8_t tag, const std::string &value) {
+    return der(tag, value.data(), value.size()); }
+
+template <typename Type_>
+static void der_(std::stringbuf &data, const Type_ &values) {
+    size_t size(0);
+    for (const auto &value : values)
+        size += value.size();
+    der(data, size);
+    for (const auto &value : values)
+        put(data, value);
+}
+
+static std::string der(const std::vector<std::string> &values) {
+    std::stringbuf data;
+    put(data, 0x30);
+    der_(data, values);
+    return data.str();
+}
+
+static std::string der(const std::multiset<std::string> &values) {
+    std::stringbuf data;
+    put(data, 0x31);
+    der_(data, values);
+    return data.str();
+}
+
+static std::string der(const std::pair<std::string, std::string> &value) {
+    const auto key(der(0x0c, value.first));
+    std::stringbuf data;
+    put(data, 0x30);
+    der(data, key.size() + value.second.size());
+    put(data, key);
+    put(data, value.second);
+    return data.str();
+}
+
+static std::string der(JValue data) {
+    switch (const auto type = data.type()) {
+        case JValue::E_BOOL: {
+            bool value = data.asBool();
+
+            std::stringbuf data;
+            put(data, 0x01);
+            der(data, 1);
+            put(data, value ? 1 : 0);
+            return data.str();
+        } break;
+
+        case JValue::E_INT: {
+            uint64_t value;
+			value = data.asInt64();
+            const auto length(bytes(value));
+
+            std::stringbuf data;
+            put(data, 0x02);
+            der(data, length);
+            put(data, value, length);
+            return data.str();
+        } break;
+
+        case JValue::E_FLOAT: {
+            assert(false);
+        } break;
+
+        case JValue::E_DATE: {
+            assert(false);
+        } break;
+
+        case JValue::E_DATA: {
+			assert(false);
+        } break;
+
+        case JValue::E_STRING: {
+            const char *value;
+			value = data.asCString();
+            return der(0x0c, value);
+        } break;
+
+        case JValue::E_ARRAY: {
+            std::vector<std::string> values;
+			for (size_t i = 0; i < data.size(); i++)
+			{
+				values.push_back(der(data[i]));
+			}
+
+            return der(values);
+        } break;
+
+        case JValue::E_OBJECT: {
+            std::multiset<std::string> values;
+
+			std::vector<string> keys;
+			data.keys(keys);
+			for (auto iter = keys.begin(); iter != keys.end(); iter++)
+			{
+				string key = *iter;
+				values.insert(der(std::make_pair(key, der(data[key]))));
+			}
+
+			return der(values);
+        } break;
+
+        default: {
+            assert(false && "unsupported plist type");
+        } break;
+    }
+}
+
+static std::string der_blob(JValue data) {
+	string strEntitlements = der(data);
+
+	uint32_t magic = MAGIC_EMBEDDED_ENTITLEMENTS_DER;
+    uint32_t length; // Total length, _including_ .magic and .length
+	length = sizeof(uint32_t) * 2 + strEntitlements.size();
+
+	std::stringbuf blobData;
+	put(blobData, magic, sizeof(uint32_t));
+	put(blobData, length, sizeof(uint32_t));
+	put(blobData, strEntitlements);
+
+	return blobData.str();
+}
 
 ZArchO::ZArchO()
 {
@@ -363,8 +530,22 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 {
 	string strRequirementsSlot;
 	string strEntitlementsSlot;
+	string strEntitlementsDerFormatSlot;
+
+	string emptyEntitlementStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict/>\n</plist>\n";
 	SlotBuildRequirements(strBundleId, pSignAsset->m_strSubjectCN, strRequirementsSlot);
-	SlotBuildEntitlements(IsExecute() ? pSignAsset->m_strEntitlementsData : "", strEntitlementsSlot);
+	SlotBuildEntitlements(IsExecute() ? pSignAsset->m_strEntitlementsData : emptyEntitlementStr, strEntitlementsSlot);
+
+	if (IsExecute() && !pSignAsset->m_strEntitlementsData.empty()) {
+        //parse entitlementDataStr to entitlementBlobs
+        JValue jvInfo;
+        jvInfo.readPList(pSignAsset->m_strEntitlementsData);
+		string strDerBlob = der_blob(jvInfo);
+        
+        //
+        strEntitlementsDerFormatSlot.clear();
+        strEntitlementsDerFormatSlot.append(strDerBlob.data(), strDerBlob.size());
+    }
 
 	string strRequirementsSlotSHA1;
 	string strRequirementsSlotSHA256;
@@ -390,6 +571,15 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 		SHASum(strEntitlementsSlot, strEntitlementsSlotSHA1, strEntitlementsSlotSHA256);
 	}
 
+	string strEntitlementsDerSHA1;
+    string strEntitlementsDerSHA256;
+    if (strEntitlementsDerFormatSlot.empty()) {//empty
+        strEntitlementsDerSHA1.append(20, 0);
+        strEntitlementsDerSHA256.append(32, 0);
+    } else {
+        SHASum(strEntitlementsDerFormatSlot, strEntitlementsDerSHA1, strEntitlementsDerSHA256);
+    }
+
 	uint8_t *pCodeSlots1Data = NULL;
 	uint8_t *pCodeSlots256Data = NULL;
 	uint32_t uCodeSlots1DataLength = 0;
@@ -408,13 +598,14 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	string strCMSSignatureSlot;
 	string strCodeDirectorySlot;
 	string strAltnateCodeDirectorySlot;
-	SlotBuildCodeDirectory(false, m_pBase, m_uCodeLength, pCodeSlots1Data, uCodeSlots1DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA1, strRequirementsSlotSHA1, strCodeResourcesSHA1, strEntitlementsSlotSHA1, strCodeDirectorySlot);
-	SlotBuildCodeDirectory(true, m_pBase, m_uCodeLength, pCodeSlots256Data, uCodeSlots256DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA256, strRequirementsSlotSHA256, strCodeResourcesSHA256, strEntitlementsSlotSHA256, strAltnateCodeDirectorySlot);
+	SlotBuildCodeDirectory(false, m_pBase, m_uCodeLength, pCodeSlots1Data, uCodeSlots1DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA1, strRequirementsSlotSHA1, strCodeResourcesSHA1, strEntitlementsSlotSHA1, strEntitlementsDerSHA1, IsExecute(), strCodeDirectorySlot);
+	SlotBuildCodeDirectory(true, m_pBase, m_uCodeLength, pCodeSlots256Data, uCodeSlots256DataLength, execSegLimit, execSegFlags, strBundleId, pSignAsset->m_strTeamId, strInfoPlistSHA256, strRequirementsSlotSHA256, strCodeResourcesSHA256, strEntitlementsSlotSHA256, strEntitlementsDerSHA256, IsExecute(), strAltnateCodeDirectorySlot);
 	SlotBuildCMSSignature(pSignAsset, strCodeDirectorySlot, strAltnateCodeDirectorySlot, strCMSSignatureSlot);
 
 	uint32_t uCodeDirectorySlotLength = (uint32_t)strCodeDirectorySlot.size();
 	uint32_t uRequirementsSlotLength = (uint32_t)strRequirementsSlot.size();
 	uint32_t uEntitlementsSlotLength = (uint32_t)strEntitlementsSlot.size();
+	uint32_t uEntitlementsDerLength = (uint32_t)strEntitlementsDerFormatSlot.size();
 	uint32_t uAltnateCodeDirectorySlotLength = (uint32_t)strAltnateCodeDirectorySlot.size();
 	uint32_t uCMSSignatureSlotLength = (uint32_t)strCMSSignatureSlot.size();
 
@@ -422,11 +613,12 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	uCodeSignBlobCount += (uCodeDirectorySlotLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uRequirementsSlotLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uEntitlementsSlotLength > 0) ? 1 : 0;
+	uCodeSignBlobCount += (uEntitlementsDerLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uAltnateCodeDirectorySlotLength > 0) ? 1 : 0;
 	uCodeSignBlobCount += (uCMSSignatureSlotLength > 0) ? 1 : 0;
 
 	uint32_t uSuperBlobHeaderLength = sizeof(CS_SuperBlob) + uCodeSignBlobCount * sizeof(CS_BlobIndex);
-	uint32_t uCodeSignLength = uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uAltnateCodeDirectorySlotLength + uCMSSignatureSlotLength;
+	uint32_t uCodeSignLength = uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uEntitlementsDerLength + uAltnateCodeDirectorySlotLength + uCMSSignatureSlotLength;
 
 	vector<CS_BlobIndex> arrBlobIndexes;
 	if (uCodeDirectorySlotLength > 0)
@@ -450,18 +642,24 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
+	if (uEntitlementsDerLength > 0) {
+        CS_BlobIndex blob;
+        blob.type = BE(CSSLOT_ENTITLEMENTS_DER);
+        blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength+ uEntitlementsSlotLength);
+        arrBlobIndexes.push_back(blob);
+    }
 	if (uAltnateCodeDirectorySlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_ALTERNATE_CODEDIRECTORIES);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uEntitlementsDerLength);
 		arrBlobIndexes.push_back(blob);
 	}
 	if (uCMSSignatureSlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_SIGNATURESLOT);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uAltnateCodeDirectorySlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uEntitlementsDerLength + uAltnateCodeDirectorySlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
 
@@ -481,6 +679,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	strOutput += strCodeDirectorySlot;
 	strOutput += strRequirementsSlot;
 	strOutput += strEntitlementsSlot;
+	strOutput += strEntitlementsDerFormatSlot;
 	strOutput += strAltnateCodeDirectorySlot;
 	strOutput += strCMSSignatureSlot;
 
@@ -644,7 +843,7 @@ bool ZArchO::InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreat
 	uint32_t uDylibPathLength = strlen(szDyLibPath);
 	uint32_t uDylibPathPadding = (8 - uDylibPathLength % 8);
 	uint32_t uDyLibCommandSize = sizeof(dylib_command) + uDylibPathLength + uDylibPathPadding;
-	if (m_uLoadCommandsFreeSpace < uDyLibCommandSize)
+	if (m_uLoadCommandsFreeSpace > 0 && m_uLoadCommandsFreeSpace < uDyLibCommandSize) // some bin doesn't have '__text'
 	{
 		ZLog::Error(">>> Can't Find Free Space Of LoadCommands For LC_LOAD_DYLIB Or LC_LOAD_WEAK_DYLIB!\n");
 		return false;

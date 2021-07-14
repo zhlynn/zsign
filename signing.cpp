@@ -291,6 +291,8 @@ bool SlotBuildCodeDirectory(
 	const string &strRequirementsSlotSHA,
 	const string &strCodeResourcesSHA,
 	const string &strEntitlementsSlotSHA,
+	const string &strEntitlementsDerSHA,
+    bool isExecuteArch,
 	string &strOutput)
 {
 	strOutput.clear();
@@ -326,6 +328,11 @@ bool SlotBuildCodeDirectory(
 	string strEmptySHA;
 	strEmptySHA.append(cdHeader.hashSize, 0);
 	vector<string> arrSpecialSlots;
+
+	if (isExecuteArch) {
+        arrSpecialSlots.push_back(strEntitlementsDerSHA.empty() ? strEmptySHA : strEntitlementsDerSHA);
+        arrSpecialSlots.push_back(strEmptySHA);
+    }
 	arrSpecialSlots.push_back(strEntitlementsSlotSHA.empty() ? strEmptySHA : strEntitlementsSlotSHA);
 	arrSpecialSlots.push_back(strEmptySHA);
 	arrSpecialSlots.push_back(strCodeResourcesSHA.empty() ? strEmptySHA : strCodeResourcesSHA);

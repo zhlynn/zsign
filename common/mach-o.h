@@ -457,6 +457,7 @@ enum {
 	CSMAGIC_EMBEDDED_SIGNATURE = 0xfade0cc0, /* embedded form of signature data */
 	CSMAGIC_EMBEDDED_SIGNATURE_OLD = 0xfade0b02,	/* XXX */
 	CSMAGIC_EMBEDDED_ENTITLEMENTS = 0xfade7171,	/* embedded entitlements */
+	MAGIC_EMBEDDED_ENTITLEMENTS_DER = 0xfade7172, /* der format entitlements */
 	CSMAGIC_DETACHED_SIGNATURE = 0xfade0cc1, /* multi-arch collection of embedded signatures */
 	CSMAGIC_BLOBWRAPPER = 0xfade0b01,	/* CMS Signature, among other things */
 	CS_SUPPORTSSCATTER = 0x20100,
@@ -469,6 +470,7 @@ enum {
 	CSSLOT_RESOURCEDIR = 3,
 	CSSLOT_APPLICATION = 4,
 	CSSLOT_ENTITLEMENTS = 5,
+	CSSLOT_ENTITLEMENTS_DER = 7,                /* der format entitlement type */
 	CSSLOT_ALTERNATE_CODEDIRECTORIES = 0x1000, /* first alternate CodeDirectory, if any */
 	CSSLOT_ALTERNATE_CODEDIRECTORY_MAX = 5,		/* max number of alternate CD slots */
 	CSSLOT_ALTERNATE_CODEDIRECTORY_LIMIT = CSSLOT_ALTERNATE_CODEDIRECTORIES + CSSLOT_ALTERNATE_CODEDIRECTORY_MAX, /* one past the last */
