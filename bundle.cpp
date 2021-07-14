@@ -30,7 +30,23 @@ bool ZAppBundle::FindAppFolder(const string &strFolder, string &strAppFolder)
 		{
 			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, "..") && 0 != strcmp(ptr->d_name, "__MACOSX"))
 			{
-				if (DT_DIR == ptr->d_type)
+				bool isdir = false;
+				if (DT_DIR == ptr->d_type) 
+				{
+				        isdir = true;
+				}
+				else if (DT_UNKNOWN == ptr->d_type)
+				{
+	        			// Entry type can be unknown depending on the underlying file system
+					ZLog::DebugV(">>> Unknown directory entry type for %s, falling back to POSIX-compatible check\n", strFolder.c_str());
+					struct stat statbuf;
+					stat(strFolder.c_str(), &statbuf);
+					if (S_ISDIR(statbuf.st_mode))
+	            			{
+			        		isdir = true;
+					}
+				}
+				if (isdir)
 				{
 					string strSubFolder = strFolder;
 					strSubFolder += "/";
