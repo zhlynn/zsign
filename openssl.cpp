@@ -110,7 +110,7 @@ bool CMSError()
 	return false;
 }
 
-bool GenerateCMS_X(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
+bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
 {
     if (!scert || !spkey)
     {
@@ -207,118 +207,6 @@ bool GenerateCMS_X(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, co
     return (!strCMSOutput.empty());
 }
 
-bool GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
-{
-	if (!scert || !spkey)
-	{
-		return CMSError();
-	}
-
-	BIO *bother1;
-	unsigned long issuerHash = X509_issuer_name_hash(scert);
-	if (0x817d2f7a == issuerHash)
-	{
-		bother1 = BIO_new_mem_buf(appleDevCACert, strlen(appleDevCACert));
-	}
-	else if (0x9b16b75c == issuerHash)
-	{
-		bother1 = BIO_new_mem_buf(appleDevCACertG3, strlen(appleDevCACertG3));
-	}
-	else
-	{
-		ZLog::Error(">>> Unknown Issuer Hash!\n");
-		return false;
-	}
-
-	BIO *bother2 = BIO_new_mem_buf(appleRootCACert, strlen(appleRootCACert));
-	if (!bother1 || !bother2)
-	{
-		return CMSError();
-	}
-
-	X509 *ocert1 = PEM_read_bio_X509(bother1, NULL, 0, NULL);
-	X509 *ocert2 = PEM_read_bio_X509(bother2, NULL, 0, NULL);
-	if (!ocert1 || !ocert2)
-	{
-		return CMSError();
-	}
-
-	STACK_OF(X509) *otherCerts = sk_X509_new_null();
-	if (!otherCerts)
-	{
-		return CMSError();
-	}
-
-	if (!sk_X509_push(otherCerts, ocert1))
-	{
-		return CMSError();
-	}
-
-	if (!sk_X509_push(otherCerts, ocert2))
-	{
-		return CMSError();
-	}
-
-	BIO *in = BIO_new_mem_buf(strCDHashData.c_str(), strCDHashData.size());
-	if (!in)
-	{
-		return CMSError();
-	}
-
-	int nFlags = CMS_DETACHED | CMS_NOSMIMECAP | CMS_BINARY | CMS_PARTIAL;
-
-	CMS_ContentInfo *cms = CMS_sign(NULL, NULL, otherCerts, in, nFlags);
-	if (!cms)
-	{
-		return CMSError();
-	}
-
-	CMS_SignerInfo *si = CMS_add1_signer(cms, scert, spkey, NULL, nFlags);
-	if (!si)
-	{
-		return CMSError();
-	}
-
-	ASN1_OBJECT *obj = OBJ_txt2obj("1.2.840.113635.100.9.1", 1);
-	if (!obj)
-	{
-		return CMSError();
-	}
-
-	if (!CMS_signed_add1_attr_by_OBJ(si, obj, 0x4, strCDHashesPlist.c_str(), strCDHashesPlist.size()))
-	{
-		return CMSError();
-	}
-
-	if (!CMS_final(cms, in, NULL, nFlags))
-	{
-		return CMSError();
-	}
-
-	BIO *out = BIO_new(BIO_s_mem());
-	if (!out)
-	{
-		return CMSError();
-	}
-
-	//PEM_write_bio_CMS(out, cms);
-	if (!i2d_CMS_bio(out, cms))
-	{
-		return CMSError();
-	}
-
-	BUF_MEM *bptr = NULL;
-	BIO_get_mem_ptr(out, &bptr);
-	if (!bptr)
-	{
-		return CMSError();
-	}
-
-	strCMSOutput.clear();
-	strCMSOutput.append(bptr->data, bptr->length);
-	return (!strCMSOutput.empty());
-}
-
 bool GenerateCMS(const string &strSignerCertData, const string &strSignerPKeyData, const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
 {
 	BIO *bcert = BIO_new_mem_buf(strSignerCertData.c_str(), strSignerCertData.size());
@@ -336,7 +224,7 @@ bool GenerateCMS(const string &strSignerCertData, const string &strSignerPKeyDat
 		return CMSError();
 	}
 
-	return GenerateCMS_X(scert, spkey, strCDHashData, strCDHashesPlist, strCMSOutput);
+	return ::_GenerateCMS(scert, spkey, strCDHashData, strCDHashesPlist, strCMSOutput);
 }
 
 bool GetCMSContent(const string &strCMSDataInput, string &strContentOutput)
@@ -808,5 +696,5 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
 
 bool ZSignAsset::GenerateCMS(const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
 {
-	return ::GenerateCMS_X((X509 *)m_x509Cert, (EVP_PKEY *)m_evpPkey, strCDHashData, strCDHashesPlist, strCMSOutput);
+	return ::_GenerateCMS((X509 *)m_x509Cert, (EVP_PKEY *)m_evpPkey, strCDHashData, strCDHashesPlist, strCMSOutput);
 }

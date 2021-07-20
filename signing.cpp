@@ -3,6 +3,120 @@
 #include "common/mach-o.h"
 #include "openssl.h"
 
+static void _DERLength(string &strBlob, uint64_t uLength)
+{
+	if (uLength < 128)
+	{
+		strBlob.append(1, (char)uLength);
+	}
+	else
+	{
+		uint32_t sLength = (64 - __builtin_clzll(uLength) + 7) / 8;
+		strBlob.append(1, (char)(0x80 | sLength));
+		sLength *= 8;
+		do
+		{
+			strBlob.append(1, (char)(uLength >> (sLength -= 8)));
+		} while (sLength != 0);
+	}
+}
+
+static string _DER(const JValue &data)
+{
+	string strOutput;
+	if (data.isBool())
+	{
+		strOutput.append(1, 0x01);
+		strOutput.append(1, 1);
+		strOutput.append(1, data.asBool() ? 1 : 0);
+	}
+	else if (data.isInt())
+	{
+		uint64_t uVal = data.asInt64();
+		strOutput.append(1, 0x02);
+		_DERLength(strOutput, uVal);
+
+		uint32_t sLength = (64 - __builtin_clzll(uVal) + 7) / 8;
+		sLength *= 8;
+		do
+		{
+			strOutput.append(1, (char)(uVal >> (sLength -= 8)));
+		} while (sLength != 0);
+
+		/*
+		uint64_t value;
+		value = data.asInt64();
+		const auto length(bytes(value));
+
+		std::stringbuf data;
+		put(data, 0x02);
+		der(data, length);
+		put(data, value, length);
+		return data.str();*/
+	}
+	else if (data.isString())
+	{
+		string strVal = data.asCString();
+		strOutput.append(1, 0x0c);
+		_DERLength(strOutput, strVal.size());
+		strOutput += strVal;
+	}
+	else if (data.isArray())
+	{
+		string strArray;
+		size_t size = data.size();
+		for (size_t i = 0; i < size; i++)
+		{
+			strArray += _DER(data[i]);
+		}
+		strOutput.append(1, 0x30);
+		_DERLength(strOutput, strArray.size());
+		strOutput += strArray;
+	}
+	else if (data.isObject())
+	{
+		string strDict;
+		vector<string> arrKeys;
+		data.keys(arrKeys);
+		for (size_t i = 0; i < arrKeys.size(); i++)
+		{
+			string &strKey = arrKeys[i];
+			string strVal = _DER(data[strKey]);
+
+			strDict.append(1, 0x30);
+			_DERLength(strDict, (2 + strKey.size() + strVal.size()));
+
+			strDict.append(1, 0x0c);
+			_DERLength(strDict, strKey.size());
+			strDict += strKey;
+
+			strDict += strVal;
+		}
+
+		strOutput.append(1, 0x31);
+		_DERLength(strOutput, strDict.size());
+		strOutput += strDict;
+	}
+	else if (data.isFloat())
+	{
+		assert(false);
+	}
+	else if (data.isDate())
+	{
+		assert(false);
+	}
+	else if (data.isData())
+	{
+		assert(false);
+	}
+	else
+	{
+		assert(false && "Unsupported Entitlements DER Type");
+	}
+
+	return strOutput;
+}
+
 uint32_t SlotParseGeneralHeader(const char *szSlotName, uint8_t *pSlotBase, CS_BlobIndex *pbi)
 {
 	uint32_t uSlotLength = LE(*(((uint32_t *)pSlotBase) + 1));
@@ -28,7 +142,7 @@ bool SlotParseRequirements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 		return false;
 	}
 
-	if(IsFileExists("/usr/bin/csreq"))
+	if (IsFileExists("/usr/bin/csreq"))
 	{
 		string strTempFile;
 		StringFormat(strTempFile, "/tmp/Requirements_%llu.blob", GetMicroSecond());
@@ -47,7 +161,7 @@ bool SlotParseRequirements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	}
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
-	
+
 	if (ZLog::IsDebug())
 	{
 		WriteFile("./.zsign_debug/Requirements.slot", (const char *)pSlotBase, uSlotLength);
@@ -69,7 +183,7 @@ bool SlotBuildRequirements(const string &strBundleID, const string &strSubjectCN
 
 	string strPaddedSubjectID = strSubjectCN;
 	strPaddedSubjectID.append(((strSubjectCN.size() % 4) ? (4 - (strSubjectCN.size() % 4)) : 0), 0);
-	
+
 	uint8_t magic1[] = {0xfa, 0xde, 0x0c, 0x01};
 	uint32_t uLength1 = 0;
 	uint8_t pack1[] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x14};
@@ -78,17 +192,80 @@ bool SlotBuildRequirements(const string &strBundleID, const string &strSubjectCN
 	uint8_t pack2[] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x02};
 	uint32_t uBundldIDLength = (uint32_t)strBundleID.size();
 	//string strPaddedBundleID
-	uint8_t pack3[]  = { 
-			0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x0b, 
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x2e,
-			0x43, 0x4e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-		 };
+	uint8_t pack3[] = {
+		0x00,
+		0x00,
+		0x00,
+		0x06,
+		0x00,
+		0x00,
+		0x00,
+		0x0f,
+		0x00,
+		0x00,
+		0x00,
+		0x06,
+		0x00,
+		0x00,
+		0x00,
+		0x0b,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x0a,
+		0x73,
+		0x75,
+		0x62,
+		0x6a,
+		0x65,
+		0x63,
+		0x74,
+		0x2e,
+		0x43,
+		0x4e,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x01,
+	};
 	uint32_t uSubjectCNLength = (uint32_t)strSubjectCN.size();
 	//string strPaddedSubjectID
 	uint8_t pack4[] = {
-			0x00, 0x00, 0x00, 0x0e, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0a, 0x2a, 0x86, 0x48, 0x86,
-			0xf7, 0x63, 0x64, 0x06, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		};
+		0x00,
+		0x00,
+		0x00,
+		0x0e,
+		0x00,
+		0x00,
+		0x00,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x0a,
+		0x2a,
+		0x86,
+		0x48,
+		0x86,
+		0xf7,
+		0x63,
+		0x64,
+		0x06,
+		0x02,
+		0x01,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+	};
 
 	uLength2 += sizeof(magic2) + sizeof(uLength2) + sizeof(pack2);
 	uLength2 += sizeof(uBundldIDLength) + strPaddedBundleID.size();
@@ -143,6 +320,23 @@ bool SlotParseEntitlements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	return true;
 }
 
+bool SlotParseDerEntitlements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
+{
+	uint32_t uSlotLength = SlotParseGeneralHeader("CSSLOT_DER_ENTITLEMENTS", pSlotBase, pbi);
+	if (uSlotLength < 8)
+	{
+		return false;
+	}
+
+	SlotParseGeneralTailer(pSlotBase, uSlotLength);
+
+	if (ZLog::IsDebug())
+	{
+		WriteFile("./.zsign_debug/Entitlements.der.slot", (const char *)pSlotBase, uSlotLength);
+	}
+	return true;
+}
+
 bool SlotBuildEntitlements(const string &strEntitlements, string &strOutput)
 {
 	strOutput.clear();
@@ -151,12 +345,34 @@ bool SlotBuildEntitlements(const string &strEntitlements, string &strOutput)
 		return false;
 	}
 
-	uint32_t uMagic = BE(0xfade7171);
+	uint32_t uMagic = BE(CSMAGIC_EMBEDDED_ENTITLEMENTS);
 	uint32_t uLength = BE((uint32_t)strEntitlements.size() + 8);
 
 	strOutput.append((const char *)&uMagic, sizeof(uMagic));
 	strOutput.append((const char *)&uLength, sizeof(uLength));
 	strOutput.append(strEntitlements.data(), strEntitlements.size());
+
+	return true;
+}
+
+bool SlotBuildDerEntitlements(const string &strEntitlements, string &strOutput)
+{
+	strOutput.clear();
+	if (strEntitlements.empty())
+	{
+		return false;
+	}
+
+	JValue jvInfo;
+	jvInfo.readPList(strEntitlements);
+
+	string strRawEntitlementsData = _DER(jvInfo);
+	uint32_t uMagic = BE(CSMAGIC_EMBEDDED_DER_ENTITLEMENTS);
+	uint32_t uLength = BE((uint32_t)strRawEntitlementsData.size() + 8);
+
+	strOutput.append((const char *)&uMagic, sizeof(uMagic));
+	strOutput.append((const char *)&uLength, sizeof(uLength));
+	strOutput.append(strRawEntitlementsData.data(), strRawEntitlementsData.size());
 
 	return true;
 }
@@ -232,7 +448,7 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 			suffix = "\tInfo.plist\n";
 			break;
 		case 1:
-			suffix = "\tRequirements slot\n";
+			suffix = "\tRequirements Slot\n";
 			break;
 		case 2:
 			suffix = "\tCodeResources\n";
@@ -241,13 +457,16 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 			suffix = "\tApplication Specific\n";
 			break;
 		case 4:
-			suffix = "\tEntitlements slot\n";
+			suffix = "\tEntitlements Slot\n";
+			break;
+		case 6:
+			suffix = "\tEntitlements(DER) Slot\n";
 			break;
 		}
 		PrintSHASum("\t\t\t", arrSpecialSlots[i], cdHeader.hashSize, suffix);
 	}
 
-	if(ZLog::IsDebug())
+	if (ZLog::IsDebug())
 	{
 		ZLog::Print("\tCodeSlots:\n");
 		for (uint32_t i = 0; i < LE(cdHeader.nCodeSlots); i++)
@@ -283,7 +502,7 @@ bool SlotBuildCodeDirectory(
 	uint32_t uCodeLength,
 	uint8_t *pCodeSlotsData,
 	uint32_t uCodeSlotsDataLength,
-	size_t execSegLimit,
+	uint64_t execSegLimit,
 	uint64_t execSegFlags,
 	const string &strBundleId,
 	const string &strTeamId,
@@ -291,8 +510,8 @@ bool SlotBuildCodeDirectory(
 	const string &strRequirementsSlotSHA,
 	const string &strCodeResourcesSHA,
 	const string &strEntitlementsSlotSHA,
-	const string &strEntitlementsDerSHA,
-    bool isExecuteArch,
+	const string &strDerEntitlementsSlotSHA,
+	bool isExecuteArch,
 	string &strOutput)
 {
 	strOutput.clear();
@@ -321,18 +540,19 @@ bool SlotBuildCodeDirectory(
 	cdHeader.spare2 = 0;
 	cdHeader.scatterOffset = 0;
 	cdHeader.teamOffset = 0;
-	cdHeader.execSegBase = _Swap(uint64_t(0));
-	cdHeader.execSegLimit = _Swap(uint64_t(execSegLimit));
-	cdHeader.execSegFlags = _Swap(execSegFlags);
+	cdHeader.execSegBase = 0;
+	cdHeader.execSegLimit = BE(execSegLimit);
+	cdHeader.execSegFlags = BE(execSegFlags);
 
 	string strEmptySHA;
 	strEmptySHA.append(cdHeader.hashSize, 0);
 	vector<string> arrSpecialSlots;
 
-	if (isExecuteArch) {
-        arrSpecialSlots.push_back(strEntitlementsDerSHA.empty() ? strEmptySHA : strEntitlementsDerSHA);
-        arrSpecialSlots.push_back(strEmptySHA);
-    }
+	if (isExecuteArch)
+	{
+		arrSpecialSlots.push_back(strDerEntitlementsSlotSHA.empty() ? strEmptySHA : strDerEntitlementsSlotSHA);
+		arrSpecialSlots.push_back(strEmptySHA);
+	}
 	arrSpecialSlots.push_back(strEntitlementsSlotSHA.empty() ? strEmptySHA : strEntitlementsSlotSHA);
 	arrSpecialSlots.push_back(strEmptySHA);
 	arrSpecialSlots.push_back(strCodeResourcesSHA.empty() ? strEmptySHA : strCodeResourcesSHA);
@@ -455,40 +675,40 @@ bool SlotParseCMSSignature(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	}
 
 	ZLog::Print("\tSignedAttrs: \n");
-	if(jvInfo["attrs"].has("ContentType"))
+	if (jvInfo["attrs"].has("ContentType"))
 	{
 		ZLog::PrintV("\t  ContentType: \t%s => %s\n", jvInfo["attrs"]["ContentType"]["obj"].asCString(), jvInfo["attrs"]["ContentType"]["data"].asCString());
 	}
 
-	if(jvInfo["attrs"].has("SigningTime"))
+	if (jvInfo["attrs"].has("SigningTime"))
 	{
 		ZLog::PrintV("\t  SigningTime: \t%s => %s\n", jvInfo["attrs"]["SigningTime"]["obj"].asCString(), jvInfo["attrs"]["SigningTime"]["data"].asCString());
 	}
 
-	if(jvInfo["attrs"].has("MessageDigest"))
+	if (jvInfo["attrs"].has("MessageDigest"))
 	{
 		ZLog::PrintV("\t  MsgDigest: \t%s => %s\n", jvInfo["attrs"]["MessageDigest"]["obj"].asCString(), jvInfo["attrs"]["MessageDigest"]["data"].asCString());
 	}
 
-	if(jvInfo["attrs"].has("CDHashes"))
+	if (jvInfo["attrs"].has("CDHashes"))
 	{
 		string strData = jvInfo["attrs"]["CDHashes"]["data"].asCString();
 		StringReplace(strData, "\n", "\n\t\t\t\t");
 		ZLog::PrintV("\t  CDHashes: \t%s => \n\t\t\t\t%s\n", jvInfo["attrs"]["CDHashes"]["obj"].asCString(), strData.c_str());
 	}
 
-	if(jvInfo["attrs"].has("CDHashes2"))
+	if (jvInfo["attrs"].has("CDHashes2"))
 	{
 		ZLog::PrintV("\t  CDHashes2: \t%s => \n", jvInfo["attrs"]["CDHashes2"]["obj"].asCString());
-		for(size_t i = 0; i < jvInfo["attrs"]["CDHashes2"]["data"].size(); i++)
+		for (size_t i = 0; i < jvInfo["attrs"]["CDHashes2"]["data"].size(); i++)
 		{
 			ZLog::PrintV("\t\t\t\t%s\n", jvInfo["attrs"]["CDHashes2"]["data"][i].asCString());
 		}
 	}
 
-	for(size_t i = 0; i < jvInfo["attrs"]["unknown"].size(); i++)
+	for (size_t i = 0; i < jvInfo["attrs"]["unknown"].size(); i++)
 	{
-		JValue& jvAttr =  jvInfo["attrs"]["unknown"][i];
+		JValue &jvAttr = jvInfo["attrs"]["unknown"][i];
 		ZLog::PrintV("\t  UnknownAttr: \t%s => %s, type: %d, count: %d\n", jvAttr["obj"].asCString(), jvAttr["name"].asCString(), jvAttr["type"].asInt(), jvAttr["count"].asInt());
 	}
 	ZLog::Print("\n");
@@ -527,7 +747,7 @@ bool SlotBuildCMSSignature(
 		return false;
 	}
 
-	uint32_t uMagic = BE(0xfade0b01);
+	uint32_t uMagic = BE(CSMAGIC_BLOBWRAPPER);
 	uint32_t uLength = BE((uint32_t)strCMSData.size() + 8);
 
 	strOutput.append((const char *)&uMagic, sizeof(uMagic));
@@ -573,6 +793,9 @@ bool ParseCodeSignature(uint8_t *pCSBase)
 			break;
 		case CSSLOT_ENTITLEMENTS:
 			SlotParseEntitlements(pSlotBase, pbi);
+			break;
+		case CSSLOT_DER_ENTITLEMENTS:
+			SlotParseDerEntitlements(pSlotBase, pbi);
 			break;
 		case CSSLOT_ALTERNATE_CODEDIRECTORIES:
 			SlotParseCodeDirectory(pSlotBase, pbi);
@@ -651,7 +874,7 @@ bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase, uint8_t *&pCodeSlots1
 		}
 		break;
 		default:
-		break;
+			break;
 		}
 	}
 
