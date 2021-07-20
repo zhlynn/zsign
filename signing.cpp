@@ -42,17 +42,6 @@ static string _DER(const JValue &data)
 		{
 			strOutput.append(1, (char)(uVal >> (sLength -= 8)));
 		} while (sLength != 0);
-
-		/*
-		uint64_t value;
-		value = data.asInt64();
-		const auto length(bytes(value));
-
-		std::stringbuf data;
-		put(data, 0x02);
-		der(data, length);
-		put(data, value, length);
-		return data.str();*/
 	}
 	else if (data.isString())
 	{
