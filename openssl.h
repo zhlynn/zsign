@@ -1,10 +1,10 @@
 #pragma once
 #include "common/json.h"
 
-bool GenerateCMS(const string &strSignerCertData, const string &strSignerPKeyData, const string &strCDHashData, const string &strCDHashPlist, string &strCMSOutput);
-bool GetCMSContent(const string &strCMSDataInput, string &strContentOutput);
 bool GetCertSubjectCN(const string &strCertData, string &strSubjectCN);
 bool GetCMSInfo(uint8_t *pCMSData, uint32_t uCMSLength, JValue &jvOutput);
+bool GetCMSContent(const string &strCMSDataInput, string &strContentOutput);
+bool GenerateCMS(const string &strSignerCertData, const string &strSignerPKeyData, const string &strCDHashData, const string &strCDHashPlist, string &strCMSOutput);
 
 class ZSignAsset
 {
@@ -22,6 +22,6 @@ public:
 	string m_strEntitlementsData;
 
 private:
-	void *m_evpPkey;
+	void *m_evpPKey;
 	void *m_x509Cert;
 };

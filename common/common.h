@@ -29,11 +29,9 @@ using namespace std;
 #define LE(x) _Swap(x)
 #define BE(x) _Swap(x)
 
-
 #if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
-#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
 #endif
-
 
 uint16_t _Swap(uint16_t value);
 uint32_t _Swap(uint32_t value);
@@ -103,14 +101,14 @@ public:
     ~ZBuffer();
 
 public:
-    char* GetBuffer(uint32_t uSize);
+    char *GetBuffer(uint32_t uSize);
 
 private:
     void Free();
 
 private:
-    char*       m_pData;
-    uint32_t    m_uSize;
+    char *m_pData;
+    uint32_t m_uSize;
 };
 
 class ZTimer

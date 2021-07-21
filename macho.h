@@ -18,14 +18,15 @@ public:
 private:
 	bool OpenFile(const char *szPath);
 	bool CloseFile();
-	bool ReallocCodeSignSpace();
+
 	bool NewArchO(uint8_t *pBase, uint32_t uLength);
 	void FreeArchOes();
+	bool ReallocCodeSignSpace();
 
 private:
-	uint8_t *m_pBase;
 	size_t m_sSize;
 	string m_strFile;
-	vector<ZArchO *> m_arrArchOes;
+	uint8_t *m_pBase;
 	bool m_bCSRealloced;
+	vector<ZArchO *> m_arrArchOes;
 };

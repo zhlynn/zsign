@@ -485,23 +485,22 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	return true;
 }
 
-bool SlotBuildCodeDirectory(
-	bool bAlternate,
-	uint8_t *pCodeBase,
-	uint32_t uCodeLength,
-	uint8_t *pCodeSlotsData,
-	uint32_t uCodeSlotsDataLength,
-	uint64_t execSegLimit,
-	uint64_t execSegFlags,
-	const string &strBundleId,
-	const string &strTeamId,
-	const string &strInfoPlistSHA,
-	const string &strRequirementsSlotSHA,
-	const string &strCodeResourcesSHA,
-	const string &strEntitlementsSlotSHA,
-	const string &strDerEntitlementsSlotSHA,
-	bool isExecuteArch,
-	string &strOutput)
+bool SlotBuildCodeDirectory(bool bAlternate,
+							uint8_t *pCodeBase,
+							uint32_t uCodeLength,
+							uint8_t *pCodeSlotsData,
+							uint32_t uCodeSlotsDataLength,
+							uint64_t execSegLimit,
+							uint64_t execSegFlags,
+							const string &strBundleId,
+							const string &strTeamId,
+							const string &strInfoPlistSHA,
+							const string &strRequirementsSlotSHA,
+							const string &strCodeResourcesSHA,
+							const string &strEntitlementsSlotSHA,
+							const string &strDerEntitlementsSlotSHA,
+							bool isExecuteArch,
+							string &strOutput)
 {
 	strOutput.clear();
 	if (NULL == pCodeBase || uCodeLength <= 0 || strBundleId.empty() || strTeamId.empty())
@@ -712,11 +711,10 @@ bool SlotParseCMSSignature(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	return true;
 }
 
-bool SlotBuildCMSSignature(
-	ZSignAsset *pSignAsset,
-	const string &strCodeDirectorySlot,
-	const string &strAltnateCodeDirectorySlot,
-	string &strOutput)
+bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
+						   const string &strCodeDirectorySlot,
+						   const string &strAltnateCodeDirectorySlot,
+						   string &strOutput)
 {
 	strOutput.clear();
 
@@ -824,7 +822,11 @@ bool SlotGetCodeSlotsData(uint8_t *pSlotBase, uint8_t *&pCodeSlots, uint32_t &uC
 	return true;
 }
 
-bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase, uint8_t *&pCodeSlots1Data, uint32_t &uCodeSlots1DataLength, uint8_t *&pCodeSlots256Data, uint32_t &uCodeSlots256DataLength)
+bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase,
+										 uint8_t *&pCodeSlots1Data,
+										 uint32_t &uCodeSlots1DataLength,
+										 uint8_t *&pCodeSlots256Data,
+										 uint32_t &uCodeSlots256DataLength)
 {
 	pCodeSlots1Data = NULL;
 	pCodeSlots256Data = NULL;

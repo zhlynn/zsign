@@ -8,26 +8,25 @@
 #include <getopt.h>
 
 const struct option options[] = {
-	{ "debug",			no_argument,			NULL, 'd' },
-	{ "force",			no_argument,			NULL, 'f' },
-	{ "verbose",		no_argument,			NULL, 'v' },
-	{ "cert",			required_argument,		NULL, 'c' },
-	{ "pkey",			required_argument,		NULL, 'k' },
-	{ "prov",			required_argument,		NULL, 'm' },
-	{ "password",		required_argument,		NULL, 'p' },
-	{ "bundleid",		required_argument,		NULL, 'b' },
-	{ "bundlename",		required_argument,		NULL, 'n' },
-	{ "bundleversion",      required_argument,		NULL, 'r' },
-	{ "entitlements",	required_argument,		NULL, 'e' },
-	{ "output",			required_argument,		NULL, 'o' },
-	{ "ziplevel",		required_argument,		NULL, 'z' },
-	{ "dylib",			required_argument,		NULL, 'l' },
-	{ "weak",			no_argument,			NULL, 'w' },
-	{ "install",		no_argument,			NULL, 'i' },
-	{ "quiet",			no_argument,			NULL, 'q' },
-	{ "help",			no_argument,			NULL, 'h' },
-	{ }
-};
+	{"debug", no_argument, NULL, 'd'},
+	{"force", no_argument, NULL, 'f'},
+	{"verbose", no_argument, NULL, 'v'},
+	{"cert", required_argument, NULL, 'c'},
+	{"pkey", required_argument, NULL, 'k'},
+	{"prov", required_argument, NULL, 'm'},
+	{"password", required_argument, NULL, 'p'},
+	{"bundleid", required_argument, NULL, 'b'},
+	{"bundlename", required_argument, NULL, 'n'},
+	{"bundleversion", required_argument, NULL, 'r'},
+	{"entitlements", required_argument, NULL, 'e'},
+	{"output", required_argument, NULL, 'o'},
+	{"ziplevel", required_argument, NULL, 'z'},
+	{"dylib", required_argument, NULL, 'l'},
+	{"weak", no_argument, NULL, 'w'},
+	{"install", no_argument, NULL, 'i'},
+	{"quiet", no_argument, NULL, 'q'},
+	{"help", no_argument, NULL, 'h'},
+	{}};
 
 int usage()
 {
@@ -174,8 +173,8 @@ int main(int argc, char *argv[])
 			ZMachO macho;
 			if (macho.Init(strPath.c_str()))
 			{
-				if(!strDyLibFile.empty())
-				{//inject dylib
+				if (!strDyLibFile.empty())
+				{ //inject dylib
 					bool bCreate = false;
 					macho.InjectDyLib(bWeakInject, strDyLibFile.c_str(), bCreate);
 				}

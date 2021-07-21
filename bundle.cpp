@@ -12,8 +12,6 @@ ZAppBundle::ZAppBundle()
 	m_bWeakInject = false;
 }
 
-
-
 bool ZAppBundle::FindAppFolder(const string &strFolder, string &strAppFolder)
 {
 	if (IsPathSuffix(strFolder, ".app") || IsPathSuffix(strFolder, ".appex"))
@@ -31,19 +29,19 @@ bool ZAppBundle::FindAppFolder(const string &strFolder, string &strAppFolder)
 			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, "..") && 0 != strcmp(ptr->d_name, "__MACOSX"))
 			{
 				bool isdir = false;
-				if (DT_DIR == ptr->d_type) 
+				if (DT_DIR == ptr->d_type)
 				{
-				        isdir = true;
+					isdir = true;
 				}
 				else if (DT_UNKNOWN == ptr->d_type)
 				{
-	        			// Entry type can be unknown depending on the underlying file system
+					// Entry type can be unknown depending on the underlying file system
 					ZLog::DebugV(">>> Unknown directory entry type for %s, falling back to POSIX-compatible check\n", strFolder.c_str());
 					struct stat statbuf;
 					stat(strFolder.c_str(), &statbuf);
 					if (S_ISDIR(statbuf.st_mode))
-	            			{
-			        		isdir = true;
+					{
+						isdir = true;
 					}
 				}
 				if (isdir)
@@ -476,13 +474,19 @@ void ZAppBundle::GetPlugIns(const string &strFolder, vector<string> &arrPlugIns)
 	}
 }
 
-bool ZAppBundle::SignFolder(
-        ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strBundleVersion,
-        const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache
-) {
+bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
+							const string &strFolder,
+							const string &strBundleID,
+							const string &strBundleVersion,
+							const string &strDisplayName,
+							const string &strDyLibFile,
+							bool bForce,
+							bool bWeakInject,
+							bool bEnableCache)
+{
 	m_bForceSign = bForce;
 	m_pSignAsset = pSignAsset;
-	m_bWeakInject = bWeakInject; 
+	m_bWeakInject = bWeakInject;
 	if (NULL == m_pSignAsset)
 	{
 		return false;
@@ -558,13 +562,13 @@ bool ZAppBundle::SignFolder(
 				ZLog::PrintV(">>> BundleName: %s -> %s\n", strOldDisplayName.c_str(), strDisplayName.c_str());
 			}
 
-                        if (!strBundleVersion.empty())
-                        {
-                                string strOldBundleVersion = jvInfoPlist["CFBundleVersion"];
-                                jvInfoPlist["CFBundleVersion"] = strBundleVersion;
-                                jvInfoPlist["CFBundleShortVersionString"] = strBundleVersion;
-                                ZLog::PrintV(">>> BundleVersion: %s -> %s\n", strOldBundleVersion.c_str(), strBundleVersion.c_str());
-                        }
+			if (!strBundleVersion.empty())
+			{
+				string strOldBundleVersion = jvInfoPlist["CFBundleVersion"];
+				jvInfoPlist["CFBundleVersion"] = strBundleVersion;
+				jvInfoPlist["CFBundleShortVersionString"] = strBundleVersion;
+				ZLog::PrintV(">>> BundleVersion: %s -> %s\n", strOldBundleVersion.c_str(), strBundleVersion.c_str());
+			}
 
 			jvInfoPlist.writePListPath("%s/Info.plist", m_strAppFolder.c_str());
 		}

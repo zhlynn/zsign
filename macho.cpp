@@ -154,7 +154,7 @@ bool ZMachO::Sign(ZSignAsset *pSignAsset, bool bForce, string strBundleId, strin
 
 		if (strInfoPlistSHA1.empty() || strInfoPlistSHA256.empty())
 		{
-			if(archo->m_strInfoPlist.empty())
+			if (archo->m_strInfoPlist.empty())
 			{
 				strInfoPlistSHA1.append(20, 0);
 				strInfoPlistSHA256.append(32, 0);
