@@ -70,7 +70,7 @@ yum install openssl-devel
 ```
 and then
 ```bash
-g++ *.cpp common/*.cpp -lcrypto -O3 -o zsign
+g++ *.cpp common/*.cpp -std=gnu++11 -lcrypto -O3 -o zsign
 ```
 
 ### Usage
