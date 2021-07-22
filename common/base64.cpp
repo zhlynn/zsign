@@ -89,10 +89,10 @@ const char *ZBase64::Encode(const char *szSrc, int nSrcLen)
 	for (i = 0; i < nSrcLen - 3; i += 3)
 	{
 		unsigned long ulTmp = *(unsigned long *)psrc;
-		register int b0 = GetB64char((B0(ulTmp) >> 2) & 0x3F);
-		register int b1 = GetB64char((B0(ulTmp) << 6 >> 2 | B1(ulTmp) >> 4) & 0x3F);
-		register int b2 = GetB64char((B1(ulTmp) << 4 >> 2 | B2(ulTmp) >> 6) & 0x3F);
-		register int b3 = GetB64char((B2(ulTmp) << 2 >> 2) & 0x3F);
+		int b0 = GetB64char((B0(ulTmp) >> 2) & 0x3F);
+		int b1 = GetB64char((B0(ulTmp) << 6 >> 2 | B1(ulTmp) >> 4) & 0x3F);
+		int b2 = GetB64char((B1(ulTmp) << 4 >> 2 | B2(ulTmp) >> 6) & 0x3F);
+		int b3 = GetB64char((B2(ulTmp) << 2 >> 2) & 0x3F);
 		*((unsigned long *)p64) = b0 | b1 << 8 | b2 << 16 | b3 << 24;
 		len += 4;
 		p64 += 4;
@@ -146,9 +146,9 @@ const char *ZBase64::Decode(const char *szSrc, int nSrcLen, int *pDecLen)
 	{
 		unsigned long ulTmp = *(unsigned long *)psrc;
 
-		register int b0 = (GetB64Index((char)B0(ulTmp)) << 2 | GetB64Index((char)B1(ulTmp)) << 2 >> 6) & 0xFF;
-		register int b1 = (GetB64Index((char)B1(ulTmp)) << 4 | GetB64Index((char)B2(ulTmp)) << 2 >> 4) & 0xFF;
-		register int b2 = (GetB64Index((char)B2(ulTmp)) << 6 | GetB64Index((char)B3(ulTmp)) << 2 >> 2) & 0xFF;
+		int b0 = (GetB64Index((char)B0(ulTmp)) << 2 | GetB64Index((char)B1(ulTmp)) << 2 >> 6) & 0xFF;
+		int b1 = (GetB64Index((char)B1(ulTmp)) << 4 | GetB64Index((char)B2(ulTmp)) << 2 >> 4) & 0xFF;
+		int b2 = (GetB64Index((char)B2(ulTmp)) << 6 | GetB64Index((char)B3(ulTmp)) << 2 >> 2) & 0xFF;
 
 		*((unsigned long *)pbuf) = b0 | b1 << 8 | b2 << 16;
 		psrc += 4;
@@ -165,20 +165,20 @@ const char *ZBase64::Decode(const char *szSrc, int nSrcLen, int *pDecLen)
 			*(((unsigned char *)&ulTmp) + j) = *psrc++;
 		}
 
-		register int b0 = (GetB64Index((char)B0(ulTmp)) << 2 | GetB64Index((char)B1(ulTmp)) << 2 >> 6) & 0xFF;
+		int b0 = (GetB64Index((char)B0(ulTmp)) << 2 | GetB64Index((char)B1(ulTmp)) << 2 >> 6) & 0xFF;
 		*pbuf++ = b0;
 		len++;
 
 		if ('=' != B1(ulTmp) && '=' != B2(ulTmp))
 		{
-			register int b1 = (GetB64Index((char)B1(ulTmp)) << 4 | GetB64Index((char)B2(ulTmp)) << 2 >> 4) & 0xFF;
+			int b1 = (GetB64Index((char)B1(ulTmp)) << 4 | GetB64Index((char)B2(ulTmp)) << 2 >> 4) & 0xFF;
 			*pbuf++ = b1;
 			len++;
 		}
 
 		if ('=' != B2(ulTmp) && '=' != B3(ulTmp))
 		{
-			register int b2 = (GetB64Index((char)B2(ulTmp)) << 6 | GetB64Index((char)B3(ulTmp)) << 2 >> 2) & 0xFF;
+			int b2 = (GetB64Index((char)B2(ulTmp)) << 6 | GetB64Index((char)B3(ulTmp)) << 2 >> 2) & 0xFF;
 			*pbuf++ = b2;
 			len++;
 		}
