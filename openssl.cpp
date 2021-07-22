@@ -12,8 +12,10 @@ class COpenSSLInit
 public:
 	COpenSSLInit()
 	{
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 		OpenSSL_add_all_algorithms();
 		ERR_load_crypto_strings();
+#endif
 	};
 };
 
@@ -209,8 +211,8 @@ bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, con
 
 bool GenerateCMS(const string &strSignerCertData, const string &strSignerPKeyData, const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
 {
-	BIO *bcert = BIO_new_mem_buf(strSignerCertData.c_str(), strSignerCertData.size());
-	BIO *bpkey = BIO_new_mem_buf(strSignerPKeyData.c_str(), strSignerPKeyData.size());
+	BIO *bcert = BIO_new_mem_buf(strSignerCertData.c_str(), (int)strSignerCertData.size());
+	BIO *bpkey = BIO_new_mem_buf(strSignerPKeyData.c_str(), (int)strSignerPKeyData.size());
 
 	if (!bcert || !bpkey)
 	{
@@ -235,7 +237,7 @@ bool GetCMSContent(const string &strCMSDataInput, string &strContentOutput)
 	}
 
 	BIO *in = BIO_new(BIO_s_mem());
-	OPENSSL_assert((size_t)BIO_write(in, strCMSDataInput.data(), strCMSDataInput.size()) == strCMSDataInput.size());
+	OPENSSL_assert((size_t)BIO_write(in, strCMSDataInput.data(), (int)strCMSDataInput.size()) == strCMSDataInput.size());
 	CMS_ContentInfo *cms = d2i_CMS_bio(in, NULL);
 	if (!cms)
 	{
@@ -327,8 +329,13 @@ void ParseCertSubject(const string &strSubject, JValue &jvSubject)
 	}
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 string ASN1_TIMEtoString(ASN1_TIME *time)
 {
+#else
+string ASN1_TIMEtoString(const ASN1_TIME *time)
+{
+#endif
 	BIO *out = BIO_new(BIO_s_mem());
 	if (!out)
 	{
@@ -374,8 +381,13 @@ bool GetCertInfo(X509 *cert, JValue &jvCertInfo)
 	int type = EVP_PKEY_id(pubkey);
 	jvCertInfo["PublicKey"]["Algorithm"] = OBJ_nid2ln(type);
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	jvCertInfo["Validity"]["NotBefore"] = ASN1_TIMEtoString(X509_get_notBefore(cert));
 	jvCertInfo["Validity"]["NotAfter"] = ASN1_TIMEtoString(X509_get_notAfter(cert));
+#else
+	jvCertInfo["Validity"]["NotBefore"] = ASN1_TIMEtoString(X509_get0_notBefore(cert));
+	jvCertInfo["Validity"]["NotAfter"] = ASN1_TIMEtoString(X509_get0_notAfter(cert));
+#endif
 
 	string strIssuer = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
 	string strSubject = X509_NAME_oneline(X509_get_subject_name(cert), NULL, 0);
@@ -658,7 +670,7 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
 		for (size_t i = 0; i < jvProv["DeveloperCertificates"].size(); i++)
 		{
 			string strCertData = jvProv["DeveloperCertificates"][i].asData();
-			BIO *bioCert = BIO_new_mem_buf(strCertData.c_str(), strCertData.size());
+			BIO *bioCert = BIO_new_mem_buf(strCertData.c_str(), (int)strCertData.size());
 			if (NULL != bioCert)
 			{
 				x509Cert = d2i_X509_bio(bioCert, NULL);
