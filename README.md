@@ -1,7 +1,6 @@
 # zsign
 Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform ( Linux & macOS ), more features.
-If this tool can help you, please don't forget to star me. :)
-
+If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> me. :)
 ### Compile
 
 You must install openssl library at first.
