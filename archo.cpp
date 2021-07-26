@@ -34,6 +34,11 @@ bool ZArchO::Init(uint8_t *pBase, uint32_t uLength)
 	m_uLength = uLength;
 	m_uCodeLength = (uLength % 16 == 0) ? uLength : uLength + 16 - (uLength % 16);
 	m_pHeader = (mach_header *)m_pBase;
+	if (MH_MAGIC != m_pHeader->magic && MH_CIGAM != m_pHeader->magic && MH_MAGIC_64 != m_pHeader->magic && MH_CIGAM_64 != m_pHeader->magic)
+	{
+		return false;
+	}
+
 	m_b64 = (MH_MAGIC_64 == m_pHeader->magic || MH_CIGAM_64 == m_pHeader->magic) ? true : false;
 	m_bBigEndian = (MH_CIGAM == m_pHeader->magic || MH_CIGAM_64 == m_pHeader->magic) ? true : false;
 	m_uHeaderSize = m_b64 ? sizeof(mach_header_64) : sizeof(mach_header);
