@@ -72,7 +72,7 @@ bool ZAppBundle::GetSignFolderInfo(const string &strFolder, JValue &jvNode, bool
 	string strBundleId = jvInfo["CFBundleIdentifier"];
 	string strBundleExe = jvInfo["CFBundleExecutable"];
 	string strBundleVersion = jvInfo["CFBundleVersion"];
-	if (strBundleId.empty() || strBundleVersion.empty() || strBundleExe.empty())
+	if (strBundleId.empty() || strBundleExe.empty())
 	{
 		return false;
 	}
