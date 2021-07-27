@@ -79,23 +79,24 @@ I have already tested on macOS and Linux, but you also need **unzip** and **zip*
 Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
 
 options:
--k, --pkey          Path to private key or p12 file. (PEM or DER format)
--m, --prov          Path to mobile provisioning profile.
--c, --cert          Path to certificate file. (PEM or DER format)
--d, --debug         Generate debug output files. (.zsign_debug folder)
--f, --force         Force sign without cache when signing folder.
--o, --output        Path to output ipa file.
--p, --password      Password for private key or p12 file.
+-k, --pkey           Path to private key or p12 file. (PEM or DER format)
+-m, --prov           Path to mobile provisioning profile.
+-c, --cert           Path to certificate file. (PEM or DER format)
+-d, --debug          Generate debug output files. (.zsign_debug folder)
+-f, --force          Force sign without cache when signing folder.
+-o, --output         Path to output ipa file.
+-p, --password       Password for private key or p12 file.
 -b, --bundle_id      New bundle id to change.
 -n, --bundle_name    New bundle name to change.
--e, --entitlements  New entitlements to change.
+-r, --bundle_version New bundle version to change.
+-e, --entitlements   New entitlements to change.
 -z, --zip_level      Compressed level when output the ipa file. (0-9)
--l, --dylib         Path to inject dylib file.
--w, --weak          Inject dylib as LC_LOAD_WEAK_DYLIB.
--i, --install       Install ipa file using ideviceinstaller command for test.
--q, --quiet         Quiet operation.
--v, --version       Show version.
--h, --help          Show help.
+-l, --dylib          Path to inject dylib file.
+-w, --weak           Inject dylib as LC_LOAD_WEAK_DYLIB.
+-i, --install        Install ipa file using ideviceinstaller command for test.
+-q, --quiet          Quiet operation.
+-v, --version        Show version.
+-h, --help           Show help.
 ```
 
 1. Show mach-o and codesignature segment info.

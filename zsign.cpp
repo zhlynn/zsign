@@ -39,11 +39,11 @@ int usage()
 	ZLog::Print("-f, --force\t\tForce sign without cache when signing folder.\n");
 	ZLog::Print("-o, --output\t\tPath to output ipa file.\n");
 	ZLog::Print("-p, --password\t\tPassword for private key or p12 file.\n");
-	ZLog::Print("-b, --bundleid\t\tNew bundle id to change.\n");
-	ZLog::Print("-n, --bundlename\tNew bundle name to change.\n");
-	ZLog::Print("-r, --bundleversion\tNew bundle version to change.\n");
+	ZLog::Print("-b, --bundle_id\t\tNew bundle id to change.\n");
+	ZLog::Print("-n, --bundle_name\tNew bundle name to change.\n");
+	ZLog::Print("-r, --bundle_version\tNew bundle version to change.\n");
 	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
-	ZLog::Print("-z, --ziplevel\t\tCompressed level when output the ipa file. (0-9)\n");
+	ZLog::Print("-z, --zip_level\t\tCompressed level when output the ipa file. (0-9)\n");
 	ZLog::Print("-l, --dylib\t\tPath to inject dylib file.\n");
 	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
