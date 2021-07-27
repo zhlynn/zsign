@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 		{
-			printf("version: 0.2\n");
+			printf("version: 0.5\n");
 			return 0;
 		}
 		break;
