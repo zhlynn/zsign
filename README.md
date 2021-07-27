@@ -86,10 +86,10 @@ options:
 -f, --force         Force sign without cache when signing folder.
 -o, --output        Path to output ipa file.
 -p, --password      Password for private key or p12 file.
--b, --bundleid      New bundle id to change.
--n, --bundlename    New bundle name to change.
+-b, --bundle_id      New bundle id to change.
+-n, --bundle_name    New bundle name to change.
 -e, --entitlements  New entitlements to change.
--z, --ziplevel      Compressed level when output the ipa file. (0-9)
+-z, --zip_level      Compressed level when output the ipa file. (0-9)
 -l, --dylib         Path to inject dylib file.
 -w, --weak          Inject dylib as LC_LOAD_WEAK_DYLIB.
 -i, --install       Install ipa file using ideviceinstaller command for test.
@@ -194,7 +194,7 @@ docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
 ```
 
 ### Copyright
-zsign is completely free. Please mark the source of zsign in your commercial product if possible.
+zsign is completely free. Please mark the source of zsign in your commercial products if possible.
 
 ### How to sign quickly?
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.
