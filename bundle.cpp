@@ -74,7 +74,10 @@ bool ZAppBundle::GetSignFolderInfo(const string &strFolder, JValue &jvNode, bool
 	string strBundleVersion = jvInfo["CFBundleVersion"];
 	if (strBundleId.empty() || strBundleVersion.empty() || strBundleExe.empty())
 	{
-		return false;
+		if (!IsPathSuffix(strFolder, ".framework")) {
+			return false;
+		}
+		strBundleVersion = "1.0.0";
 	}
 
 	string strInfoPlistSHA1Base64;
