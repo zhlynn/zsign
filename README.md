@@ -61,6 +61,18 @@ x86_64-w64-mingw32-g++  \
 
 another ref for chinese: https://blog.csdn.net/a513436535/article/details/108539238
 
+#### Ubuntu:
+
+
+```bash
+sudo apt-get install zip unzip git build-essential checkinstall zlib1g-dev libssl-dev -y
+```bash
+
+and then
+```bash
+g++ *.cpp common/*.cpp -std=gnu++11 -lcrypto -O3 -o zsign
+```
+
 #### CentOS7:
 
 
