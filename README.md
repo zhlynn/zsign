@@ -10,9 +10,13 @@ You must install openssl library at first.
 ```bash
 brew install openssl
 ```
-and then (attention to replace your openssl version)
+and then
 ```bash
-g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl@1.1/1.1.1k/include -L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -O3 -o zsign
+#For Intel:
+g++ *.cpp common/*.cpp -lcrypto -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib -O3 -o zsign
+
+#For Apple Silicon:
+g++ *.cpp common/*.cpp -lcrypto -I/opt/homebrew/opt/openssl/include -L/opt/homebrew/opt/openssl/lib -O3 -o zsign
 ```
 
 #### Windows/MingW:
