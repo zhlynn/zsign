@@ -714,9 +714,11 @@ bool SlotParseCMSSignature(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 						   const string &strCodeDirectorySlot,
 						   const string &strAltnateCodeDirectorySlot,
-						   string &strOutput)
+						   string &strOutput,
+						   string &strOutput256)
 {
 	strOutput.clear();
+	strOutput256.clear();
 
 	JValue jvHashes;
 	string strCDHashesPlist;
@@ -725,11 +727,16 @@ bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 	SHASum(E_SHASUM_TYPE_1, strCodeDirectorySlot, strCodeDirectorySlotSHA1);
 	SHASum(E_SHASUM_TYPE_256, strAltnateCodeDirectorySlot, strAltnateCodeDirectorySlot256);
 	jvHashes["cdhashes"][0].assignData(strCodeDirectorySlotSHA1.data(), strCodeDirectorySlotSHA1.size());
-	jvHashes["cdhashes"][1].assignData(strAltnateCodeDirectorySlot256.data(), strCodeDirectorySlotSHA1.size());
+	jvHashes["cdhashes"][1].assignData(strAltnateCodeDirectorySlot256.data(), strAltnateCodeDirectorySlot256.size());
 	jvHashes.writePList(strCDHashesPlist);
 
 	string strCMSData;
+	string strCMSData256;
 	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCMSData))
+	{
+		return false;
+	}
+	if (!pSignAsset->GenerateCMS(strAltnateCodeDirectorySlot, strCDHashesPlist, strCMSData256))
 	{
 		return false;
 	}
@@ -740,6 +747,12 @@ bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 	strOutput.append((const char *)&uMagic, sizeof(uMagic));
 	strOutput.append((const char *)&uLength, sizeof(uLength));
 	strOutput.append(strCMSData.data(), strCMSData.size());
+
+	//256
+	uLength = BE((uint32_t)strCMSData256.size() + 8);
+	strOutput256.append((const char *)&uMagic, sizeof(uMagic));
+	strOutput256.append((const char *)&uLength, sizeof(uLength));
+	strOutput256.append(strCMSData256.data(), strCMSData256.size());
 	return true;
 }
 

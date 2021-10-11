@@ -25,7 +25,8 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 						   const string &strCodeDirectorySlot,
 						   const string &strAltnateCodeDirectorySlot,
-						   string &strOutput);
+						   string &strOutput,
+						   string &strOutput256);
 bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase,
 										 uint8_t *&pCodeSlots1Data,
 										 uint32_t &uCodeSlots1DataLength,

@@ -428,6 +428,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	}
 
 	string strCMSSignatureSlot;
+	string strCMSSignatureSlot256;
 	string strCodeDirectorySlot;
 	string strAltnateCodeDirectorySlot;
 	SlotBuildCodeDirectory(false,
@@ -465,14 +466,15 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	SlotBuildCMSSignature(pSignAsset,
 						  strCodeDirectorySlot,
 						  strAltnateCodeDirectorySlot,
-						  strCMSSignatureSlot);
+						  strCMSSignatureSlot,
+						  strCMSSignatureSlot256);
 
 	uint32_t uCodeDirectorySlotLength = (uint32_t)strCodeDirectorySlot.size();
 	uint32_t uRequirementsSlotLength = (uint32_t)strRequirementsSlot.size();
 	uint32_t uEntitlementsSlotLength = (uint32_t)strEntitlementsSlot.size();
 	uint32_t uDerEntitlementsLength = (uint32_t)strDerEntitlementsSlot.size();
 	uint32_t uAltnateCodeDirectorySlotLength = (uint32_t)strAltnateCodeDirectorySlot.size();
-	uint32_t uCMSSignatureSlotLength = (uint32_t)strCMSSignatureSlot.size();
+	uint32_t uCMSSignatureSlotLength = (uint32_t)strCMSSignatureSlot256.size();
 
 	uint32_t uCodeSignBlobCount = 0;
 	uCodeSignBlobCount += (uCodeDirectorySlotLength > 0) ? 1 : 0;
@@ -492,7 +494,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 							   uCMSSignatureSlotLength;
 
 	vector<CS_BlobIndex> arrBlobIndexes;
-	if (uCodeDirectorySlotLength > 0)
+	if (uAltnateCodeDirectorySlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_CODEDIRECTORY);
@@ -503,35 +505,35 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_REQUIREMENTS);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uAltnateCodeDirectorySlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
 	if (uEntitlementsSlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_ENTITLEMENTS);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uAltnateCodeDirectorySlotLength + uRequirementsSlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
 	if (uDerEntitlementsLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_DER_ENTITLEMENTS);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uAltnateCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
-	if (uAltnateCodeDirectorySlotLength > 0)
+	if (uCodeDirectorySlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_ALTERNATE_CODEDIRECTORIES);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uDerEntitlementsLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uAltnateCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uDerEntitlementsLength);
 		arrBlobIndexes.push_back(blob);
 	}
 	if (uCMSSignatureSlotLength > 0)
 	{
 		CS_BlobIndex blob;
 		blob.type = BE(CSSLOT_SIGNATURESLOT);
-		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uDerEntitlementsLength + uAltnateCodeDirectorySlotLength);
+		blob.offset = BE(uSuperBlobHeaderLength + uAltnateCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uDerEntitlementsLength + uCodeDirectorySlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
 
@@ -548,12 +550,12 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 		CS_BlobIndex &blob = arrBlobIndexes[i];
 		strOutput.append((const char *)&blob, sizeof(blob));
 	}
-	strOutput += strCodeDirectorySlot;
+	strOutput += strAltnateCodeDirectorySlot;
 	strOutput += strRequirementsSlot;
 	strOutput += strEntitlementsSlot;
 	strOutput += strDerEntitlementsSlot;
-	strOutput += strAltnateCodeDirectorySlot;
-	strOutput += strCMSSignatureSlot;
+	strOutput += strCodeDirectorySlot;
+	strOutput += strCMSSignatureSlot256;
 
 	if (ZLog::IsDebug())
 	{
