@@ -3,19 +3,23 @@ Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-pl
 If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> me. :)
 ### Compile
 
-You must install openssl library at first.
+You must install openssl and zlib libraries at first.
 
 #### macOS:
 
 ```bash
 brew install openssl
 ```
-and then (attention to replace your openssl version)
+and then
+
 ```bash
-g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl@1.1/1.1.1k/include -L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -O3 -o zsign
+mkdir build; cd build
+cmake ..
+make
 ```
 
 #### Windows/MingW:
+
 Note:  These instructions describe how to cross-compile for Windows from
 Linux.  I haven't tested these steps compiling for Windows from Windows,
 but it should mostly work.
@@ -71,7 +75,9 @@ sudo apt-get install zip unzip git build-essential checkinstall zlib1g-dev libss
 and then
 
 ```bash
-g++ *.cpp common/*.cpp -std=gnu++11 -lcrypto -O3 -o zsign
+mkdir build; cd build
+cmake ..
+make
 ```
 
 #### CentOS7:
@@ -82,7 +88,9 @@ yum install openssl-devel
 ```
 and then
 ```bash
-g++ *.cpp common/*.cpp -std=gnu++11 -lcrypto -O3 -o zsign
+mkdir build; cd build
+cmake ..
+make
 ```
 
 ### Usage
