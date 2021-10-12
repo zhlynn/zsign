@@ -849,8 +849,8 @@ bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase,
 			CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
 			if (LE(cdHeader.length) > 8)
 			{
-				pCodeSlots1Data = pSlotBase + LE(cdHeader.hashOffset);
-				uCodeSlots1DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
+				pCodeSlots256Data = pSlotBase + LE(cdHeader.hashOffset);
+				uCodeSlots256DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
 			}
 		}
 		break;
@@ -859,8 +859,8 @@ bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase,
 			CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
 			if (LE(cdHeader.length) > 8)
 			{
-				pCodeSlots256Data = pSlotBase + LE(cdHeader.hashOffset);
-				uCodeSlots256DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
+				pCodeSlots1Data = pSlotBase + LE(cdHeader.hashOffset);
+				uCodeSlots1DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
 			}
 		}
 		break;
