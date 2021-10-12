@@ -216,7 +216,7 @@ docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
 ```
 
 ### Copyright
-zsign is completely free. Please mark the source of zsign in your commercial products if possible.
+zsign is available under the BSD-3-Clause license.
 
 ### How to sign quickly?
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.
