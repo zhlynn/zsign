@@ -38,8 +38,7 @@ list(APPEND LIB_LIST ${ZLIB_LIBRARIES})
 
 include_directories(common)
 
-set(COMMON common/base64.cpp common/json.cpp common/common.cpp)
-set(SRC ${COMMON} archo.cpp bundle.cpp macho.cpp openssl.cpp signing.cpp zsign.cpp)
+file(GLOB SRC common/*.cpp ./**.cpp)
 
 add_executable(zsign ${SRC})
 target_link_libraries(zsign ${LIB_LIST})
