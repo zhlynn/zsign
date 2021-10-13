@@ -45,7 +45,6 @@ make
             # Installing Cmake latest
             wget -qO- "https://cmake.org/files/v3.21/cmake-$CmakeV-linux-x86_64.tar.gz" | \
             tar --strip-components=1 -xz -C /usr/local &&
-            rm -rf zsign &&
 
 
 # Compile zsign using cmake
