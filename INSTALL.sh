@@ -16,10 +16,6 @@ echo "$OSTYPE is Mac"
     # Detect OS if it is CentOS
     elif [ -x /usr/bin/$CentOs ]; then
 
-    # Clone zsign from zhlynn github repository!
-rm -rf zsign; git clone $zsign &&
-cd zsign &&
-
         # Dependencies
         yum install openssl-devel -y;
         yum install wget zip unzip -y &&
@@ -42,9 +38,6 @@ make
     # Detect OS if it is ubuntu
     elif [ -x /usr/bin/$Ubuntu ]; then
 
-# Clone zsign from zhlynn github repository!
-rm -rf zsign; git clone $zsign &&
-cd zsign &&
 
         # Dependencies
         sudo apt-get install wget zip unzip build-essential checkinstall zlib1g-dev libssl-dev -y &&
