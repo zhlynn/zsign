@@ -69,29 +69,20 @@ another ref for chinese: https://blog.csdn.net/a513436535/article/details/108539
 
 
 ```bash
-sudo apt-get install zip unzip git build-essential checkinstall zlib1g-dev libssl-dev -y
-```
-
-and then
-
-```bash
-mkdir build; cd build
-cmake ..
-make
+sudo apt-get install git
+git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
+./INSTALL.sh
 ```
 
 #### CentOS7:
 
 
 ```bash
-yum install openssl-devel
+yum install git 
+git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
+./INSTALL.sh
 ```
-and then
-```bash
-mkdir build; cd build
-cmake ..
-make
-```
+
 
 ### Usage
 I have already tested on macOS and Linux, but you also need **unzip** and **zip** command installed.
