@@ -5,7 +5,7 @@ CentOs=yum
 Ubuntu=apt-get
 CmakeV=3.21.3
 
-# Compile on CentOS
+# Compile on MacOs
 if [[ "$OSTYPE" =~ ^$MacOs ]]; then
 echo "$OSTYPE is Mac"
 
