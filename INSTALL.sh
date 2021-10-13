@@ -4,7 +4,6 @@ MacOs=darwin
 CentOs=yum
 Ubuntu=apt-get
 CmakeV=3.21.3
-zsign=https://github.com/zhlynn/zsign.git
 
 # Compile on CentOS
 if [[ "$OSTYPE" =~ ^$MacOs ]]; then
