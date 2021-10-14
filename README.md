@@ -152,7 +152,7 @@ docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
 ```
 <br>
 
-## 编译教程，中文.
+## 中文编译教程 - Compile tutorials in Chinese.
 - [点击我 - Click me](https://blog.csdn.net/a513436535/article/details/108539238)
 
   <br>
