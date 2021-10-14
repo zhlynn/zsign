@@ -1,24 +1,51 @@
-# zsign
-Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform ( Linux & macOS ), more features.
-If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> me. :)
-### Compile
+<div align="center">
 
-You must install openssl and zlib libraries at first.
 
-#### macOS:
+# zsign ✔️
+
+Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform  **Linux**, **macOS** & **Windows** , more features.
+If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [Me](https://github.com/zhlynn).
+</div>
+<br>
+
+
+## Compile on linux distributions:
+
+#### Ubuntu:
+
 
 ```bash
-brew install openssl
+sudo apt-get install git
+git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
+./INSTALL.sh
+```
+
+#### CentOS7:
+
+
+```bash
+yum install git 
+git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
+./INSTALL.sh
+```
+
+
+
+## Compile on MacOs:
+
+You must install zlib libraries at first using command bellow.
+```bash
+xcode-select --install
 ```
 and then
 
 ```bash
-mkdir build; cd build
-cmake ..
-make
+brew install git && git clone https://github.com/gyke69/zsign.git; cd zsign && chmod +x INSTALL.sh && ./INSTALL.sh
 ```
 
-#### Windows/MingW:
+
+
+#### Compile on Windows/MingW:
 
 Note:  These instructions describe how to cross-compile for Windows from
 Linux.  I haven't tested these steps compiling for Windows from Windows,
@@ -63,28 +90,74 @@ x86_64-w64-mingw32-g++  \
 -m64 -static -static-libgcc
 ```
 
-another ref for chinese: https://blog.csdn.net/a513436535/article/details/108539238
 
-#### Ubuntu:
+## Optional Compile:
 
 
-```bash
-sudo apt-get install git
-git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
-./INSTALL.sh
+#### xmake:
+
+If you have [xmake](https://xmake.io) installed, you can use xmake to quickly compile and run it.
+
+#### Build
+
+```console
+xmake
 ```
 
-#### CentOS7:
+#### Run
 
-
-```bash
-yum install git 
-git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
-./INSTALL.sh
+```console
+xmake run zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
 ```
 
+#### Install
 
-### Usage
+```console
+xmake install
+```
+
+#### Get zsign binary
+
+```console
+xmake install -o outputdir
+```
+
+binary: `outputdir/bin/zsign`
+
+## Docker:
+
+1. Build:
+```
+docker build -t zsign https://github.com/zhlynn/zsign.git
+```
+
+2. Run:
+
+*Mount current directory (stored in $PWD) to container and set WORKDIR to it:*
+```
+docker run -v "$PWD:$PWD" -w "$PWD" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
+```
+
+*If input files are outside current folder, you will need to mount different folder:*
+```
+docker run -v "/source/input:/target/input" -w "/target/input" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
+```
+
+3. Extract the zsign executable
+
+*You can extract the static linked zsign executable from the container image and deploy it to other server:*
+```
+docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
+
+```
+<br>
+
+## 编译教程，中文.
+- [点击我 - Click me](https://blog.csdn.net/a513436535/article/details/108539238)
+
+  <br>
+  
+## zsign usage:
 I have already tested on macOS and Linux, but you also need **unzip** and **zip** command installed.
 
 ```bash
@@ -151,60 +224,6 @@ options:
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
 
-### Use xmake to compile
-
-If you have [xmake](https://xmake.io) installed, you can use xmake to quickly compile and run it.
-
-#### Build
-
-```console
-xmake
-```
-
-#### Run
-
-```console
-xmake run zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
-```
-
-#### Install
-
-```console
-xmake install
-```
-
-#### Get zsign binary
-
-```console
-xmake install -o outputdir
-```
-
-binary: `outputdir/bin/zsign`
-
-### Docker
-1. Build:
-```
-docker build -t zsign https://github.com/zhlynn/zsign.git
-```
-
-2. Run:
-
-*Mount current directory (stored in $PWD) to container and set WORKDIR to it:*
-```
-docker run -v "$PWD:$PWD" -w "$PWD" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
-```
-
-*If input files are outside current folder, you will need to mount different folder:*
-```
-docker run -v "/source/input:/target/input" -w "/target/input" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
-```
-
-3. Extract the zsign executable
-
-*You can extract the static linked zsign executable from the container image and deploy it to other server:*
-```
-docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
-```
 
 ### Copyright
 zsign is available under the BSD-3-Clause license.
