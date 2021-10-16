@@ -90,11 +90,28 @@ x86_64-w64-mingw32-g++  \
 -m64 -static -static-libgcc
 ```
 
-
 ## Optional Compile:
 
+#### Compile it yourserlf:
+1. Install the required dependencies accodring to your Os. 
+2. Clone zsign repositorie.
 
-#### xmake:
+> Recommended  
+> 
+```bash
+mkdir build; cd build
+cmake ..
+make
+```
+or
+
+> Optional
+> 
+```bash
+g++ *.cpp common/*.cpp -std=gnu++11 -lcrypto -O3 -o zsign
+```
+
+## Compile usign xmake:
 
 If you have [xmake](https://xmake.io) installed, you can use xmake to quickly compile and run it.
 
@@ -124,7 +141,7 @@ xmake install -o outputdir
 
 binary: `outputdir/bin/zsign`
 
-## Docker:
+## Compile usign Docker:
 
 1. Build:
 ```
@@ -225,10 +242,26 @@ options:
 ```
 
 
-### Copyright
-zsign is available under the BSD-3-Clause license.
+## Very useful tip:
+#### How to sign quickly?
 
-### How to sign quickly?
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.
 At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.
-When you re-sign the folder with other assets next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try！：）
+When you re-sign the folder with other assets next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try!
+
+
+## License
+
+zsign is licensed under the terms of  BSD-3-Clause license. See the [LICENSE](LICENSE) file.
+
+> THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
