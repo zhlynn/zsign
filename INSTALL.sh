@@ -6,8 +6,18 @@ Ubuntu=apt-get
 CmakeV=3.21.3
 
 # Compile on MacOs
-if [[ "$OSTYPE" =~ ^$MacOs ]]; then
-echo "$OSTYPE is Mac"
+
+	# Detect Os if  it is MacOs 
+	if [[ "$OSTYPE" =~ ^$MacOs ]]; then
+		
+	# Dependencies 
+	brew install zip unzip &&
+	brew install openssl cmake  
+
+# Compile zsign usign cmake
+mkdir build; cd build &&
+cmake .. && 
+make
 
 
 # Compile on CentOS
