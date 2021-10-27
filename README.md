@@ -8,6 +8,15 @@ If this tool can help you, please don't forget to <font color=#FF0000 size=5>ðŸŒ
 </div>
 <br>
 
+## Compile on macOS:
+
+```bash
+brew install openssl
+```
+and then (attention to replace your openssl version)
+```bash
+g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl@1.1/1.1.1k/include -L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -O3 -o zsign
+```
 
 ## Compile on linux distributions:
 
@@ -28,21 +37,6 @@ yum install git
 git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
 ./INSTALL.sh
 ```
-
-
-
-## Compile on MacOs:
-
-You must install zlib libraries at first using command bellow.
-```bash
-xcode-select --install
-```
-and then
-
-```bash
-brew install git && git clone https://github.com/gyke69/zsign.git; cd zsign && chmod +x INSTALL.sh && ./INSTALL.sh
-```
-
 
 
 #### Compile on Windows/MingW:
