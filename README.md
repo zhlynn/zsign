@@ -8,21 +8,36 @@ If this tool can help you, please don't forget to <font color=#FF0000 size=5>�
 </div>
 <br>
 
-#### macOS:
+## Compile on macOS:
 
-1、brew install openssl
+```bash
+brew install openssl
+```
+and then (attention to replace your openssl version)
+```bash
+g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl@1.1/1.1.1k/include -L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -O3 -o zsign
+```
 
-2、g++ *.cpp common/*.cpp -lcrypto -I/usr/local/opt/openssl@1.1/include -L/usr/local/opt/openssl@1.1/lib -O3 -o zsign
+## Compile on linux distributions:
 
+#### Ubuntu:
+
+
+```bash
+sudo apt-get install git
+git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
+./INSTALL.sh
+```
 
 #### CentOS7:
 
-1、yum install gcc-c++ libstdc++-devel
 
-2、g++ -std=c++11 *.cpp common/*.cpp -lcrypto -O3 -o zsign
+```bash
+yum install git 
+git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
+./INSTALL.sh
+```
 
-需要先安装unzip
-yum install -y unzip zip
 
 #### Compile on Windows/MingW:
 
