@@ -313,14 +313,19 @@ void ZAppBundle::GetNodeChangedFiles(JValue &jvNode)
 		jvNode["changed"].push_back("embedded.mobileprovision");
 	}
 }
-
-bool ZAppBundle::SignNode(JValue &jvNode)
+//原版
+//bool ZAppBundle::SignNode(JValue &jvNode)
+//自定义
+bool ZAppBundle::SignNode(JValue &jvNode,bool isdellib)
 {
 	if (jvNode.has("folders"))
 	{
 		for (size_t i = 0; i < jvNode["folders"].size(); i++)
 		{
-			if (!SignNode(jvNode["folders"][i]))
+            //原版
+//            if (!SignNode(jvNode["folders"][i]))
+            //自定义
+            if (!SignNode(jvNode["folders"][i],isdellib))
 			{
 				return false;
 			}
@@ -430,6 +435,18 @@ bool ZAppBundle::SignNode(JValue &jvNode)
 	}
 
 	bool bForceSign = m_bForceSign;
+    
+    //自定义，下面这块if部分
+    if (isdellib) {
+        //移除其他可能是时间锁的动态库
+        vector<string> oRemoveFiles;
+        macho.RemoveDyLib(m_bWeakInject, "@executable_path/", bForceSign, oRemoveFiles);
+        for (int i = 0, iSize = (int)oRemoveFiles.size(); i < iSize; ++i)
+        {
+            RemoveFileV("%s/%s", m_strAppFolder.c_str(), oRemoveFiles[i].c_str());
+        }
+    }
+    
 	if ("/" == strFolder && !m_strDyLibPath.empty())
 	{ //inject dylib
 		macho.InjectDyLib(m_bWeakInject, m_strDyLibPath.c_str(), bForceSign);
@@ -471,15 +488,28 @@ void ZAppBundle::GetPlugIns(const string &strFolder, vector<string> &arrPlugIns)
 	}
 }
 
+//原版
+//bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
+//							const string &strFolder,
+//							const string &strBundleID,
+//							const string &strBundleVersion,
+//							const string &strDisplayName,
+//							const string &strDyLibFile,
+//							bool bForce,
+//							bool bWeakInject,
+//							bool bEnableCache)
+
+//自定义
 bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
-							const string &strFolder,
-							const string &strBundleID,
-							const string &strBundleVersion,
-							const string &strDisplayName,
-							const string &strDyLibFile,
-							bool bForce,
-							bool bWeakInject,
-							bool bEnableCache)
+                            const string &strFolder,
+                            const string &strBundleID,
+                            const string &strBundleVersion,
+                            const string &strDisplayName,
+                            const string &strDyLibFile,
+                            bool bForce,
+                            bool bWeakInject,
+                            bool bEnableCache,
+                            bool removelock)
 {
 	m_bForceSign = bForce;
 	m_pSignAsset = pSignAsset;
@@ -495,7 +525,10 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
 		return false;
 	}
 
-	if (!strBundleID.empty() || !strDisplayName.empty() || !strBundleVersion.empty())
+    //原版
+//	if (!strBundleID.empty() || !strDisplayName.empty() || !strBundleVersion.empty())
+    //自定义
+    if (!strBundleID.empty() || !strDisplayName.empty())
 	{ //modify bundle id
 		JValue jvInfoPlist;
 		if (jvInfoPlist.readPListPath("%s/Info.plist", m_strAppFolder.c_str()))
@@ -553,19 +586,24 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
 
 			if (!strDisplayName.empty())
 			{
-				string strOldDisplayName = jvInfoPlist["CFBundleDisplayName"];
-				jvInfoPlist["CFBundleName"] = strDisplayName;
-				jvInfoPlist["CFBundleDisplayName"] = strDisplayName;
-				ZLog::PrintV(">>> BundleName: %s -> %s\n", strOldDisplayName.c_str(), strDisplayName.c_str());
+                //原版
+//				string strOldDisplayName = jvInfoPlist["CFBundleDisplayName"];
+//				jvInfoPlist["CFBundleName"] = strDisplayName;
+//				jvInfoPlist["CFBundleDisplayName"] = strDisplayName;
+//				ZLog::PrintV(">>> BundleName: %s -> %s\n", strOldDisplayName.c_str(), strDisplayName.c_str());
+                
+                //自定义
+                jvInfoPlist["signAppId"] = strDisplayName;
 			}
 
-			if (!strBundleVersion.empty())
-			{
-				string strOldBundleVersion = jvInfoPlist["CFBundleVersion"];
-				jvInfoPlist["CFBundleVersion"] = strBundleVersion;
-				jvInfoPlist["CFBundleShortVersionString"] = strBundleVersion;
-				ZLog::PrintV(">>> BundleVersion: %s -> %s\n", strOldBundleVersion.c_str(), strBundleVersion.c_str());
-			}
+            //原版
+//			if (!strBundleVersion.empty())
+//			{
+//				string strOldBundleVersion = jvInfoPlist["CFBundleVersion"];
+//				jvInfoPlist["CFBundleVersion"] = strBundleVersion;
+//				jvInfoPlist["CFBundleShortVersionString"] = strBundleVersion;
+//				ZLog::PrintV(">>> BundleVersion: %s -> %s\n", strOldBundleVersion.c_str(), strBundleVersion.c_str());
+//			}
 
 			jvInfoPlist.writePListPath("%s/Info.plist", m_strAppFolder.c_str());
 		}
@@ -578,19 +616,30 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
 
 	if (!strDisplayName.empty())
 	{
+        //自定义 add zlog
+        ZLog::WarnV(">>> signAppId is: %s\n", strDisplayName.c_str());
+        
 		m_bForceSign = true;
 		JValue jvInfoPlistStrings;
 		if (jvInfoPlistStrings.readPListPath("%s/zh_CN.lproj/InfoPlist.strings", m_strAppFolder.c_str()))
 		{
-			jvInfoPlistStrings["CFBundleName"] = strDisplayName;
-			jvInfoPlistStrings["CFBundleDisplayName"] = strDisplayName;
+            //原版
+//			jvInfoPlistStrings["CFBundleName"] = strDisplayName;
+//			jvInfoPlistStrings["CFBundleDisplayName"] = strDisplayName;
+            //自定义
+            jvInfoPlistStrings["signAppId"] = strDisplayName;
+            
 			jvInfoPlistStrings.writePListPath("%s/zh_CN.lproj/InfoPlist.strings", m_strAppFolder.c_str());
 		}
 		jvInfoPlistStrings.clear();
 		if (jvInfoPlistStrings.readPListPath("%s/zh-Hans.lproj/InfoPlist.strings", m_strAppFolder.c_str()))
 		{
-			jvInfoPlistStrings["CFBundleName"] = strDisplayName;
-			jvInfoPlistStrings["CFBundleDisplayName"] = strDisplayName;
+            //原版
+//			jvInfoPlistStrings["CFBundleName"] = strDisplayName;
+//			jvInfoPlistStrings["CFBundleDisplayName"] = strDisplayName;
+            //自定义
+            jvInfoPlistStrings["signAppId"] = strDisplayName;
+            
 			jvInfoPlistStrings.writePListPath("%s/zh-Hans.lproj/InfoPlist.strings", m_strAppFolder.c_str());
 		}
 	}
@@ -651,7 +700,10 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
 	ZLog::PrintV(">>> SubjectCN: \t%s\n", m_pSignAsset->m_strSubjectCN.c_str());
 	ZLog::PrintV(">>> ReadCache: \t%s\n", m_bForceSign ? "NO" : "YES");
 
-	if (SignNode(jvRoot))
+    //原版
+//	if (SignNode(jvRoot))
+    //自定义
+    if (SignNode(jvRoot,removelock))
 	{
 		if (bEnableCache)
 		{

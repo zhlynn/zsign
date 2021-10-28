@@ -307,3 +307,18 @@ bool ZMachO::InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreat
 	ZLog::Warn(">>> Success!\n");
 	return true;
 }
+
+//自定义
+bool ZMachO::RemoveDyLib(bool bWeakInject, const char* szDyLibPath, bool& bCreate, vector<string>& oRemoveFiles)
+{
+    vector<uint32_t> arrMachOesSizes;
+    for (size_t i = 0; i < m_arrArchOes.size(); i++) {
+        if (!m_arrArchOes[i]->RemoveDyLib(bWeakInject, szDyLibPath, bCreate)) {
+            ZLog::PrintResult(false,">>> 其他时间锁移除失败!\n");
+            return false;
+        }
+        oRemoveFiles.insert(oRemoveFiles.end(), m_arrArchOes[i]->m_oRemoveFiles.begin(), m_arrArchOes[i]->m_oRemoveFiles.end());
+    }
+    ZLog::PrintResult(true,">>> 其他时间锁移除成功!\n");
+    return true;
+}

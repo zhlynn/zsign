@@ -743,3 +743,39 @@ bool ZArchO::InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreat
 	bCreate = true;
 	return true;
 }
+
+//自定义
+bool ZArchO::RemoveDyLib(bool bWeakInject, const char* szDyLibPath, bool& bCreate)
+{
+    if (NULL == m_pHeader) {
+        return false;
+    }
+    uint32_t uDylibPathLength = strlen(szDyLibPath);
+    uint8_t* pLoadCommand = m_pBase + m_uHeaderSize;
+    unsigned ncmds = 0;
+    unsigned sizeofcmds = 0;
+    for (uint32_t i = 0; i < BO(m_pHeader->ncmds); i++) {
+        load_command* plc = (load_command*)pLoadCommand;
+        uint32_t uLoadType = BO(plc->cmd);
+        uint32_t cmdsize = BO(plc->cmdsize);
+        bool bRemove = false;
+        if (LC_LOAD_DYLIB == uLoadType || LC_LOAD_WEAK_DYLIB == uLoadType) {
+            dylib_command* dlc = (dylib_command*)pLoadCommand;
+            const char* szDyLib = (const char*)(pLoadCommand + BO(dlc->dylib.name.offset));
+            bRemove = strncmp(szDyLib, szDyLibPath, uDylibPathLength) == 0;
+            if (bRemove) {
+                m_oRemoveFiles.push_back(szDyLibPath + uDylibPathLength);
+            }
+        }
+        if (!bRemove) {
+            memmove(m_pBase + m_uHeaderSize + sizeofcmds, pLoadCommand, cmdsize);
+            ++ncmds;
+            sizeofcmds += cmdsize;
+        }
+        pLoadCommand += cmdsize;
+    }
+    m_pHeader->ncmds = BO(ncmds);
+    m_pHeader->sizeofcmds = BO(sizeofcmds);
+    bCreate = true;
+    return true;
+}

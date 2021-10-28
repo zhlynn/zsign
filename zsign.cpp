@@ -10,6 +10,8 @@
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
 	{"force", no_argument, NULL, 'f'},
+    //自定义
+    { "remove",no_argument,NULL, 'x' },
 	{"verbose", no_argument, NULL, 'v'},
 	{"cert", required_argument, NULL, 'c'},
 	{"pkey", required_argument, NULL, 'k'},
@@ -37,6 +39,8 @@ int usage()
 	ZLog::Print("-c, --cert\t\tPath to certificate file. (PEM or DER format)\n");
 	ZLog::Print("-d, --debug\t\tGenerate debug output files. (.zsign_debug folder)\n");
 	ZLog::Print("-f, --force\t\tForce sign without cache when signing folder.\n");
+    //自定义
+    ZLog::Print("-x, --remove\tremove the time lock dylib.\n");
 	ZLog::Print("-o, --output\t\tPath to output ipa file.\n");
 	ZLog::Print("-p, --password\t\tPassword for private key or p12 file.\n");
 	ZLog::Print("-b, --bundle_id\t\tNew bundle id to change.\n");
@@ -59,6 +63,10 @@ int main(int argc, char *argv[])
 	ZTimer gtimer;
 
 	bool bForce = false;
+    
+    //自定义
+    bool bRemove = false;
+    
 	bool bInstall = false;
 	bool bWeakInject = false;
 	uint32_t uZipLevel = 0;
@@ -76,7 +84,10 @@ int main(int argc, char *argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w", options, &argslot)))
+    //原版
+//    while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w", options, &argslot)))
+    //自定义
+	while (-1 != (opt = getopt_long(argc, argv, "dfxvhc:k:m:o:ip:e:b:n:z:ql:w", options, &argslot)))
 	{
 		switch (opt)
 		{
@@ -128,9 +139,13 @@ int main(int argc, char *argv[])
 		case 'q':
 			ZLog::SetLogLever(ZLog::E_NONE);
 			break;
+        //自定义
+        case 'x':
+                bRemove = true;
+                break;
 		case 'v':
 		{
-			printf("version: 0.5\n");
+			printf("version: 15.1\n");
 			return 0;
 		}
 		break;
@@ -215,7 +230,10 @@ int main(int argc, char *argv[])
 
 	timer.Reset();
 	ZAppBundle bundle;
-	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strBundleVersion, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache);
+    //原版
+//	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strBundleVersion, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache);
+    //自定义
+    bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strBundleVersion, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache,bRemove);
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	if (bInstall && strOutputFile.empty())
