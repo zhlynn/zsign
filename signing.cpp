@@ -724,8 +724,10 @@ bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 	string strAltnateCodeDirectorySlot256;
 	SHASum(E_SHASUM_TYPE_1, strCodeDirectorySlot, strCodeDirectorySlotSHA1);
 	SHASum(E_SHASUM_TYPE_256, strAltnateCodeDirectorySlot, strAltnateCodeDirectorySlot256);
-	jvHashes["cdhashes"][0].assignData(strCodeDirectorySlotSHA1.data(), strCodeDirectorySlotSHA1.size());
-	jvHashes["cdhashes"][1].assignData(strAltnateCodeDirectorySlot256.data(), strCodeDirectorySlotSHA1.size());
+	
+    size_t cdHashSize = strCodeDirectorySlotSHA1.size();
+	jvHashes["cdhashes"][0].assignData(strCodeDirectorySlotSHA1.data(), cdHashSize);
+	jvHashes["cdhashes"][1].assignData(strAltnateCodeDirectorySlot256.data(), cdHashSize);
 	jvHashes.writePList(strCDHashesPlist);
 
 	string strCMSData;
