@@ -177,22 +177,8 @@ bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, con
 		return CMSError();
 	}
 
-    CMS_SignerInfo * si = CMS_add1_signer(cms, scert, spkey, EVP_sha256(), nFlags);
-//    CMS_add1_signer(cms, NULL, NULL, EVP_sha1(), nFlags);
-    if (!si) {
-        return CMSError();
-    }
-    
-    ASN1_OBJECT * obj = OBJ_txt2obj("1.2.840.113635.100.9.1", 1);
-    if (!obj) {
-        return CMSError();
-    }
-    
-    int addHashPlist = CMS_signed_add1_attr_by_OBJ(si, obj, 0x4, strCDHashesPlist.c_str(), (int)strCDHashesPlist.size());
-    
-    if (!addHashPlist) {
-        return CMSError();
-    }
+	CMS_add1_signer(cms, scert, spkey, EVP_sha256(), nFlags);
+	CMS_add1_signer(cms, scert, spkey, EVP_sha1(), nFlags);
 
 	if (!CMS_final(cms, in, NULL, nFlags))
 	{
