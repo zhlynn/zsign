@@ -1,13 +1,5 @@
-<div align="center">
-
-
-# zsign ✔️
-
 Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform  **Linux**, **macOS** & **Windows** , more features.
 If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [Me](https://github.com/zhlynn).
-</div>
-<br>
-
 ## Compile on macOS:
 
 ```bash
@@ -18,7 +10,7 @@ and then (attention to replace your openssl version)
 g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl@1.1/1.1.1k/include -L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -O3 -o zsign
 ```
 
-## Compile on linux distributions:
+## Compile on Linux:
 
 #### Ubuntu:
 
@@ -135,7 +127,7 @@ xmake install -o outputdir
 
 binary: `outputdir/bin/zsign`
 
-## Compile usign Docker:
+## Compile using Docker:
 
 1. Build:
 ```
@@ -163,8 +155,8 @@ docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
 ```
 <br>
 
-## 中文编译教程 - Compile tutorial in Chinese.
-- [点击我 - Click me](https://blog.csdn.net/a513436535/article/details/108539238)
+## Compile tutorial in Chinese.
+- https://blog.csdn.net/a513436535/article/details/108539238
 
   <br>
   
@@ -234,10 +226,7 @@ options:
 ```bash
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
-
-
-## Very useful tip:
-#### How to sign quickly?
+## How to sign quickly?
 
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.
 At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.
