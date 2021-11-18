@@ -731,7 +731,7 @@ bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 	jvHashes.writePList(strCDHashesPlist);
 
 	string strCMSData;
-	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCMSData))
+	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCodeDirectorySlotSHA1, strAltnateCodeDirectorySlot256, strCMSData))
 	{
 		return false;
 	}
