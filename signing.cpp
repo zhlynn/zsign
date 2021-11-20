@@ -724,12 +724,14 @@ bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 	string strAltnateCodeDirectorySlot256;
 	SHASum(E_SHASUM_TYPE_1, strCodeDirectorySlot, strCodeDirectorySlotSHA1);
 	SHASum(E_SHASUM_TYPE_256, strAltnateCodeDirectorySlot, strAltnateCodeDirectorySlot256);
-	jvHashes["cdhashes"][0].assignData(strCodeDirectorySlotSHA1.data(), strCodeDirectorySlotSHA1.size());
-	jvHashes["cdhashes"][1].assignData(strAltnateCodeDirectorySlot256.data(), strCodeDirectorySlotSHA1.size());
+	
+    size_t cdHashSize = strCodeDirectorySlotSHA1.size();
+	jvHashes["cdhashes"][0].assignData(strCodeDirectorySlotSHA1.data(), cdHashSize);
+	jvHashes["cdhashes"][1].assignData(strAltnateCodeDirectorySlot256.data(), cdHashSize);
 	jvHashes.writePList(strCDHashesPlist);
 
 	string strCMSData;
-	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCMSData))
+	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCodeDirectorySlotSHA1, strAltnateCodeDirectorySlot256, strCMSData))
 	{
 		return false;
 	}
@@ -849,8 +851,8 @@ bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase,
 			CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
 			if (LE(cdHeader.length) > 8)
 			{
-				pCodeSlots256Data = pSlotBase + LE(cdHeader.hashOffset);
-				uCodeSlots256DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
+				pCodeSlots1Data = pSlotBase + LE(cdHeader.hashOffset);
+				uCodeSlots1DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
 			}
 		}
 		break;
@@ -859,8 +861,8 @@ bool GetCodeSignatureExistsCodeSlotsData(uint8_t *pCSBase,
 			CS_CodeDirectory cdHeader = *((CS_CodeDirectory *)pSlotBase);
 			if (LE(cdHeader.length) > 8)
 			{
-				pCodeSlots1Data = pSlotBase + LE(cdHeader.hashOffset);
-				uCodeSlots1DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
+				pCodeSlots256Data = pSlotBase + LE(cdHeader.hashOffset);
+				uCodeSlots256DataLength = LE(cdHeader.nCodeSlots) * cdHeader.hashSize;
 			}
 		}
 		break;
