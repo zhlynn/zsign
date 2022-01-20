@@ -9,6 +9,7 @@ target("zsign")
     set_kind("binary")
     add_files("*.cpp", "common/*.cpp")
     add_packages("openssl")
+    set_languages("c99", "c++11")
 
 --
 -- FAQ
