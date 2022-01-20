@@ -97,7 +97,7 @@ or
 g++ *.cpp common/*.cpp -std=gnu++11 -lcrypto -O3 -o zsign
 ```
 
-## Compile usign xmake:
+## Compile zsign xmake:
 
 If you have [xmake](https://xmake.io) installed, you can use xmake to quickly compile and run it.
 
