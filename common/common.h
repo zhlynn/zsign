@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
+#if defined(WINDOWS)
+#include "../include/mman.h"
+#else
 #include <sys/mman.h>
+#endif
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -14,7 +18,11 @@
 #include <ftw.h>
 #include <math.h>
 #include <assert.h>
+#if defined(WINDOWS)
+#include "../include/dirent.h"
+#else
 #include <dirent.h>
+#endif
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>

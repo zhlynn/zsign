@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(zsign)
 set(CMAKE_CXX_STANDARD 11)
+add_compile_options(-DWINDOWS)
 
 # Dependencies
 # On macOS, search Homebrew for keg-only versions of OpenSSL because system provided /usr/lib/libssl.dylib cannot be linked
@@ -33,6 +34,8 @@ message("zlib libraries: ${ZLIB_LIBRARIES}")
 include_directories(${ZLIB_INCLUDE_DIR})
 list(APPEND LIB_LIST ${ZLIB_LIBRARIES})
 
+find_library(MMAN_LIB mman)
+list(APPEND LIB_LIST ${MMAN_LIB})
 
 # Main sources
 

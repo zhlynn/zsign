@@ -4,7 +4,11 @@
 #include "macho.h"
 #include "bundle.h"
 #include <libgen.h>
+#if defined(WINDOWS)
+#include "include/dirent.h"
+#else
 #include <dirent.h>
+#endif
 #include <getopt.h>
 
 const struct option options[] = {
