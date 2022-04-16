@@ -208,7 +208,35 @@ int main(int argc, char *argv[])
 		StringFormat(strFolder, "/tmp/zsign_folder_%llu", timer.Reset());
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
+#if defined(WINDOWS)
+		string tmpFile = ("/tmp/tmpIpaToZip.zip");
+		string tmpFileFullPath = GetCanonicalizePath(tmpFile.c_str());
+		CreateFolder("/tmp");
+
+		bool isZipFileCopied = SystemExec("powershell -Command \"Copy-Item %s %s\"", strPath.c_str(), tmpFileFullPath.c_str());
+		if (!isZipFileCopied)
+		{
+			// Error is reported for some reason but IPA file copied correctly ...
+			//ZLog::ErrorV("ZIP cannot be copied!\n");
+		}
+
+		bool isArchiveExpanded = SystemExec("powershell -Command \"Expand-Archive -Path '%s' -DestinationPath '%s'\"", tmpFileFullPath.c_str(), strFolder.c_str());
+		if (!isArchiveExpanded)
+		{
+			// Error is reported for some reason but ZIP file extracted correctly ...
+			//ZLog::ErrorV("Archive cannot be expanded!\n");
+		}
+
+		if (!RemoveFile(tmpFileFullPath.c_str()))
+		{
+			ZLog::ErrorV("Temporary file %s cannot be removed!\n", tmpFileFullPath);
+		}
+
+		//if (!isZipFileCopied || !isArchiveExpanded)
+		if (false)
+#else
 		if (!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
+#endif
 		{
 			RemoveFolder(strFolder.c_str());
 			ZLog::ErrorV(">>> Unzip Failed!\n");
@@ -224,7 +252,11 @@ int main(int argc, char *argv[])
 
 	if (bInstall && strOutputFile.empty())
 	{
+#if defined(WINDOWS)
+		StringFormat(strOutputFile, "zsign_temp_%llu.ipa", GetMicroSecond());
+#else
 		StringFormat(strOutputFile, "/tmp/zsign_temp_%llu.ipa", GetMicroSecond());
+#endif
 	}
 
 	if (!strOutputFile.empty())
@@ -246,7 +278,35 @@ int main(int argc, char *argv[])
 			{
 				uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
 				RemoveFile(strOutputFile.c_str());
+#if defined(WINDOWS)
+				string payloadFolderAbsolutePath = GetCanonicalizePath("Payload");
+				string tmpZipFileToIpaAbsolutePath = GetCanonicalizePath("/tmp/tmpIpaCandidate.zip");
+
+				bool isArchived = SystemExec("powershell -Command \"Compress-Archive -Path '%s' -DestinationPath '%s'\"",
+											  payloadFolderAbsolutePath.c_str(),
+										      tmpZipFileToIpaAbsolutePath.c_str());
+				if (!isArchived)
+				{
+					// Error is reported for some reason but ZIP achive is created correctly ...
+					//ZLog::ErrorV("Archive cannot be created! ");
+				}
+
+				bool isZipFileCopied = SystemExec("powershell -Command \"Copy-Item %s %s\"",
+												   tmpZipFileToIpaAbsolutePath.c_str(),
+												   strOutputFile.c_str());
+				if (!isZipFileCopied)
+				{
+					// Error is reported for some reason but IPA file copied correctly ...
+					//ZLog::ErrorV("Archive cannot be copied!");
+				}
+
+				if (!RemoveFile(tmpZipFileToIpaAbsolutePath.c_str()))
+				{
+					ZLog::ErrorV("Temporary ZIP file %s cannot be removed!\n", tmpZipFileToIpaAbsolutePath);
+				}
+#else
 				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
+#endif
 				chdir(szOldFolder);
 				if (!IsFileExists(strOutputFile.c_str()))
 				{
@@ -270,7 +330,16 @@ int main(int argc, char *argv[])
 
 	if (0 == strFolder.find("/tmp/zsign_folder_"))
 	{
+#if defined(WINDOWS)
+		// Unfortunately it doesn't work for some reason ... :-(
+		//bool tmpFolderCleaned = SystemExec("powershell -Command \"Remove-Item 'c:\\tmp\\zsign_*' –recurse -force \"");
+		//if (!tmpFolderCleaned)
+		//{
+		//	ZLog::Error("Folder tmp not cleaned up!");
+		//}
+#else
 		RemoveFolder(strFolder.c_str());
+#endif
 	}
 
 	gtimer.Print(">>> Done.");
