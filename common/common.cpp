@@ -295,11 +295,9 @@ string GetCanonicalizePath(const char *szPath)
 
 #if defined(WINDOWS)
 
-			if (NULL != _fullpath((char *)"./", path, PATH_BUFFER_LENGTH))
+			if (NULL != _fullpath(path, szPath, PATH_BUFFER_LENGTH))
 			{
 				strPath = path;
-				strPath += "/";
-				strPath += szPath;
 			}
 #else
 			if (NULL != realpath("./", path))
