@@ -73,7 +73,7 @@ x86_64-w64-mingw32-g++  \
 -DWINDOWS -L../openssl  \
 -L../mman-win32  \
 -lmman -lgdi32  \
--m64 -static -static-libgcc
+-m64 -static -static-libgcc -lws2_32
 ```
 
 ## Optional Compile:
