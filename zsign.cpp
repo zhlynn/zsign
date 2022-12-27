@@ -10,6 +10,7 @@
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
 	{"force", no_argument, NULL, 'f'},
+	{"rmprov", no_argument, NULL, 'x'},
 	{"verbose", no_argument, NULL, 'v'},
 	{"cert", required_argument, NULL, 'c'},
 	{"pkey", required_argument, NULL, 'k'},
@@ -39,6 +40,7 @@ int usage()
 	ZLog::Print("-f, --force\t\tForce sign without cache when signing folder.\n");
 	ZLog::Print("-o, --output\t\tPath to output ipa file.\n");
 	ZLog::Print("-p, --password\t\tPassword for private key or p12 file.\n");
+	ZLog::Print("-x, --rmprov\t\tRemove mobile provisioning profile from ipa.\n");
 	ZLog::Print("-b, --bundle_id\t\tNew bundle id to change.\n");
 	ZLog::Print("-n, --bundle_name\tNew bundle name to change.\n");
 	ZLog::Print("-r, --bundle_version\tNew bundle version to change.\n");
@@ -58,6 +60,7 @@ int main(int argc, char *argv[])
 {
 	ZTimer gtimer;
 
+    bool removeProvision = false;
 	bool bForce = false;
 	bool bInstall = false;
 	bool bWeakInject = false;
@@ -73,10 +76,10 @@ int main(int argc, char *argv[])
 	string strOutputFile;
 	string strDisplayName;
 	string strEntitlementsFile;
-
+	
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w", options, &argslot)))
+	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w:x", options, &argslot)))
 	{
 		switch (opt)
 		{
@@ -124,6 +127,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'w':
 			bWeakInject = true;
+			break;
+		case 'x':
+		    removeProvision = true;
 			break;
 		case 'q':
 			ZLog::SetLogLever(ZLog::E_NONE);
@@ -242,9 +248,9 @@ int main(int argc, char *argv[])
 			{
 				uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
 				RemoveFile(strOutputFile.c_str());
-				//for (const auto & entry : fs::directory_iterator("Payload"))
-    				//SystemExec("rm %s/embedded.mobileprovision", entry.path().c_str());
-				SystemExec("rm Payload/*/embedded.mobileprovision");
+				if (removeProvision) 
+					SystemExec("rm Payload/*/embedded.mobileprovision");
+                
 				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
 				chdir(szOldFolder);
 				if (!IsFileExists(strOutputFile.c_str()))
@@ -256,7 +262,6 @@ int main(int argc, char *argv[])
 		}
 		timer.PrintResult(true, ">>> Archive OK! (%s)", GetFileSizeString(strOutputFile.c_str()).c_str());
 	}
-
 	if (bRet && bInstall)
 	{
 		SystemExec("ideviceinstaller -i '%s'", strOutputFile.c_str());
