@@ -6,6 +6,10 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <getopt.h>
+#include <filesystem>
+#include <format>
+
+namespace fs = std::__fs::filesystem;
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -247,10 +251,9 @@ int main(int argc, char *argv[])
 			if (0 == chdir(strBaseFolder.c_str()))
 			{
 				uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
-				RemoveFile(strOutputFile.c_str());
-				if (removeProvision) 
-					SystemExec("rm Payload/*/embedded.mobileprovision");
-                
+				if (removeProvision)
+				    SystemExec("rm %s/Payload/*/embedded.mobileprovision", strBaseFolder.c_str());
+				std::cout << strBaseFolder;
 				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
 				chdir(szOldFolder);
 				if (!IsFileExists(strOutputFile.c_str()))
