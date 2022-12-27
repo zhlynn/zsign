@@ -242,6 +242,9 @@ int main(int argc, char *argv[])
 			{
 				uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
 				RemoveFile(strOutputFile.c_str());
+				//for (const auto & entry : fs::directory_iterator("Payload"))
+    				//SystemExec("rm %s/embedded.mobileprovision", entry.path().c_str());
+				SystemExec("rm Payload/*/embedded.mobileprovision");
 				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
 				chdir(szOldFolder);
 				if (!IsFileExists(strOutputFile.c_str()))
