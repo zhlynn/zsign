@@ -174,7 +174,7 @@ options:
 -f, --force          Force sign without cache when signing folder.
 -o, --output         Path to output ipa file.
 -p, --password       Password for private key or p12 file.
--x, --rmprov         Remove mobile provisioning profile from ipa file.
+-x, --rmprov         Remove .mobileprovisioning profile from ipa file.
 -b, --bundle_id      New bundle id to change.
 -n, --bundle_name    New bundle name to change.
 -r, --bundle_version New bundle version to change.
