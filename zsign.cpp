@@ -6,8 +6,6 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <getopt.h>
-#include <filesystem>
-
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -212,16 +210,22 @@ int main(int argc, char *argv[])
 		StringFormat(strFolder, "/tmp/zsign_folder_%llu", timer.Reset());
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
+
 		if (!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
 		{
 			RemoveFolder(strFolder.c_str());
 			ZLog::ErrorV(">>> Unzip Failed!\n");
 			return -1;
 		}
+
 		timer.PrintResult(true, ">>> Unzip OK!");
 	}
 
 	timer.Reset();
+	if (removeProvision){
+		if (!SystemExec("rm %s/Payload/*/embedded.mobileprovision", strFolder.c_str()))
+			ZLog::Warn(">>> Failed to delete provisioning file. Skipping...\n");
+		}
 	ZAppBundle bundle;
 	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strBundleVersion, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache);
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
@@ -249,9 +253,6 @@ int main(int argc, char *argv[])
 			if (0 == chdir(strBaseFolder.c_str()))
 			{
 				uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
-				if (removeProvision)
-				    SystemExec("rm %s/Payload/*/embedded.mobileprovision", strBaseFolder.c_str());
-				std::cout << strBaseFolder;
 				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
 				chdir(szOldFolder);
 				if (!IsFileExists(strOutputFile.c_str()))
