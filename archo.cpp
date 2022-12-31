@@ -743,3 +743,45 @@ bool ZArchO::InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreat
 	bCreate = true;
 	return true;
 }
+
+void ZArchO::uninstallDylibs(set<string> dylibNames)
+{
+    uint8_t *pLoadCommand = m_pBase + m_uHeaderSize;
+    uint32_t old_load_command_size = m_pHeader->sizeofcmds;
+    uint8_t *new_load_command_data = (uint8_t*)malloc(old_load_command_size);
+    memset(new_load_command_data,0,old_load_command_size);
+    uint32_t new_load_command_size = 0;
+    uint32_t clear_num = 0;
+    uint32_t clear_data_size = 0;
+    for (uint32_t i = 0; i < BO(m_pHeader->ncmds); i++)
+    {
+        load_command *plc = (load_command *)pLoadCommand;
+        uint32_t load_command_size = BO(plc->cmdsize);
+        if (LC_LOAD_DYLIB == BO(plc->cmd) || LC_LOAD_WEAK_DYLIB == BO(plc->cmd))
+        {
+            dylib_command *dlc = (dylib_command *)pLoadCommand;
+            const char *szDyLib = (const char *)(pLoadCommand + BO(dlc->dylib.name.offset));
+            string dylibName = szDyLib;
+            if(dylibNames.count(dylibName)>0){
+                ZLog::PrintV("\t\t\t%s\tclear\n", szDyLib);
+                clear_num++;
+                clear_data_size+=load_command_size;
+                pLoadCommand += BO(plc->cmdsize);
+                continue;
+            }
+            ZLog::PrintV("\t\t\t%s\n", szDyLib);
+        }
+        new_load_command_size+=load_command_size;
+        memcpy(new_load_command_data,pLoadCommand,load_command_size);
+        new_load_command_data += load_command_size;
+        pLoadCommand += BO(plc->cmdsize);
+    }
+    pLoadCommand -= m_pHeader->sizeofcmds;
+
+    m_pHeader->ncmds -= clear_num;
+    m_pHeader->sizeofcmds -= clear_data_size;
+    new_load_command_data -=new_load_command_size;
+    memset(pLoadCommand,0,old_load_command_size);
+    memcpy(pLoadCommand,new_load_command_data,new_load_command_size);
+    free(new_load_command_data);
+}
