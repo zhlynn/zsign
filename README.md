@@ -7,7 +7,7 @@ brew install openssl
 ```
 and then (attention to replace your openssl version)
 ```bash
-g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl@1.1/1.1.1k/include -L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -O3 -o zsign
+g++ *.cpp common/*.cpp -lcrypto -I/usr/local/opt/openssl@1.1/include -L/usr/local/opt/openssl@1.1/lib -O3 -o zsign
 ```
 
 ## Compile on Linux:
@@ -25,9 +25,10 @@ git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &
 
 
 ```bash
-yum install git 
-git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
+cd zsign && chmod +x INSTALL.sh &&
 ./INSTALL.sh
+
+g++ -std=c++11 *.cpp common/*.cpp -lcrypto -O3 -o zsign_linux
 ```
 
 

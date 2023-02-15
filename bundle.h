@@ -9,10 +9,18 @@ public:
 	ZAppBundle();
 
 public:
-	bool SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strBundleVersion, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache);
+    //原版
+//	bool SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strBundleVersion, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache);
+    //自定义
+    bool SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strBundleVersion, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache,bool removelock);
+
 
 private:
-	bool SignNode(JValue &jvNode);
+    //原版
+//	bool SignNode(JValue &jvNode);
+    //自定义
+    bool SignNode(JValue &jvNode,bool isdellib);
+
 	void GetNodeChangedFiles(JValue &jvNode);
 	void GetChangedFiles(JValue &jvNode, vector<string> &arrChangedFiles);
 	void GetPlugIns(const string &strFolder, vector<string> &arrPlugIns);

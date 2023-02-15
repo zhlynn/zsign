@@ -13,6 +13,8 @@ public:
 	void PrintInfo();
 	bool IsExecute();
 	bool InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreate);
+    //自定义 add RemoveDyLib
+    bool RemoveDyLib(bool bWeakInject, const char* szDyLibPath, bool& bCreate);
 	uint32_t ReallocCodeSignSpace(const string &strNewFile);
 
 private:
@@ -37,4 +39,6 @@ public:
 	uint32_t m_uLoadCommandsFreeSpace;
 	mach_header *m_pHeader;
 	uint32_t m_uHeaderSize;
+    //自定义
+    vector<string> m_oRemoveFiles;
 };

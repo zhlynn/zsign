@@ -14,6 +14,8 @@ public:
 	void PrintInfo();
 	bool Sign(ZSignAsset *pSignAsset, bool bForce, string strBundleId, string strInfoPlistSHA1, string strInfoPlistSHA256, const string &strCodeResourcesData);
 	bool InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreate);
+    //自定义
+    bool RemoveDyLib(bool bWeakInject, const char* szDyLibPath, bool& bCreate, vector<string>& oRemoveFiles);
 
 private:
 	bool OpenFile(const char *szPath);
