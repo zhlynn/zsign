@@ -25,7 +25,7 @@ git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &
 
 
 ```bash
-cd zsign && chmod +x INSTALL.sh &&
+cd zsign && chmod +x INSTALL.sh
 ./INSTALL.sh
 
 g++ -std=c++11 *.cpp common/*.cpp -lcrypto -O3 -o zsign_linux

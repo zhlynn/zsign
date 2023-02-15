@@ -220,11 +220,12 @@ int main(int argc, char *argv[])
 		putenv("LANG=C.UTF-8");
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
-		if (!SystemExec("unzip -O UTF-8 -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
-		{
-			RemoveFolder(strFolder.c_str());
-			ZLog::ErrorV(">>> Unzip Failed!\n");
-			return -1;
+	    string strCommand = StringFormat("unzip -O CP936 -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str());
+        int iResult = system(strCommand.c_str());
+		if (iResult != 0) {
+    		RemoveFolder(strFolder.c_str());
+    		ZLog::ErrorV(">>> Unzip Failed! Exit-Status: %d\n", iResult);
+    		return -1;
 		}
 		timer.PrintResult(true, ">>> Unzip OK!");
 	}

@@ -485,6 +485,15 @@ const char *StringFormat(string &strFormat, const char *szFormatArgs, ...)
 	return strFormat.c_str();
 }
 
+string StringFormat(const char *szFormat, ...) {
+    char buf[1024];
+    va_list args;
+    va_start(args, szFormat);
+    vsnprintf(buf, sizeof(buf), szFormat, args);
+    va_end(args);
+    return string(buf);
+}
+
 string &StringReplace(string &context, const string &from, const string &to)
 {
 	size_t lookHere = 0;

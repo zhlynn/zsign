@@ -67,6 +67,7 @@ void *MapFile(const char *path, size_t offset, size_t size, size_t *psize, bool 
 bool IsPathSuffix(const string &strPath, const char *suffix);
 
 const char *StringFormat(string &strFormat, const char *szFormatArgs, ...);
+string StringFormat(const char *szFormat, ...);
 string &StringReplace(string &context, const string &from, const string &to);
 void StringSplit(const string &src, const string &split, vector<string> &dest);
 
