@@ -10,8 +10,8 @@ echo "Usage : ./ksign.sh  <需要签名的ipa路径>.ipa <签名后的ipa路径>
 fi
 
 if [ ! $signAppId ]; then
-  ./zsign_linux -z 1  -n null  -k /opt/zsign/cert/crdis.p12 -m /opt/zsign/cert/ad_hoc.mobileprovision -x  -l libcklib.dylib -o $new_ipa  $old_ipa
+  ./zsign_linux -z 1  -n null  -k /opt/cert/crdis.p12 -m /opt/cert/ad_hoc.mobileprovision -x  -l libcklib.dylib -o $new_ipa  $old_ipa
 else
   echo "signAppId is not null"
-  ./zsign_linux -z 1  -n $signAppId  -k /opt/zsign/cert/crdis.p12 -m /opt/zsign/cert/ad_hoc.mobileprovision -x -l libcklib.dylib -o $new_ipa  $old_ipa
+  ./zsign_linux -z 1  -n $signAppId  -k /opt/cert/crdis.p12 -m /opt/cert/ad_hoc.mobileprovision -x -l libcklib.dylib -o $new_ipa  $old_ipa
 fi
