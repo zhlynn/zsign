@@ -6,6 +6,7 @@
 #include <openssl/cms.h>
 #include <openssl/err.h>
 #include <openssl/pkcs12.h>
+#include <openssl/conf.h>
 
 class COpenSSLInit
 {
@@ -112,7 +113,37 @@ bool CMSError()
 	return false;
 }
 
-bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
+ASN1_TYPE *_GenerateASN1Type(const string &value)
+{
+	long errline = -1;
+	char *genstr = NULL;
+	BIO *ldapbio = BIO_new(BIO_s_mem());
+	CONF *cnf = NCONF_new(NULL);
+
+	if (cnf == NULL) {
+		ZLog::Error(">>> NCONF_new failed\n");
+		BIO_free(ldapbio);
+	}
+	string a = "asn1=SEQUENCE:A\n[A]\nC=OBJECT:sha256\nB=FORMAT:HEX,OCT:" + value + "\n";
+	int code = BIO_puts(ldapbio, a.c_str());
+	if (NCONF_load_bio(cnf, ldapbio, &errline) <= 0) {
+		BIO_free(ldapbio);
+		NCONF_free(cnf);
+		ZLog::PrintV(">>> NCONF_load_bio failed %d\n", errline);
+	}
+	BIO_free(ldapbio);
+	genstr = NCONF_get_string(cnf, "default", "asn1");
+
+	if (genstr == NULL) {
+		ZLog::Error(">>> NCONF_get_string failed\n");
+		NCONF_free(cnf);
+	}
+	ASN1_TYPE *ret = ASN1_generate_nconf(genstr, cnf);
+	NCONF_free(cnf);
+	return ret;
+}
+
+bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, const string &strCDHashesPlist, const string &strCodeDirectorySlotSHA1, const string &strAltnateCodeDirectorySlot256, string &strCMSOutput)
 {
 	if (!scert || !spkey)
 	{
@@ -177,8 +208,49 @@ bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, con
 		return CMSError();
 	}
 
-	CMS_add1_signer(cms, scert, spkey, EVP_sha256(), nFlags);
-	CMS_add1_signer(cms, scert, spkey, EVP_sha1(), nFlags);
+    CMS_SignerInfo * si = CMS_add1_signer(cms, scert, spkey, EVP_sha256(), nFlags);
+//    CMS_add1_signer(cms, NULL, NULL, EVP_sha1(), nFlags);
+    if (!si) {
+        return CMSError();
+    }
+    
+	// add plist
+    ASN1_OBJECT * obj = OBJ_txt2obj("1.2.840.113635.100.9.1", 1);
+    if (!obj) {
+        return CMSError();
+    }
+    
+    int addHashPlist = CMS_signed_add1_attr_by_OBJ(si, obj, 0x4, strCDHashesPlist.c_str(), (int)strCDHashesPlist.size());
+    
+    if (!addHashPlist) {
+        return CMSError();
+    }
+
+	// add CDHashes
+	string sha256;
+	char buf[16] = {0};
+	for (size_t i = 0; i < strAltnateCodeDirectorySlot256.size(); i++)
+	{
+		sprintf(buf, "%02x", (uint8_t)strAltnateCodeDirectorySlot256[i]);
+		sha256 += buf;
+	}
+	transform(sha256.begin(), sha256.end(), sha256.begin(), ::toupper);
+
+	ASN1_OBJECT * obj2 = OBJ_txt2obj("1.2.840.113635.100.9.2", 1);
+    if (!obj2) {
+        return CMSError();
+    }
+
+	X509_ATTRIBUTE *attr = X509_ATTRIBUTE_new();
+	X509_ATTRIBUTE_set1_object(attr, obj2);
+
+	ASN1_TYPE *type_256 = _GenerateASN1Type(sha256);
+	X509_ATTRIBUTE_set1_data(attr, V_ASN1_SEQUENCE,
+                             type_256->value.asn1_string->data, type_256->value.asn1_string->length);
+	int addHashSHA = CMS_signed_add1_attr(si, attr);
+	if (!addHashSHA) {
+        return CMSError();
+    }
 
 	if (!CMS_final(cms, in, NULL, nFlags))
 	{
@@ -206,6 +278,7 @@ bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, con
 
 	strCMSOutput.clear();
 	strCMSOutput.append(bptr->data, bptr->length);
+	ASN1_TYPE_free(type_256);
 	return (!strCMSOutput.empty());
 }
 
@@ -226,7 +299,7 @@ bool GenerateCMS(const string &strSignerCertData, const string &strSignerPKeyDat
 		return CMSError();
 	}
 
-	return ::_GenerateCMS(scert, spkey, strCDHashData, strCDHashesPlist, strCMSOutput);
+	return ::_GenerateCMS(scert, spkey, strCDHashData, strCDHashesPlist, "", "", strCMSOutput);
 }
 
 bool GetCMSContent(const string &strCMSDataInput, string &strContentOutput)
@@ -705,7 +778,7 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
 	return true;
 }
 
-bool ZSignAsset::GenerateCMS(const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput)
+bool ZSignAsset::GenerateCMS(const string &strCDHashData, const string &strCDHashesPlist, const string &strCodeDirectorySlotSHA1, const string &strAltnateCodeDirectorySlot256, string &strCMSOutput)
 {
-	return ::_GenerateCMS((X509 *)m_x509Cert, (EVP_PKEY *)m_evpPKey, strCDHashData, strCDHashesPlist, strCMSOutput);
+	return ::_GenerateCMS((X509 *)m_x509Cert, (EVP_PKEY *)m_evpPKey, strCDHashData, strCDHashesPlist, strCodeDirectorySlotSHA1, strAltnateCodeDirectorySlot256, strCMSOutput);
 }

@@ -15,12 +15,12 @@ const struct option options[] = {
 	{"pkey", required_argument, NULL, 'k'},
 	{"prov", required_argument, NULL, 'm'},
 	{"password", required_argument, NULL, 'p'},
-	{"bundleid", required_argument, NULL, 'b'},
-	{"bundlename", required_argument, NULL, 'n'},
-	{"bundleversion", required_argument, NULL, 'r'},
+	{"bundle_id", required_argument, NULL, 'b'},
+	{"bundle_name", required_argument, NULL, 'n'},
+	{"bundle_version", required_argument, NULL, 'r'},
 	{"entitlements", required_argument, NULL, 'e'},
 	{"output", required_argument, NULL, 'o'},
-	{"ziplevel", required_argument, NULL, 'z'},
+	{"zip_level", required_argument, NULL, 'z'},
 	{"dylib", required_argument, NULL, 'l'},
 	{"weak", no_argument, NULL, 'w'},
 	{"install", no_argument, NULL, 'i'},
@@ -39,11 +39,11 @@ int usage()
 	ZLog::Print("-f, --force\t\tForce sign without cache when signing folder.\n");
 	ZLog::Print("-o, --output\t\tPath to output ipa file.\n");
 	ZLog::Print("-p, --password\t\tPassword for private key or p12 file.\n");
-	ZLog::Print("-b, --bundleid\t\tNew bundle id to change.\n");
-	ZLog::Print("-n, --bundlename\tNew bundle name to change.\n");
-	ZLog::Print("-r, --bundleversion\tNew bundle version to change.\n");
+	ZLog::Print("-b, --bundle_id\t\tNew bundle id to change.\n");
+	ZLog::Print("-n, --bundle_name\tNew bundle name to change.\n");
+	ZLog::Print("-r, --bundle_version\tNew bundle version to change.\n");
 	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
-	ZLog::Print("-z, --ziplevel\t\tCompressed level when output the ipa file. (0-9)\n");
+	ZLog::Print("-z, --zip_level\t\tCompressed level when output the ipa file. (0-9)\n");
 	ZLog::Print("-l, --dylib\t\tPath to inject dylib file.\n");
 	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 		{
-			printf("version: 0.2\n");
+			printf("version: 0.5\n");
 			return 0;
 		}
 		break;

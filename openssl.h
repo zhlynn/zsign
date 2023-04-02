@@ -12,7 +12,7 @@ public:
 	ZSignAsset();
 
 public:
-	bool GenerateCMS(const string &strCDHashData, const string &strCDHashesPlist, string &strCMSOutput);
+	bool GenerateCMS(const string &strCDHashData, const string &strCDHashesPlist, const string &strCodeDirectorySlotSHA1, const string &strAltnateCodeDirectorySlot256, string &strCMSOutput);
 	bool Init(const string &strSignerCertFile, const string &strSignerPKeyFile, const string &strProvisionFile, const string &strEntitlementsFile, const string &strPassword);
 
 public:
