@@ -1,7 +1,7 @@
 #pragma once
 #include "common/mach-o.h"
 #include "openssl.h"
-
+#include <set>
 class ZArchO
 {
 public:
@@ -14,6 +14,7 @@ public:
 	bool IsExecute();
 	bool InjectDyLib(bool bWeakInject, const char *szDyLibPath, bool &bCreate);
 	uint32_t ReallocCodeSignSpace(const string &strNewFile);
+    void uninstallDylibs(set<string> dylibNames);
 
 private:
 	uint32_t BO(uint32_t uVal);
