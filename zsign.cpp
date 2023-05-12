@@ -48,8 +48,8 @@ int usage()
 	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
-	ZLog::Print("-v, --version\t\tShow version.\n");
-	ZLog::Print("-h, --help\t\tShow help.\n");
+	ZLog::Print("-v, --version\t\tShows version.\n");
+	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
 	return -1;
 }
