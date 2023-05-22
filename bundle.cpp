@@ -193,6 +193,13 @@ bool ZAppBundle::GenerateCodeResources(const string &strFolder, JValue &jvCodeRe
 	for (set<string>::iterator it = setFiles.begin(); it != setFiles.end(); it++)
 	{
 		string strKey = *it;
+
+		if(remove_embedded==1 && strKey=="embedded.mobileprovision"){
+            string filePath = strFolder+"/embedded.mobileprovision";
+            remove(filePath.data());
+            continue;
+        }
+
 		string strFile = strFolder + "/" + strKey;
 		string strFileSHA1Base64;
 		string strFileSHA256Base64;
