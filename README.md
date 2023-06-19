@@ -1,4 +1,4 @@
-Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform  **Linux**, **macOS** & **Windows** , more features.
+Maybe it is the most quickly codesign alternative for iOS12+, cross-platform  **Linux**, **macOS** & **Windows** , more features.
 If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [Me](https://github.com/zhlynn).
 ## Compile on macOS:
 
