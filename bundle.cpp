@@ -376,6 +376,7 @@ bool ZAppBundle::SignNode(JValue &jvNode)
 		return false;
 	}
 
+	RemoveFolderV("%s/_CodeSignature", strBaseFolder.c_str());
 	CreateFolderV("%s/_CodeSignature", strBaseFolder.c_str());
 	string strCodeResFile = strBaseFolder + "/_CodeSignature/CodeResources";
 
