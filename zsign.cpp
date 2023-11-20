@@ -26,6 +26,7 @@ const struct option options[] = {
 	{"install", no_argument, NULL, 'i'},
 	{"quiet", no_argument, NULL, 'q'},
 	{"help", no_argument, NULL, 'h'},
+	{"embeddedremove", no_argument, NULL, 'x'},
 	{}};
 
 int usage()
@@ -50,6 +51,7 @@ int usage()
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
+	ZLog::Print("-x, --embeddedremove\t\tWill remove embedded.mobileprovision.\n");
 
 	return -1;
 }
@@ -61,6 +63,7 @@ int main(int argc, char *argv[])
 	bool bForce = false;
 	bool bInstall = false;
 	bool bWeakInject = false;
+	bool brProv = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -76,7 +79,7 @@ int main(int argc, char *argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w", options, &argslot)))
+	while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w:x", options, &argslot)))
 	{
 		switch (opt)
 		{
@@ -135,6 +138,9 @@ int main(int argc, char *argv[])
 		}
 		break;
 		case 'h':
+		case 'x':
+			brProv = true;
+			break;
 		case '?':
 			return usage();
 			break;
@@ -215,7 +221,7 @@ int main(int argc, char *argv[])
 
 	timer.Reset();
 	ZAppBundle bundle;
-	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strBundleVersion, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache);
+	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId, strBundleVersion, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache, brProv);
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	if (bInstall && strOutputFile.empty())

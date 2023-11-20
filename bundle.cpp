@@ -479,7 +479,8 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
 							const string &strDyLibFile,
 							bool bForce,
 							bool bWeakInject,
-							bool bEnableCache)
+							bool bEnableCache,
+							bool brProv)
 {
 	m_bForceSign = bForce;
 	m_pSignAsset = pSignAsset;
@@ -595,10 +596,18 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
 		}
 	}
 
-	if (!WriteFile(pSignAsset->m_strProvisionData, "%s/embedded.mobileprovision", m_strAppFolder.c_str()))
-	{ //embedded.mobileprovision
-		ZLog::ErrorV(">>> Can't Write embedded.mobileprovision!\n");
-		return false;
+	ZLog::ErrorV("%d", brProv);
+	if (!brProv)
+	{
+		if (!WriteFile(pSignAsset->m_strProvisionData, "%s/embedded.mobileprovision", m_strAppFolder.c_str()))
+		{ //embedded.mobileprovision
+			ZLog::ErrorV(">>> Can't Write embedded.mobileprovision!\n");
+			return false;
+		}
+	}
+	else
+	{
+		RemoveFileV("%s/embedded.mobileprovision", m_strAppFolder.c_str());
 	}
 
 	if (!strDyLibFile.empty())
