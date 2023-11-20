@@ -185,6 +185,7 @@ options:
 -q, --quiet          Quiet operation.
 -v, --version        Show version.
 -h, --help           Show help.
+-x, --embeddedremove Will remove embedded.mobileprovision.
 ```
 
 1. Show mach-o and codesignature segment info.
