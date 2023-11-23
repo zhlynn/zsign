@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	bool bInstall = false;
 	bool bWeakInject = false;
 	bool brProv = false;
-	uint32_t uZipLevel = 0;
+	uint32_t uZipLevel = 6;
 
 	string strCertFile;
 	string strPKeyFile;
