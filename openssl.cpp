@@ -5,6 +5,7 @@
 #include <openssl/pem.h>
 #include <openssl/cms.h>
 #include <openssl/err.h>
+#include <openssl/provider.h>
 #include <openssl/pkcs12.h>
 #include <openssl/conf.h>
 
@@ -694,6 +695,7 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
 			if (NULL == evpPKey)
 			{
 				BIO_reset(bioPKey);
+				OSSL_PROVIDER_load(NULL, "legacy");
 				PKCS12 *p12 = d2i_PKCS12_bio(bioPKey, NULL);
 				if (NULL != p12)
 				{
