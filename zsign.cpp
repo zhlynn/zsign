@@ -8,6 +8,7 @@
 #include <getopt.h>
 
 const struct option options[] = {
+	{"remove_embedded", no_argument, &remove_embedded, 1},
 	{"debug", no_argument, NULL, 'd'},
 	{"force", no_argument, NULL, 'f'},
 	{"verbose", no_argument, NULL, 'v'},
@@ -32,6 +33,7 @@ int usage()
 {
 	ZLog::Print("Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder\n");
 	ZLog::Print("options:\n");
+	ZLog::Print("--remove_embedded\tremove emmbedded.mobileprovision file.(not recommend)\n");
 	ZLog::Print("-k, --pkey\t\tPath to private key or p12 file. (PEM or DER format)\n");
 	ZLog::Print("-m, --prov\t\tPath to mobile provisioning profile.\n");
 	ZLog::Print("-c, --cert\t\tPath to certificate file. (PEM or DER format)\n");
