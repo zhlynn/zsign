@@ -421,8 +421,9 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder,
                             const string &strBundleID,
                             const string &strBundleVersion,
                             const string &strDisplayName,
-                            const vector<string> &arrDyLibFiles, bool bForce,
-                            bool bWeakInject, bool bEnableCache) {
+                            const vector<string> &arrDyLibFiles,
+                            const vector<string> &arrFrameworkFiles,
+                            bool bForce, bool bWeakInject, bool bEnableCache) {
   m_bForceSign = bForce;
   m_pSignAsset = pSignAsset;
   m_bWeakInject = bWeakInject;
@@ -556,17 +557,40 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder,
     for (string strDyLibFile : arrDyLibFiles) {
       string strDyLibData;
       ReadFile(strDyLibFile.c_str(), strDyLibData);
-      if (!strDyLibData.empty()) {
-        string strFileName = basename((char *)strDyLibFile.c_str());
-        if (WriteFile(strDyLibData, "%s/%s", m_strAppFolder.c_str(),
-                      strFileName.c_str())) {
-          string strDyLibPath;
-          StringFormat(strDyLibPath, "@executable_path/%s",
-                       strFileName.c_str());
 
-          arrDyLibPaths.push_back(strDyLibPath);
-        }
+      if (strDyLibData.empty())
+        continue;
+
+      string strFileName = basename((char *)strDyLibFile.c_str());
+      if (!WriteFile(strDyLibData, "%s/%s", m_strAppFolder.c_str(),
+                     strFileName.c_str()))
+        continue;
+
+      string strDyLibPath;
+      StringFormat(strDyLibPath, "@executable_path/%s", strFileName.c_str());
+
+      arrDyLibPaths.push_back(strDyLibPath);
+    }
+  }
+
+  if (!arrFrameworkFiles.empty()) { // inject frameworks
+    const char *c_strAppFolder = m_strAppFolder.c_str();
+    for (string strFrameworkFile : arrFrameworkFiles) {
+      string strFrameworkData;
+      const char *c_strFrameworkFile = strFrameworkFile.c_str();
+
+      ZLog::PrintV(
+          ">>> Unzip:\tFramework %s (%s) -> %s ... \n", c_strFrameworkFile,
+          GetFileSizeString(c_strFrameworkFile).c_str(), c_strAppFolder);
+
+      if (!SystemExec("unzip -qq -d '%s' '%s'", c_strAppFolder,
+                      c_strFrameworkFile)) {
+        ZLog::ErrorV(">>> Unzip Framework Failed!\n");
+
+        continue;
       }
+
+      ZLog::PrintV(">>> Unzip Framework %s OK!\n", c_strFrameworkFile);
     }
   }
 
