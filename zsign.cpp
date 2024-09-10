@@ -23,6 +23,7 @@ const struct option options[] = {
     {"output", required_argument, NULL, 'o'},
     {"zip_level", required_argument, NULL, 'z'},
     {"dylib", required_argument, NULL, 'l'},
+    {"framework", required_argument, NULL, 'L'},
     {"weak", no_argument, NULL, 'w'},
     {"install", no_argument, NULL, 'i'},
     {"quiet", no_argument, NULL, 'q'},
@@ -51,6 +52,11 @@ int usage() {
   ZLog::Print("-l, --dylib\t\tPath to inject dylib file.\n");
   ZLog::Print(
       "\t\t\tUse -l multiple time to inject multiple dylib files at once.\n");
+  ZLog::Print("-L, --framework\t\tPath to inject framework file.\n");
+  ZLog::Print("\t\t\tFramework folder must be zipped (using zip) to .ifw file "
+              "before injecting.\n");
+  ZLog::Print("\t\t\tUse -L multiple time to inject multiple framework files "
+              "at once.\n");
   ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
   ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller "
               "command for test.\n");
@@ -80,10 +86,11 @@ int main(int argc, char *argv[]) {
   string strEntitlementsFile;
 
   vector<string> arrDyLibFiles;
+  vector<string> arrFrameworkFiles;
 
   int opt = 0;
   int argslot = -1;
-  while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w",
+  while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:L:w",
                                   options, &argslot))) {
     switch (opt) {
     case 'd':
@@ -118,6 +125,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'l':
       arrDyLibFiles.push_back(optarg);
+      break;
+    case 'L':
+      arrFrameworkFiles.push_back(optarg);
       break;
     case 'i':
       bInstall = true;
@@ -211,9 +221,9 @@ int main(int argc, char *argv[]) {
 
   timer.Reset();
   ZAppBundle bundle;
-  bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId,
-                                strBundleVersion, strDisplayName, arrDyLibFiles,
-                                bForce, bWeakInject, bEnableCache);
+  bool bRet = bundle.SignFolder(
+      &zSignAsset, strFolder, strBundleId, strBundleVersion, strDisplayName,
+      arrDyLibFiles, arrFrameworkFiles, bForce, bWeakInject, bEnableCache);
   timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
   if (bInstall && strOutputFile.empty()) {
