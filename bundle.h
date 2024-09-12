@@ -12,7 +12,8 @@ public:
   bool SignFolder(ZSignAsset *pSignAsset, const string &strFolder,
                   const string &strBundleID, const string &strBundleVersion,
                   const string &strDisplayName,
-                  const vector<string> &arrDyLibFiles, bool bForce,
+                  const vector<string> &arrDyLibFiles,
+                  const vector<string> &arrFrameworkFiles, bool bForce,
                   bool bWeakInject, bool bEnableCache);
 
 private:
