@@ -23,6 +23,9 @@ public:
 	/// can be empty.
 	bool m_bAdhoc{};
 	bool m_bSingleBinary{}; ///< `true` if signing single binary, i.e. `CS_EXECSEG_MAIN_BINARY` flag shall be set
+	/// If true, serialize a single CSSLOT_CODEDIRECTORY that uses SHA256; otherwise, use both SHA1 and SHA256 (alternate).
+	bool m_bUseSHA256Only{};
+
 	string m_strTeamId;
 	string m_strSubjectCN;
 	string m_strProvisionData;

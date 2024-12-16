@@ -430,7 +430,9 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 	string strCMSSignatureSlot;
 	string strCodeDirectorySlot;
 	string strAltnateCodeDirectorySlot;
-	SlotBuildCodeDirectory(false,
+	if (!pSignAsset->m_bUseSHA256Only)
+	{
+		SlotBuildCodeDirectory(false,
 						   m_pBase,
 						   m_uCodeLength,
 						   pCodeSlots1Data,
@@ -447,6 +449,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 						   IsExecute(),
 						   pSignAsset->m_bAdhoc,
 						   strCodeDirectorySlot);
+	}
 	SlotBuildCodeDirectory(true,
 						   m_pBase,
 						   m_uCodeLength,
@@ -464,6 +467,12 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 						   IsExecute(),
 						   pSignAsset->m_bAdhoc,
 						   strAltnateCodeDirectorySlot);
+	if (pSignAsset->m_bUseSHA256Only)
+	{
+		// SHA256-based code directory is usually the alternate; however, make it the primary (and only)
+		// code directory if `m_bUseSHA256Only == true`.
+		strAltnateCodeDirectorySlot.swap(strCodeDirectorySlot);
+	}
 	SlotBuildCMSSignature(pSignAsset,
 						  strCodeDirectorySlot,
 						  strAltnateCodeDirectorySlot,
