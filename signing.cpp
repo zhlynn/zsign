@@ -3,6 +3,8 @@
 #include "common/mach-o.h"
 #include "openssl.h"
 
+#include <algorithm>
+
 static void _DERLength(string &strBlob, uint64_t uLength)
 {
 	if (uLength < 128)
@@ -546,6 +548,17 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 	arrSpecialSlots.push_back(strCodeResourcesSHA.empty() ? strEmptySHA : strCodeResourcesSHA);
 	arrSpecialSlots.push_back(strRequirementsSlotSHA.empty() ? strEmptySHA : strRequirementsSlotSHA);
 	arrSpecialSlots.push_back(strInfoPlistSHA.empty() ? strEmptySHA : strInfoPlistSHA);
+
+	// Trailing entries whose hash == strEmptySHA in `arrSpecialSlots` can be omitted; erase them.
+	// Special slots have negative indexes and come before code slots, i.e. index -1 is the 'Info.plist'
+	// slot, and -2 is 'Requirements slot'.
+	// Note that in `arrSpecialSlots` is reversed and trailing elements appear at front.
+	auto itLastUsedSpecialSlot = std::find_if(arrSpecialSlots.begin(), arrSpecialSlots.end(),
+						  [&](const string& strSHA) { return strSHA != strEmptySHA; });
+	if (itLastUsedSpecialSlot != arrSpecialSlots.begin())
+	{
+		arrSpecialSlots.erase(arrSpecialSlots.begin(), itLastUsedSpecialSlot);
+	}
 
 	uint32_t uPageSize = (uint32_t)pow(2, cdHeader.pageSize);
 	uint32_t uPages = uCodeLength / uPageSize;
