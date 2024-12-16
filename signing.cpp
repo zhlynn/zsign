@@ -3,6 +3,8 @@
 #include "common/mach-o.h"
 #include "openssl.h"
 
+#include <string_view>
+
 static void _DERLength(string &strBlob, uint64_t uLength)
 {
 	if (uLength < 128)
@@ -163,7 +165,7 @@ bool SlotBuildRequirements(const string &strBundleID, const string &strSubjectCN
 	strOutput.clear();
 	if (strBundleID.empty() || strSubjectCN.empty())
 	{ //ldid
-		strOutput = "\xfa\xde\x0c\x01\x00\x00\x00\x0c\x00\x00\x00\x00";
+		strOutput = "\xfa\xde\x0c\x01\x00\x00\x00\x0c\x00\x00\x00\x00"sv;
 		return true;
 	}
 
