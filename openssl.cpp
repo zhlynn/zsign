@@ -232,7 +232,7 @@ bool _GenerateCMS(X509 *scert, EVP_PKEY *spkey, const string &strCDHashData, con
 	char buf[16] = {0};
 	for (size_t i = 0; i < strAltnateCodeDirectorySlot256.size(); i++)
 	{
-		sprintf(buf, "%02x", (uint8_t)strAltnateCodeDirectorySlot256[i]);
+		snprintf(buf, sizeof(buf), "%02x", (uint8_t)strAltnateCodeDirectorySlot256[i]);
 		sha256 += buf;
 	}
 	transform(sha256.begin(), sha256.end(), sha256.begin(), ::toupper);
@@ -556,7 +556,7 @@ bool GetCMSInfo(uint8_t *pCMSData, uint32_t uCMSLength, JValue &jvOutput)
 					char buf[16] = {0};
 					for (int m = 0; m < av->value.octet_string->length; m++)
 					{
-						sprintf(buf, "%02x", (uint8_t)av->value.octet_string->data[m]);
+						snprintf(buf, sizeof(buf), "%02x", (uint8_t)av->value.octet_string->data[m]);
 						strSHASum += buf;
 					}
 					jvOutput["attrs"]["MessageDigest"]["obj"] = txtobj;

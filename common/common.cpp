@@ -359,26 +359,26 @@ string FormatSize(int64_t size, int64_t base)
 	if (size > base * base * base * base)
 	{
 		fsize = (size * 1.0) / (base * base * base * base);
-		sprintf(ret, "%.2f TB", fsize);
+		snprintf(ret, sizeof(ret), "%.2f TB", fsize);
 	}
 	else if (size > base * base * base)
 	{
 		fsize = (size * 1.0) / (base * base * base);
-		sprintf(ret, "%.2f GB", fsize);
+		snprintf(ret, sizeof(ret), "%.2f GB", fsize);
 	}
 	else if (size > base * base)
 	{
 		fsize = (size * 1.0) / (base * base);
-		sprintf(ret, "%.2f MB", fsize);
+		snprintf(ret, sizeof(ret), "%.2f MB", fsize);
 	}
 	else if (size > base)
 	{
 		fsize = (size * 1.0) / (base);
-		sprintf(ret, "%.2f KB", fsize);
+		snprintf(ret, sizeof(ret), "%.2f KB", fsize);
 	}
 	else
 	{
-		sprintf(ret, "%" PRId64 " B", size);
+		snprintf(ret, sizeof(ret), "%" PRId64 " B", size);
 	}
 	return ret;
 }
@@ -522,7 +522,7 @@ bool SHA1Text(const string &strData, string &strOutput)
 	char buf[16] = {0};
 	for (size_t i = 0; i < strSHASum.size(); i++)
 	{
-		sprintf(buf, "%02x", (uint8_t)strSHASum[i]);
+		snprintf(buf, sizeof(buf), "%02x", (uint8_t)strSHASum[i]);
 		strOutput += buf;
 	}
 	return (!strOutput.empty());

@@ -389,14 +389,14 @@ string JValue::asString() const
 	case E_INT:
 	{
 		char buf[256];
-		sprintf(buf, "%" PRId64, m_Value.vInt64);
+		snprintf(buf, sizeof(buf), "%" PRId64, m_Value.vInt64);
 		return buf;
 	}
 	break;
 	case E_FLOAT:
 	{
 		char buf[256];
-		sprintf(buf, "%lf", m_Value.vFloat);
+		snprintf(buf, sizeof(buf), "%lf", m_Value.vFloat);
 		return buf;
 	}
 	break;
@@ -1640,7 +1640,7 @@ void JReader::error(string &strmsg) const
 		}
 	}
 	char msg[64];
-	sprintf(msg, "Error: Line %d, Column %d, ", row, int(m_pErr - plast) + 1);
+	snprintf(msg, sizeof(msg), "Error: Line %d, Column %d, ", row, int(m_pErr - plast) + 1);
 	strmsg += msg + m_strErr + "\n";
 }
 
@@ -1890,14 +1890,14 @@ void JWriter::PushValue(const string &strval)
 string JWriter::v2s(int64_t val)
 {
 	char buf[32];
-	sprintf(buf, "%" PRId64, val);
+	snprintf(buf, sizeof(buf), "%" PRId64, val);
 	return buf;
 }
 
 string JWriter::v2s(double val)
 {
 	char buf[512];
-	sprintf(buf, "%g", val);
+	snprintf(buf, sizeof(buf), "%g", val);
 	return buf;
 }
 
@@ -1921,7 +1921,7 @@ string JWriter::d2s(time_t t)
 	ft.tm_sec = (ft.tm_sec < 0) ? 0 : ft.tm_sec;
 
 	char szDate[64] = {0};
-	sprintf(szDate, "%04d-%02d-%02dT%02d:%02d:%02dZ", ft.tm_year + 1900, ft.tm_mon + 1, ft.tm_mday, ft.tm_hour, ft.tm_min, ft.tm_sec);
+	snprintf(szDate, sizeof(szDate), "%04d-%02d-%02dT%02d:%02d:%02dZ", ft.tm_year + 1900, ft.tm_mon + 1, ft.tm_mday, ft.tm_hour, ft.tm_min, ft.tm_sec);
 	return szDate;
 }
 
@@ -2500,7 +2500,7 @@ void PReader::error(string &strmsg) const
 		}
 	}
 	char msg[64];
-	sprintf(msg, "Error: Line %d, Column %d, ", row, int(m_pErr - plast) + 1);
+	snprintf(msg, sizeof(msg), "Error: Line %d, Column %d, ", row, int(m_pErr - plast) + 1);
 	strmsg += msg + m_strErr + "\n";
 }
 
@@ -3007,7 +3007,7 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 		strdoc += strindent;
 		strdoc += "<integer>";
 		char temp[32] = {0};
-		sprintf(temp, "%" PRId64, pval.asInt64());
+		snprintf(temp, sizeof(temp), "%" PRId64, pval.asInt64());
 		strdoc += temp;
 		strdoc += "</integer>\n";
 	}
@@ -3026,11 +3026,11 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 			char temp[32] = {0};
 			if (floor(v) == v)
 			{
-				sprintf(temp, "%" PRId64, (int64_t)v);
+				snprintf(temp, sizeof(temp), "%" PRId64, (int64_t)v);
 			}
 			else
 			{
-				sprintf(temp, "%.15lf", v);
+				snprintf(temp, sizeof(temp), "%.15lf", v);
 			}
 			strdoc += temp;
 		}
