@@ -502,10 +502,11 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 							const string &strEntitlementsSlotSHA,
 							const string &strDerEntitlementsSlotSHA,
 							bool isExecuteArch,
+							bool isAdhoc,
 							string &strOutput)
 {
 	strOutput.clear();
-	if (NULL == pCodeBase || uCodeLength <= 0 || strBundleId.empty() || strTeamId.empty())
+	if (NULL == pCodeBase || uCodeLength <= 0 || strBundleId.empty() || (strTeamId.empty() && !isAdhoc))
 	{
 		return false;
 	}
@@ -517,7 +518,7 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 	cdHeader.magic = BE(CSMAGIC_CODEDIRECTORY);
 	cdHeader.length = 0;
 	cdHeader.version = BE(uVersion);
-	cdHeader.flags = 0;
+	cdHeader.flags = isAdhoc ? BE(static_cast<uint32_t>(CS_SEC_CODESIGNATURE_ADHOC)) : 0U;
 	cdHeader.hashOffset = 0;
 	cdHeader.identOffset = 0;
 	cdHeader.nSpecialSlots = 0;
@@ -585,7 +586,7 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 	{
 		//todo
 	}
-	if (uVersion >= 0x20200)
+	if (uVersion >= 0x20200 && !strTeamId.empty())
 	{
 		uSlotLength += uTeamIDLength;
 	}
@@ -600,7 +601,9 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 	{
 		//todo
 	}
-	if (uVersion >= 0x20200)
+	// `strTeamId` may be empty for ad-hoc signature; in that case, `cdHeader.teamOffset == 0` and string
+	// data is not serialized below.
+	if (uVersion >= 0x20200 && !strTeamId.empty())
 	{
 		uHashOffset += uTeamIDLength;
 		cdHeader.teamOffset = BE(uHeaderLength + uBundleIDLength);
@@ -613,7 +616,7 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 	{
 		//todo
 	}
-	if (uVersion >= 0x20200)
+	if (uVersion >= 0x20200 && !strTeamId.empty())
 	{
 		strOutput.append(strTeamId.data(), strTeamId.size() + 1);
 	}
@@ -719,6 +722,11 @@ bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 						   string &strOutput)
 {
 	strOutput.clear();
+	if (pSignAsset->m_bAdhoc)
+	{
+		strOutput = "\xfa\xde\x0b\x01\x00\x00\x00\x08"sv; // The empty CSSLOT_SIGNATURESLOT
+		return true;
+	}
 
 	JValue jvHashes;
 	string strCDHashesPlist;

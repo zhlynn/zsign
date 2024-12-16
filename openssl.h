@@ -13,9 +13,16 @@ public:
 
 public:
 	bool GenerateCMS(const string &strCDHashData, const string &strCDHashesPlist, const string &strCodeDirectorySlotSHA1, const string &strAltnateCodeDirectorySlot256, string &strCMSOutput);
+	/// Initialize ZSignAsset for ad-hoc signing.  Entitlements may be optionally read from \p strEntitlementsFile.
+	bool Init(const string &strEntitlementsFile);
+	/// Initialize ZSignAsset object.
 	bool Init(const string &strSignerCertFile, const string &strSignerPKeyFile, const string &strProvisionFile, const string &strEntitlementsFile, const string &strPassword);
 
 public:
+	/// If true, carry out ad-hoc signature instead; in that case, `m_strTeamId` and `m_strSubjectCN`
+	/// can be empty.
+	bool m_bAdhoc{};
+	bool m_bSingleBinary{}; ///< `true` if signing single binary, i.e. `CS_EXECSEG_MAIN_BINARY` flag shall be set
 	string m_strTeamId;
 	string m_strSubjectCN;
 	string m_strProvisionData;

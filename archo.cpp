@@ -420,11 +420,11 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 		GetCodeSignatureExistsCodeSlotsData(m_pSignBase, pCodeSlots1Data, uCodeSlots1DataLength, pCodeSlots256Data, uCodeSlots256DataLength);
 	}
 
-	uint64_t execSegFlags = 0;
+	uint64_t execSegFlags = pSignAsset->m_bSingleBinary ? CS_EXECSEG_MAIN_BINARY : 0U;
 	if (NULL != strstr(strEntitlementsSlot.data() + 8, "<key>get-task-allow</key>"))
 	{
 		// TODO: Check if get-task-allow is actually set to true
-		execSegFlags = CS_EXECSEG_MAIN_BINARY | CS_EXECSEG_ALLOW_UNSIGNED;
+		execSegFlags |= CS_EXECSEG_MAIN_BINARY | CS_EXECSEG_ALLOW_UNSIGNED;
 	}
 
 	string strCMSSignatureSlot;
@@ -445,6 +445,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 						   strEntitlementsSlotSHA1,
 						   strDerEntitlementsSlotSHA1,
 						   IsExecute(),
+						   pSignAsset->m_bAdhoc,
 						   strCodeDirectorySlot);
 	SlotBuildCodeDirectory(true,
 						   m_pBase,
@@ -461,6 +462,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset *pSignAsset, bool bForce, const strin
 						   strEntitlementsSlotSHA256,
 						   strDerEntitlementsSlotSHA256,
 						   IsExecute(),
+						   pSignAsset->m_bAdhoc,
 						   strAltnateCodeDirectorySlot);
 	SlotBuildCMSSignature(pSignAsset,
 						  strCodeDirectorySlot,

@@ -498,6 +498,10 @@ enum {
 	CS_SIGNER_TYPE_UNKNOWN = 0,
 	CS_SIGNER_TYPE_LEGACYVPN = 5,
 
+/*
+ * Flags that can be specified in `CS_CodeDirectory::flags`.
+ */
+	CS_SEC_CODESIGNATURE_ADHOC = 0x0002,				/* kSecCodeSignatureAdhoc */
 };
 
 #pragma pack(push, 1)
