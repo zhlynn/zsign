@@ -21,6 +21,7 @@ bool SlotBuildCodeDirectory(bool bAlternate,
 							const string &strEntitlementsSlotSHA,
 							const string &strDerEntitlementsSlotSHA,
 							bool isExecuteArch,
+							bool isAdhoc,
 							string &strOutput);
 bool SlotBuildCMSSignature(ZSignAsset *pSignAsset,
 						   const string &strCodeDirectorySlot,

@@ -5,6 +5,8 @@
 #include <dirent.h>
 #include <getopt.h>
 #include <libgen.h>
+
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -12,6 +14,9 @@ const struct option options[] = {
     {"debug", no_argument, NULL, 'd'},
     {"force", no_argument, NULL, 'f'},
     {"verbose", no_argument, NULL, 'v'},
+    {"adhoc", no_argument, NULL, 'a'},
+    {"single_inplace", no_argument, NULL, 's'},
+    {"sha256_only", no_argument, NULL, '2'},
     {"cert", required_argument, NULL, 'c'},
     {"pkey", required_argument, NULL, 'k'},
     {"prov", required_argument, NULL, 'm'},
@@ -36,6 +41,9 @@ int usage() {
   ZLog::Print(
       "-k, --pkey\t\tPath to private key or p12 file. (PEM or DER format)\n");
   ZLog::Print("-m, --prov\t\tPath to mobile provisioning profile.\n");
+  ZLog::Print("-a, --adhoc\t\tPerform ad-hoc signature only.\n");
+  ZLog::Print("-s, --single_inplace\t\tRe-sign a single Mach-O binary in place. (incompatible with `-o`)\n");
+  ZLog::Print("-2, --sha256_only\t\tSerialize a single code directory that uses SHA256.\n");
   ZLog::Print("-c, --cert\t\tPath to certificate file. (PEM or DER format)\n");
   ZLog::Print(
       "-d, --debug\t\tGenerate debug output files. (.zsign_debug folder)\n");
@@ -67,6 +75,9 @@ int main(int argc, char *argv[]) {
   bool bForce = false;
   bool bInstall = false;
   bool bWeakInject = false;
+  bool bAdhoc = false;
+  bool bSingleInplace = false;
+  bool bSHA256Only = false;
   uint32_t uZipLevel = 0;
 
   string strCertFile;
@@ -83,7 +94,7 @@ int main(int argc, char *argv[]) {
 
   int opt = 0;
   int argslot = -1;
-  while (-1 != (opt = getopt_long(argc, argv, "dfvhc:k:m:o:ip:e:b:n:z:ql:w",
+  while (-1 != (opt = getopt_long(argc, argv, "dfvas2hc:k:m:o:ip:e:b:n:z:ql:w",
                                   options, &argslot))) {
     switch (opt) {
     case 'd':
@@ -100,6 +111,15 @@ int main(int argc, char *argv[]) {
       break;
     case 'm':
       strProvFile = optarg;
+      break;
+    case 'a':
+      bAdhoc = true;
+      break;
+    case 's':
+      bSingleInplace = true;
+      break;
+    case '2':
+      bSHA256Only = true;
       break;
     case 'p':
       strPassword = optarg;
@@ -150,6 +170,10 @@ int main(int argc, char *argv[]) {
   if (optind >= argc) {
     return usage();
   }
+  if (bSingleInplace && !strOutputFile.empty()) {
+    ZLog::ErrorV(">>> Only one of `--single_inplace` or `--output` can be specified\n");
+    return usage();
+  }
 
   if (ZLog::IsDebug()) {
     CreateFolder("./.zsign_debug");
@@ -165,30 +189,47 @@ int main(int argc, char *argv[]) {
   }
 
   bool bZipFile = false;
+  std::unique_ptr<ZMachO> macho;
   if (!IsFolder(strPath.c_str())) {
     bZipFile = IsZipFile(strPath.c_str());
     if (!bZipFile) { // macho file
-      ZMachO macho;
-      if (macho.Init(strPath.c_str())) {
-        if (!arrDyLibFiles.empty()) { // inject dylib
-          bool bCreate = false;
-
-          for (string dyLibFile : arrDyLibFiles)
-            macho.InjectDyLib(bWeakInject, dyLibFile.c_str(), bCreate);
-        } else {
-          macho.PrintInfo();
-        }
-        macho.Free();
+      macho = std::make_unique<ZMachO>();
+      if (!macho->Init(strPath.c_str())) {
+        ZLog::ErrorV(">>> Invalid Mach-O file! %s\n", strPath.c_str());
+        return -1;
       }
-      return 0;
+      if (!arrDyLibFiles.empty()) { // inject dylib
+        bool bCreate = false;
+
+        for (string dyLibFile : arrDyLibFiles)
+          macho->InjectDyLib(bWeakInject, dyLibFile.c_str(), bCreate);
+      } else if (!bSingleInplace) {
+        macho->PrintInfo();
+      }
+      if (!bSingleInplace) { // no in-place sign requested; exit
+        macho->Free();
+        return 0;
+      }
     }
   }
 
   ZTimer timer;
   ZSignAsset zSignAsset;
-  if (!zSignAsset.Init(strCertFile, strPKeyFile, strProvFile,
-                       strEntitlementsFile, strPassword)) {
+  const bool bSignAssetInitResult = bAdhoc
+    ? zSignAsset.Init(strEntitlementsFile)
+    : zSignAsset.Init(strCertFile, strPKeyFile, strProvFile, strEntitlementsFile, strPassword);
+  if (!bSignAssetInitResult) {
     return -1;
+  }
+  zSignAsset.m_bUseSHA256Only = bSHA256Only;
+  zSignAsset.m_bSingleBinary = (macho != nullptr);
+
+  if (zSignAsset.m_bSingleBinary) {
+    ZLog::PrintV(">>>%s Signing:\t%s\n", (zSignAsset.m_bAdhoc ? " Ad-hoc" : ""), strPath.c_str());
+    macho->Sign(&zSignAsset, bForce, strBundleId, /*strInfoPlistSHA1=*/{}, /*strInfoPlistSHA256=*/{},
+	       /*strCodeResourcesData=*/{});
+    macho->Free();
+    return 0;
   }
 
   bool bEnableCache = true;

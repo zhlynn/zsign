@@ -652,6 +652,22 @@ ZSignAsset::ZSignAsset()
 	m_x509Cert = NULL;
 }
 
+bool ZSignAsset::Init(const string &strEntitlementsFile)
+{
+	bool bResult = true;
+
+	m_bAdhoc = true;
+	if (!strEntitlementsFile.empty())
+	{
+		bResult = ReadFile(strEntitlementsFile.c_str(), m_strEntitlementsData);
+		if (!bResult)
+		{
+			ZLog::Error(">>> Couldn't Read Entitlements File!\n");
+		}
+	}
+	return bResult;
+}
+
 bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPKeyFile, const string &strProvisionFile, const string &strEntitlementsFile, const string &strPassword)
 {
 	ReadFile(strProvisionFile.c_str(), m_strProvisionData);
