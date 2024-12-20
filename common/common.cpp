@@ -694,6 +694,7 @@ uint64_t ZTimer::PrintResult(bool bSuccess, const char *szFormatArgs, ...)
 }
 
 int ZLog::g_nLogLevel = ZLog::E_INFO;
+bool ZLog::g_bVerbose = false;
 
 void ZLog::Print(int nLevel, const char *szLog)
 {
