@@ -695,11 +695,6 @@ uint64_t ZTimer::PrintResult(bool bSuccess, const char *szFormatArgs, ...)
 
 int ZLog::g_nLogLevel = ZLog::E_INFO;
 
-void ZLog::SetLogLever(int nLogLevel)
-{
-	g_nLogLevel = nLogLevel;
-}
-
 void ZLog::Print(int nLevel, const char *szLog)
 {
 	if (g_nLogLevel >= nLevel)
@@ -811,9 +806,4 @@ void ZLog::DebugV(const char *szFormatArgs, ...)
 		PARSEVALIST(szFormatArgs, szLog)
 		write(STDOUT_FILENO, szLog, strlen(szLog));
 	}
-}
-
-bool ZLog::IsDebug()
-{
-	return (E_DEBUG == g_nLogLevel);
 }

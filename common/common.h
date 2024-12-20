@@ -138,7 +138,7 @@ public:
     };
 
 public:
-    static bool IsDebug();
+    static bool IsDebug() { return (E_DEBUG == g_nLogLevel); }
     static void Print(const char *szLog);
     static void PrintV(const char *szFormatArgs, ...);
     static void Debug(const char *szLog);
@@ -153,7 +153,7 @@ public:
     static bool PrintResultV(bool bSuccess, const char *szFormatArgs, ...);
     static void Print(int nLevel, const char *szLog);
     static void PrintV(int nLevel, const char *szFormatArgs, ...);
-    static void SetLogLever(int nLogLevel);
+    static void SetLogLever(int nLogLevel) { g_nLogLevel = nLogLevel; }
 
 private:
     static int g_nLogLevel;
