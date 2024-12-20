@@ -458,7 +458,7 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 		PrintSHASum("\t\t\t", arrSpecialSlots[i], cdHeader.hashSize, suffix);
 	}
 
-	if (ZLog::IsDebug())
+	if (ZLog::IsVerbose())
 	{
 		ZLog::Print("\tCodeSlots:\n");
 		for (uint32_t i = 0; i < LE(cdHeader.nCodeSlots); i++)
@@ -468,7 +468,7 @@ bool SlotParseCodeDirectory(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	}
 	else
 	{
-		ZLog::Print("\tCodeSlots: \tomitted. (use -d option for details)\n");
+		ZLog::Print("\tCodeSlots: \tomitted. (use --verbose option for details)\n");
 	}
 
 	SlotParseGeneralTailer(pSlotBase, uSlotLength);
