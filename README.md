@@ -10,6 +10,12 @@ and then (attention to replace your openssl version)
 g++ *.cpp common/*.cpp -lcrypto -std=c++20 -I/usr/local/Cellar/openssl@3/3.4.0/include -L/usr/local/Cellar/openssl@3/3.4.0/lib -O3 -o zsign
 ```
 
+If you are on the Apple Silicon:
+
+```bash
+g++ *.cpp common/*.cpp -lcrypto -std=c++20 -I/opt/homebrew/Cellar/openssl@3/3.4.0/include -L/opt/homebrew/Cellar/openssl@3/3.4.0/lib -O3 -o zsign
+```
+
 ## Compile on Linux:
 
 #### Ubuntu:
