@@ -13,7 +13,7 @@
 const struct option options[] = {
     {"debug", no_argument, NULL, 'd'},
     {"force", no_argument, NULL, 'f'},
-    {"verbose", no_argument, NULL, 'v'},
+    {"verbose", no_argument, NULL, 'V'},
     {"adhoc", no_argument, NULL, 'a'},
     {"single_inplace", no_argument, NULL, 's'},
     {"sha256_only", no_argument, NULL, '2'},
@@ -48,6 +48,7 @@ int usage() {
   ZLog::Print(
       "-d, --debug\t\tGenerate debug output files. (.zsign_debug folder)\n");
   ZLog::Print("-f, --force\t\tForce sign without cache when signing folder.\n");
+  ZLog::Print("-V, --verbose\t\tEnable extra verbosity in log.\n");
   ZLog::Print("-o, --output\t\tPath to output ipa file.\n");
   ZLog::Print("-p, --password\t\tPassword for private key or p12 file.\n");
   ZLog::Print("-b, --bundle_id\t\tNew bundle id to change.\n");
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   int opt = 0;
   int argslot = -1;
-  while (-1 != (opt = getopt_long(argc, argv, "dfvas2hc:k:m:o:ip:e:b:n:z:ql:w",
+  while (-1 != (opt = getopt_long(argc, argv, "dfVvas2hc:k:m:o:ip:e:b:n:z:ql:w",
                                   options, &argslot))) {
     switch (opt) {
     case 'd':
@@ -102,6 +103,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'f':
       bForce = true;
+      break;
+    case 'V':
+      ZLog::SetVerbose(true);
       break;
     case 'c':
       strCertFile = optarg;
