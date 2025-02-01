@@ -546,10 +546,12 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset, const string &strFolder,
     }
   }
 
-  if (!WriteFile(pSignAsset->m_strProvisionData, "%s/embedded.mobileprovision",
-                 m_strAppFolder.c_str())) { // embedded.mobileprovision
-    ZLog::ErrorV(">>> Can't Write embedded.mobileprovision!\n");
-    return false;
+  RemoveFileV("%s/embedded.mobileprovision", m_strAppFolder.c_str());
+  if (!pSignAsset->m_strProvisionData.empty()) {
+    if (!WriteFile(pSignAsset->m_strProvisionData, "%s/embedded.mobileprovision", m_strAppFolder.c_str())) { // embedded.mobileprovision
+      ZLog::ErrorV(">>> Can't Write embedded.mobileprovision!\n");
+      return false;
+    }
   }
 
   if (!arrDyLibFiles.empty()) { // inject dylib
