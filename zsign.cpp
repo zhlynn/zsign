@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -63,33 +64,26 @@ int usage()
 
 	return -1;
 }
-string getCacheDirectory()
-{
+
+string getCacheDirectory() {
     try {
 #ifdef _WIN32
-        char buffer[MAX_PATH];
-        if (GetEnvironmentVariable("USERPROFILE", buffer, MAX_PATH) == 0) {
-            throw std::runtime_error("USERPROFILE environment variable is not set.");  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
+        const char* buffer = std::GetEnvironmentVariable("USERPROFILE");
+        if (!buffer) {
+            throw std::runtime_error("USERPROFILE environment variable is not set.");
         }
 #else
         const char* buffer = std::getenv("HOME");
         if (!buffer) {
-            throw std::runtime_error("HOME environment variable is not set.");  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
+            throw std::runtime_error("HOME environment variable is not set.");
         }
 #endif
-        std::string cacheDir = std::string(buffer) + "/.cache/";
-        struct stat st;
-        if (stat(cacheDir.c_str(), &st) != 0) {
-            if (mkdir(cacheDir.c_str(), 0700) != 0) {
-                throw std::runtime_error("Error creating cache directory: " + cacheDir);  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
-            }
-        }
-        else if (!S_ISDIR(st.st_mode)) {
-            throw std::runtime_error("Path exists but is not a directory: " + cacheDir);  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
+        string cacheDir = std::filesystem::path(buffer) / ".cache";
+        if (!std::filesystem::exists(cacheDir) || !std::filesystem::is_directory(cacheDir)) {
+            throw std::runtime_error("Path exists but is not a directory: " + cacheDir);
         }
         return cacheDir;
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         ZLog::ErrorV("Error while getting cache directory: %s", e.what());
         throw;
     }
