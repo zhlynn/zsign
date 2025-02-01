@@ -159,7 +159,7 @@ bool ZMachO::Sign(ZSignAsset* pSignAsset, bool bForce, string strBundleId, strin
 
 bool ZMachO::ReallocCodeSignSpace()
 {
-	ZLog::Warn(">>> Realloc CodeSignature Space... \n");
+	ZLog::Warn(">>> Realloc CodeSignature space... \n");
 
 	vector<uint32_t> arrMachOesSizes;
 	for (size_t i = 0; i < m_arrArchOes.size(); i++) {
@@ -255,7 +255,7 @@ bool ZMachO::ReallocCodeSignSpace()
 
 bool ZMachO::InjectDyLib(bool bWeakInject, const char* szDyLibPath, bool& bCreate)
 {
-	ZLog::WarnV(">>> Inject DyLib: %s ... \n", szDyLibPath);
+	ZLog::WarnV(">>> Inject dylib: %s ... \n", szDyLibPath);
 
 	vector<uint32_t> arrMachOesSizes;
 	for (size_t i = 0; i < m_arrArchOes.size(); i++) {

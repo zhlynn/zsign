@@ -19,12 +19,9 @@ public:
 	bool Init(const string &strSignerCertFile, const string &strSignerPKeyFile, const string &strProvisionFile, const string &strEntitlementsFile, const string &strPassword);
 
 public:
-	/// If true, carry out ad-hoc signature instead; in that case, `m_strTeamId` and `m_strSubjectCN`
-	/// can be empty.
-	bool m_bAdhoc{};
-	bool m_bSingleBinary{}; ///< `true` if signing single binary, i.e. `CS_EXECSEG_MAIN_BINARY` flag shall be set
-	/// If true, serialize a single CSSLOT_CODEDIRECTORY that uses SHA256; otherwise, use both SHA1 and SHA256 (alternate).
-	bool m_bUseSHA256Only{};
+	bool m_bAdhoc; /// If true, carry out ad-hoc signature instead; in that case, `m_strTeamId` and `m_strSubjectCN`, can be empty.
+	bool m_bSingleBinary; ///< `true` if signing single binary, i.e. `CS_EXECSEG_MAIN_BINARY` flag shall be set
+	bool m_bUseSHA256Only; /// If true, serialize a single CSSLOT_CODEDIRECTORY that uses SHA256; otherwise, use both SHA1 and SHA256 (alternate).
 
 	string m_strTeamId;
 	string m_strSubjectCN;
@@ -32,6 +29,6 @@ public:
 	string m_strEntitlementsData;
 
 private:
-	void *m_evpPKey;
-	void *m_x509Cert;
+	void* m_evpPKey;
+	void* m_x509Cert;
 };

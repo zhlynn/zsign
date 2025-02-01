@@ -189,11 +189,11 @@ int main(int argc, char* argv[])
 	}
 
 	bool bZipFile = false;
-	std::unique_ptr<ZMachO> macho;
+	ZMachO* macho = NULL;
 	if (!IsFolder(strPath.c_str())) {
 		bZipFile = IsZipFile(strPath.c_str());
 		if (!bZipFile) { // macho file
-			macho = std::make_unique<ZMachO>();
+			macho = new ZMachO();
 			if (!macho->Init(strPath.c_str())) {
 				ZLog::ErrorV(">>> Invalid mach-o file! %s\n", strPath.c_str());
 				return -1;
@@ -213,24 +213,31 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	ZTimer timer;
-	ZSignAsset zSignAsset;
-	const bool bSignAssetInitResult = bAdhoc
-		? zSignAsset.Init(strEntitlementsFile)
-		: zSignAsset.Init(strCertFile, strPKeyFile, strProvFile, strEntitlementsFile, strPassword);
-	if (!bSignAssetInitResult) {
-		return -1;
+	ZSignAsset zsa;
+	if (bAdhoc) {
+		if (!zsa.Init(strEntitlementsFile)) {
+			return -1;
+		}
+	} else {
+		if (!zsa.Init(strCertFile, strPKeyFile, strProvFile, strEntitlementsFile, strPassword)) {
+			return -1;
+		}
 	}
-	zSignAsset.m_bUseSHA256Only = bSHA256Only;
-	zSignAsset.m_bSingleBinary = (macho != nullptr);
 
-	if (zSignAsset.m_bSingleBinary) {
-		ZLog::PrintV(">>>%s Signing:\t%s\n", (zSignAsset.m_bAdhoc ? " Ad-hoc" : ""), strPath.c_str());
-		macho->Sign(&zSignAsset, bForce, strBundleId, /*strInfoPlistSHA1=*/{}, /*strInfoPlistSHA256=*/{},
-			/*strCodeResourcesData=*/{});
+	zsa.m_bUseSHA256Only = bSHA256Only;
+	zsa.m_bSingleBinary = (NULL != macho);
+
+	if (zsa.m_bSingleBinary) {
+		ZLog::PrintV(">>>%s Signing:\t%s\n", (zsa.m_bAdhoc ? " Ad-hoc" : ""), strPath.c_str());
+		string strInfoPlistSHA1;
+		string strInfoPlistSHA256;
+		string strCodeResourcesData;
+		macho->Sign(&zsa, bForce, strBundleId, strInfoPlistSHA1, strInfoPlistSHA256, strCodeResourcesData);
 		macho->Free();
 		return 0;
 	}
+
+	ZTimer timer;
 
 	bool bEnableCache = true;
 	string strFolder = strPath;
@@ -250,9 +257,7 @@ int main(int argc, char* argv[])
 
 	timer.Reset();
 	ZAppBundle bundle;
-	bool bRet = bundle.SignFolder(&zSignAsset, strFolder, strBundleId,
-		strBundleVersion, strDisplayName, arrDyLibFiles,
-		bForce, bWeakInject, bEnableCache);
+	bool bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDyLibFiles, bForce, bWeakInject, bEnableCache);
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	if (bInstall && strOutputFile.empty()) {
@@ -282,8 +287,7 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-		timer.PrintResult(true, ">>> Archive OK! (%s)",
-			GetFileSizeString(strOutputFile.c_str()).c_str());
+		timer.PrintResult(true, ">>> Archive OK! (%s)", GetFileSizeString(strOutputFile.c_str()).c_str());
 	}
 
 	if (bRet && bInstall) {

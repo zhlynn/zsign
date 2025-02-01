@@ -311,7 +311,7 @@ void ZArchO::PrintInfo()
 	}
 
 	if (NULL == m_pSignBase || m_uSignLength <= 0) {
-		ZLog::Warn(">>> Can't Find CodeSignature Segment!\n");
+		ZLog::Warn(">>> Can't find CodeSignature segment!\n");
 	} else {
 		ParseCodeSignature(m_pSignBase);
 	}
@@ -520,7 +520,7 @@ bool ZArchO::Sign(ZSignAsset* pSignAsset, bool bForce, const string& strBundleId
 {
 	if (NULL == m_pSignBase) {
 		m_bEnoughSpace = false;
-		ZLog::Warn(">>> Can't Find CodeSignature Segment!\n");
+		ZLog::Warn(">>> Can't find CodeSignature segment!\n");
 		return false;
 	}
 
@@ -629,9 +629,9 @@ bool ZArchO::InjectDyLib(bool bWeakInject, const char* szDyLibPath, bool& bCreat
 			if (0 == strcmp(szDyLib, szDyLibPath)) {
 				if ((bWeakInject && (LC_LOAD_WEAK_DYLIB != uLoadType)) || (!bWeakInject && (LC_LOAD_DYLIB != uLoadType))) {
 					dlc->cmd = BO((uint32_t)(bWeakInject ? LC_LOAD_WEAK_DYLIB : LC_LOAD_DYLIB));
-					ZLog::WarnV(">>> DyLib Load Type Changed! %s -> %s\n", (LC_LOAD_DYLIB == uLoadType) ? "LC_LOAD_DYLIB" : "LC_LOAD_WEAK_DYLIB", bWeakInject ? "LC_LOAD_WEAK_DYLIB" : "LC_LOAD_DYLIB");
+					ZLog::WarnV(">>> dylib load type Changed! %s -> %s\n", (LC_LOAD_DYLIB == uLoadType) ? "LC_LOAD_DYLIB" : "LC_LOAD_WEAK_DYLIB", bWeakInject ? "LC_LOAD_WEAK_DYLIB" : "LC_LOAD_DYLIB");
 				} else {
-					ZLog::WarnV(">>> DyLib Is Already Existed! %s\n");
+					ZLog::WarnV(">>> dylib is already existed! %s\n", szDyLib);
 				}
 				return true;
 			}

@@ -372,8 +372,8 @@ bool ZAppBundle::SignNode(JValue& jvNode)
 
 	bool bForceSign = m_bForceSign;
 	if ("/" == strFolder && !m_arrDyLibPaths.empty()) { // inject dylib
-		for (string strDyLibPath : m_arrDyLibPaths) {
-			macho.InjectDyLib(m_bWeakInject, strDyLibPath.c_str(), bForceSign);
+		for (size_t i = 0; i < m_arrDyLibPaths.size(); i++) {
+			macho.InjectDyLib(m_bWeakInject, m_arrDyLibPaths[i].c_str(), bForceSign);
 		}
 	}
 
@@ -526,7 +526,8 @@ bool ZAppBundle::SignFolder(ZSignAsset* pSignAsset,
 	}
 
 	if (!arrDyLibFiles.empty()) { // inject dylib
-		for (string strDyLibFile : arrDyLibFiles) {
+		for (size_t i = 0; i < arrDyLibFiles.size(); i++) {
+			const string& strDyLibFile = arrDyLibFiles[i];
 			string strDyLibData;
 			ReadFile(strDyLibFile.c_str(), strDyLibData);
 			if (!strDyLibData.empty()) {
