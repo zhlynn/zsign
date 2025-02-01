@@ -63,46 +63,36 @@ int usage()
 
 	return -1;
 }
-
 string getCacheDirectory()
 {
-    const char* homeDir = nullptr;
-
+    try {
 #ifdef _WIN32
-    char homeDirBuffer[MAX_PATH];
-    if (GetEnvironmentVariable("USERPROFILE", homeDirBuffer, MAX_PATH) > 0)
-    {
-        homeDir = homeDirBuffer;
-    }
-    else
-    {
-        ZLog::ErrorV(">>> USERPROFILE environment variable is not set.");
-        return "";
-    }
-#else
-    homeDir = std::getenv("HOME");
-    if (homeDir == nullptr)
-    {
-        ZLog::ErrorV(">>> HOME environment variable is not set.");
-        return "";
-    }
-#endif
-
-    std::string cacheDir = std::string(homeDir) + "/.cache/";
-
-    struct stat st;
-    if (stat(cacheDir.c_str(), &st) != 0){
-        if (mkdir(cacheDir.c_str(), 0700) != 0) {
-            ZLog::ErrorV("Error creating cache directory: %s", cacheDir.c_str());
-            return "";
+        char buffer[MAX_PATH];
+        if (GetEnvironmentVariable("USERPROFILE", buffer, MAX_PATH) == 0) {
+            throw std::runtime_error("USERPROFILE environment variable is not set.");  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
         }
+#else
+        const char* buffer = std::getenv("HOME");
+        if (!buffer) {
+            throw std::runtime_error("HOME environment variable is not set.");  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
+        }
+#endif
+        std::string cacheDir = std::string(buffer) + "/.cache/";
+        struct stat st;
+        if (stat(cacheDir.c_str(), &st) != 0) {
+            if (mkdir(cacheDir.c_str(), 0700) != 0) {
+                throw std::runtime_error("Error creating cache directory: " + cacheDir);  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
+            }
+        }
+        else if (!S_ISDIR(st.st_mode)) {
+            throw std::runtime_error("Path exists but is not a directory: " + cacheDir);  // In this instead returning empty string throw an exception, following @jalopezg-git's advice.
+        }
+        return cacheDir;
     }
-    else if (!S_ISDIR(st.st_mode))
-    {
-        ZLog::ErrorV("Path exists but is not a directory: %s", cacheDir.c_str());
-        return "";
+    catch (const std::exception& e) {
+        ZLog::ErrorV("Error while getting cache directory: %s", e.what());
+        throw;
     }
-    return cacheDir;
 }
 
 int main(int argc, char* argv[])
