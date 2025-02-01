@@ -63,7 +63,8 @@ bool ZAppBundle::GetSignFolderInfo(const string& strFolder, JValue& jvNode, bool
 	jvInfo.readPList(strInfoPlistData);
 	string strBundleId = jvInfo["CFBundleIdentifier"];
 	string strBundleExe = jvInfo["CFBundleExecutable"];
-	string strBundleVersion = jvInfo["CFBundleVersion"];
+	string strBundleVersion = jvInfo["CFBundleShortVersionString"];
+	string strRequiredOSVersion = jvInfo["MinimumOSVersion"];
 	if (strBundleId.empty() || strBundleExe.empty()) {
 		return false;
 	}
@@ -75,6 +76,7 @@ bool ZAppBundle::GetSignFolderInfo(const string& strFolder, JValue& jvNode, bool
 	jvNode["bid"] = strBundleId;
 	jvNode["bver"] = strBundleVersion;
 	jvNode["exec"] = strBundleExe;
+	jvNode["ros"] = strRequiredOSVersion;
 	jvNode["sha1"] = strInfoPlistSHA1Base64;
 	jvNode["sha2"] = strInfoPlistSHA256Base64;
 
@@ -569,6 +571,7 @@ bool ZAppBundle::SignFolder(ZSignAsset* pSignAsset,
 	ZLog::PrintV(">>> BundleVer: \t%s\n", jvRoot["bver"].asCString());
 	ZLog::PrintV(">>> TeamId: \t%s\n", m_pSignAsset->m_strTeamId.c_str());
 	ZLog::PrintV(">>> SubjectCN: \t%s\n", m_pSignAsset->m_strSubjectCN.c_str());
+	ZLog::PrintV(">>> Minimum iOS Version: \t%s\n", jvRoot["ros"].asCString());
 	ZLog::PrintV(">>> ReadCache: \t%s\n", m_bForceSign ? "NO" : "YES");
 
 	if (SignNode(jvRoot)) {

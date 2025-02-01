@@ -64,6 +64,47 @@ int usage()
 	return -1;
 }
 
+string getCacheDirectory()
+{
+    const char* homeDir = nullptr;
+
+#ifdef _WIN32
+    char homeDirBuffer[MAX_PATH];
+    if (GetEnvironmentVariable("USERPROFILE", homeDirBuffer, MAX_PATH) > 0)
+    {
+        homeDir = homeDirBuffer;
+    }
+    else
+    {
+        ZLog::ErrorV(">>> USERPROFILE environment variable is not set.");
+        return "";
+    }
+#else
+    homeDir = std::getenv("HOME");
+    if (homeDir == nullptr)
+    {
+        ZLog::ErrorV(">>> HOME environment variable is not set.");
+        return "";
+    }
+#endif
+
+    std::string cacheDir = std::string(homeDir) + "/.cache/";
+
+    struct stat st;
+    if (stat(cacheDir.c_str(), &st) != 0){
+        if (mkdir(cacheDir.c_str(), 0700) != 0) {
+            ZLog::ErrorV("Error creating cache directory: %s", cacheDir.c_str());
+            return "";
+        }
+    }
+    else if (!S_ISDIR(st.st_mode))
+    {
+        ZLog::ErrorV("Path exists but is not a directory: %s", cacheDir.c_str());
+        return "";
+    }
+    return cacheDir;
+}
+
 int main(int argc, char* argv[])
 {
 	ZTimer gtimer;
@@ -90,8 +131,8 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfVvas2hc:k:m:o:ip:e:b:n:z:ql:w",
-		options, &argslot))) {
+	while (-1 != (opt = getopt_long(argc, argv, "dfVvas2hc:k:m:o:ip:e:b:n:z:ql:w", options, &argslot)))
+	{
 		switch (opt) {
 		case 'd':
 			ZLog::SetLogLever(ZLog::E_DEBUG);
@@ -244,7 +285,7 @@ int main(int argc, char* argv[])
 	if (bZipFile) { // ipa file
 		bForce = true;
 		bEnableCache = false;
-		StringFormatV(strFolder, "/tmp/zsign_folder_%llu", timer.Reset());
+		StringFormatV(strFolder, "%s/zsign_folder_%llu", getCacheDirectory().c_str(), timer.Reset());
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
 		if (!SystemExecV("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str())) {
@@ -261,7 +302,7 @@ int main(int argc, char* argv[])
 	timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	if (bInstall && strOutputFile.empty()) {
-		StringFormatV(strOutputFile, "/tmp/zsign_temp_%llu.ipa", GetMicroSecond());
+		StringFormatV(strOutputFile, "%s/zsign_temp_%llu.ipa", getCacheDirectory().c_str(), GetMicroSecond());
 	}
 
 	if (!strOutputFile.empty()) {
@@ -294,11 +335,12 @@ int main(int argc, char* argv[])
 		SystemExecV("ideviceinstaller -i '%s'", strOutputFile.c_str());
 	}
 
-	if (0 == strOutputFile.find("/tmp/zsign_tmp_")) {
+	string tempPattern = getCacheDirectory() + "/zsign_temp_";
+	if (0 == strOutputFile.find(tempPattern)) {
 		RemoveFile(strOutputFile.c_str());
 	}
-
-	if (0 == strFolder.find("/tmp/zsign_folder_")) {
+	string folderPattern = getCacheDirectory() + "/zsign_folder_";
+	if (0 == strFolder.find(folderPattern)) {
 		RemoveFolder(strFolder.c_str());
 	}
 
