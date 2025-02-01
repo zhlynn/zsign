@@ -42,22 +42,22 @@ JValue::JValue(double val) : m_eType(E_FLOAT)
 	m_Value.vFloat = val;
 }
 
-JValue::JValue(const char *val) : m_eType(E_STRING)
+JValue::JValue(const char* val) : m_eType(E_STRING)
 {
 	m_Value.vString = NewString(val);
 }
 
-JValue::JValue(const string &val) : m_eType(E_STRING)
+JValue::JValue(const string& val) : m_eType(E_STRING)
 {
 	m_Value.vString = NewString(val.c_str());
 }
 
-JValue::JValue(const JValue &other)
+JValue::JValue(const JValue& other)
 {
 	CopyValue(other);
 }
 
-JValue::JValue(const char *val, size_t len) : m_eType(E_DATA)
+JValue::JValue(const char* val, size_t len) : m_eType(E_DATA)
 {
 	m_Value.vData = new string();
 	m_Value.vData->append(val, len);
@@ -110,8 +110,7 @@ bool JValue::isObject() const
 
 bool JValue::isEmpty() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_NULL:
 		return true;
 		break;
@@ -140,7 +139,7 @@ bool JValue::isEmpty() const
 	return true;
 }
 
-JValue::operator const char *() const
+JValue::operator const char* () const
 {
 	return asCString();
 }
@@ -170,23 +169,21 @@ JValue::operator bool() const
 	return asBool();
 }
 
-char *JValue::NewString(const char *cstr)
+char* JValue::NewString(const char* cstr)
 {
-	char *str = NULL;
-	if (NULL != cstr)
-	{
+	char* str = NULL;
+	if (NULL != cstr) {
 		size_t len = (strlen(cstr) + 1) * sizeof(char);
-		str = (char *)malloc(len);
+		str = (char*)malloc(len);
 		memcpy(str, cstr, len);
 	}
 	return str;
 }
 
-void JValue::CopyValue(const JValue &src)
+void JValue::CopyValue(const JValue& src)
 {
 	m_eType = src.m_eType;
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_ARRAY:
 		m_Value.vArray = (NULL == src.m_Value.vArray) ? NULL : new vector<JValue>(*(src.m_Value.vArray));
 		break;
@@ -198,13 +195,10 @@ void JValue::CopyValue(const JValue &src)
 		break;
 	case E_DATA:
 	{
-		if (NULL != src.m_Value.vData)
-		{
+		if (NULL != src.m_Value.vData) {
 			m_Value.vData = new string();
 			*m_Value.vData = *src.m_Value.vData;
-		}
-		else
-		{
+		} else {
 			m_Value.vData = NULL;
 		}
 	}
@@ -217,8 +211,7 @@ void JValue::CopyValue(const JValue &src)
 
 void JValue::Free()
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_INT:
 	{
 		m_Value.vInt64 = 0;
@@ -236,8 +229,7 @@ void JValue::Free()
 	break;
 	case E_STRING:
 	{
-		if (NULL != m_Value.vString)
-		{
+		if (NULL != m_Value.vString) {
 			free(m_Value.vString);
 			m_Value.vString = NULL;
 		}
@@ -245,8 +237,7 @@ void JValue::Free()
 	break;
 	case E_ARRAY:
 	{
-		if (NULL != m_Value.vArray)
-		{
+		if (NULL != m_Value.vArray) {
 			delete m_Value.vArray;
 			m_Value.vArray = NULL;
 		}
@@ -254,8 +245,7 @@ void JValue::Free()
 	break;
 	case E_OBJECT:
 	{
-		if (NULL != m_Value.vObject)
-		{
+		if (NULL != m_Value.vObject) {
 			delete m_Value.vObject;
 			m_Value.vObject = NULL;
 		}
@@ -268,8 +258,7 @@ void JValue::Free()
 	break;
 	case E_DATA:
 	{
-		if (NULL != m_Value.vData)
-		{
+		if (NULL != m_Value.vData) {
 			delete m_Value.vData;
 			m_Value.vData = NULL;
 		}
@@ -281,10 +270,9 @@ void JValue::Free()
 	m_eType = E_NULL;
 }
 
-JValue &JValue::operator=(const JValue &other)
+JValue& JValue::operator=(const JValue& other)
 {
-	if (this != &other)
-	{
+	if (this != &other) {
 		Free();
 		CopyValue(other);
 	}
@@ -303,8 +291,7 @@ int JValue::asInt() const
 
 int64_t JValue::asInt64() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_INT:
 		return m_Value.vInt64;
 		break;
@@ -325,8 +312,7 @@ int64_t JValue::asInt64() const
 
 double JValue::asFloat() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_INT:
 		return double(m_Value.vInt64);
 		break;
@@ -347,8 +333,7 @@ double JValue::asFloat() const
 
 bool JValue::asBool() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_BOOL:
 		return m_Value.vBool;
 		break;
@@ -381,8 +366,7 @@ bool JValue::asBool() const
 
 string JValue::asString() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_BOOL:
 		return m_Value.vBool ? "true" : "false";
 		break;
@@ -421,10 +405,9 @@ string JValue::asString() const
 	return "";
 }
 
-const char *JValue::asCString() const
+const char* JValue::asCString() const
 {
-	if (E_STRING == m_eType && NULL != m_Value.vString)
-	{
+	if (E_STRING == m_eType && NULL != m_Value.vString) {
 		return m_Value.vString;
 	}
 	return "";
@@ -432,8 +415,7 @@ const char *JValue::asCString() const
 
 size_t JValue::size() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_ARRAY:
 		return (NULL == m_Value.vArray) ? 0 : m_Value.vArray->size();
 		break;
@@ -449,41 +431,38 @@ size_t JValue::size() const
 	return 0;
 }
 
-JValue &JValue::operator[](int index)
+JValue& JValue::operator[](int index)
 {
 	return (*this)[(size_t)(index < 0 ? 0 : index)];
 }
 
-const JValue &JValue::operator[](int index) const
+const JValue& JValue::operator[](int index) const
 {
 	return (*this)[(size_t)(index < 0 ? 0 : index)];
 }
 
-JValue &JValue::operator[](int64_t index)
+JValue& JValue::operator[](int64_t index)
 {
 	return (*this)[(size_t)(index < 0 ? 0 : index)];
 }
 
-const JValue &JValue::operator[](int64_t index) const
+const JValue& JValue::operator[](int64_t index) const
 {
 	return (*this)[(size_t)(index < 0 ? 0 : index)];
 }
 
-JValue &JValue::operator[](size_t index)
+JValue& JValue::operator[](size_t index)
 {
-	if (E_ARRAY != m_eType || NULL == m_Value.vArray)
-	{
+	if (E_ARRAY != m_eType || NULL == m_Value.vArray) {
 		Free();
 		m_eType = E_ARRAY;
 		m_Value.vArray = new vector<JValue>();
 	}
 
 	size_t sum = m_Value.vArray->size();
-	if (sum <= index)
-	{
+	if (sum <= index) {
 		size_t fill = index - sum;
-		for (size_t i = 0; i <= fill; i++)
-		{
+		for (size_t i = 0; i <= fill; i++) {
 			m_Value.vArray->push_back(null);
 		}
 	}
@@ -491,42 +470,36 @@ JValue &JValue::operator[](size_t index)
 	return m_Value.vArray->at(index);
 }
 
-const JValue &JValue::operator[](size_t index) const
+const JValue& JValue::operator[](size_t index) const
 {
-	if (E_ARRAY == m_eType && NULL != m_Value.vArray)
-	{
-		if (index < m_Value.vArray->size())
-		{
+	if (E_ARRAY == m_eType && NULL != m_Value.vArray) {
+		if (index < m_Value.vArray->size()) {
 			return m_Value.vArray->at(index);
 		}
 	}
 	return null;
 }
 
-JValue &JValue::operator[](const string &key)
+JValue& JValue::operator[](const string& key)
 {
 	return (*this)[key.c_str()];
 }
 
-const JValue &JValue::operator[](const string &key) const
+const JValue& JValue::operator[](const string& key) const
 {
 	return (*this)[key.c_str()];
 }
 
-JValue &JValue::operator[](const char *key)
+JValue& JValue::operator[](const char* key)
 {
 	map<string, JValue>::iterator it;
-	if (E_OBJECT != m_eType || NULL == m_Value.vObject)
-	{
+	if (E_OBJECT != m_eType || NULL == m_Value.vObject) {
 		Free();
 		m_eType = E_OBJECT;
 		m_Value.vObject = new map<string, JValue>();
-	}
-	else
-	{
+	} else {
 		it = m_Value.vObject->find(key);
-		if (it != m_Value.vObject->end())
-		{
+		if (it != m_Value.vObject->end()) {
 			return it->second;
 		}
 	}
@@ -534,25 +507,21 @@ JValue &JValue::operator[](const char *key)
 	return it->second;
 }
 
-const JValue &JValue::operator[](const char *key) const
+const JValue& JValue::operator[](const char* key) const
 {
-	if (E_OBJECT == m_eType && NULL != m_Value.vObject)
-	{
+	if (E_OBJECT == m_eType && NULL != m_Value.vObject) {
 		map<string, JValue>::const_iterator it = m_Value.vObject->find(key);
-		if (it != m_Value.vObject->end())
-		{
+		if (it != m_Value.vObject->end()) {
 			return it->second;
 		}
 	}
 	return null;
 }
 
-bool JValue::has(const char *key) const
+bool JValue::has(const char* key) const
 {
-	if (E_OBJECT == m_eType && NULL != m_Value.vObject)
-	{
-		if (m_Value.vObject->end() != m_Value.vObject->find(key))
-		{
+	if (E_OBJECT == m_eType && NULL != m_Value.vObject) {
+		if (m_Value.vObject->end() != m_Value.vObject->find(key)) {
 			return true;
 		}
 	}
@@ -560,14 +529,11 @@ bool JValue::has(const char *key) const
 	return false;
 }
 
-int JValue::index(const char *ele) const
+int JValue::index(const char* ele) const
 {
-	if (E_ARRAY == m_eType && NULL != m_Value.vArray)
-	{
-		for (size_t i = 0; i < m_Value.vArray->size(); i++)
-		{
-			if (ele == (*m_Value.vArray)[i].asString())
-			{
+	if (E_ARRAY == m_eType && NULL != m_Value.vArray) {
+		for (size_t i = 0; i < m_Value.vArray->size(); i++) {
+			if (ele == (*m_Value.vArray)[i].asString()) {
 				return (int)i;
 			}
 		}
@@ -576,25 +542,24 @@ int JValue::index(const char *ele) const
 	return -1;
 }
 
-JValue &JValue::at(int index)
+JValue& JValue::at(int index)
 {
 	return (*this)[index];
 }
 
-JValue &JValue::at(size_t index)
+JValue& JValue::at(size_t index)
 {
 	return (*this)[index];
 }
 
-JValue &JValue::at(const char *key)
+JValue& JValue::at(const char* key)
 {
 	return (*this)[key];
 }
 
 bool JValue::remove(int index)
 {
-	if (index >= 0)
-	{
+	if (index >= 0) {
 		return remove((size_t)index);
 	}
 	return false;
@@ -602,10 +567,8 @@ bool JValue::remove(int index)
 
 bool JValue::remove(size_t index)
 {
-	if (E_ARRAY == m_eType && NULL != m_Value.vArray)
-	{
-		if (index < m_Value.vArray->size())
-		{
+	if (E_ARRAY == m_eType && NULL != m_Value.vArray) {
+		if (index < m_Value.vArray->size()) {
 			m_Value.vArray->erase(m_Value.vArray->begin() + index);
 			return true;
 		}
@@ -613,12 +576,10 @@ bool JValue::remove(size_t index)
 	return false;
 }
 
-bool JValue::remove(const char *key)
+bool JValue::remove(const char* key)
 {
-	if (E_OBJECT == m_eType && NULL != m_Value.vObject)
-	{
-		if (m_Value.vObject->end() != m_Value.vObject->find(key))
-		{
+	if (E_OBJECT == m_eType && NULL != m_Value.vObject) {
+		if (m_Value.vObject->end() != m_Value.vObject->find(key)) {
 			m_Value.vObject->erase(key);
 			return !has(key);
 		}
@@ -626,15 +587,13 @@ bool JValue::remove(const char *key)
 	return false;
 }
 
-bool JValue::keys(vector<string> &arrKeys) const
+bool JValue::keys(vector<string>& arrKeys) const
 {
-	if (E_OBJECT == m_eType && NULL != m_Value.vObject)
-	{
+	if (E_OBJECT == m_eType && NULL != m_Value.vObject) {
 		arrKeys.reserve(m_Value.vObject->size());
 		map<string, JValue>::iterator itbeg = m_Value.vObject->begin();
 		map<string, JValue>::iterator itend = m_Value.vObject->end();
-		for (; itbeg != itend; itbeg++)
-		{
+		for (; itbeg != itend; itbeg++) {
 			arrKeys.push_back((itbeg->first).c_str());
 		}
 		return true;
@@ -648,87 +607,70 @@ string JValue::write() const
 	return write(strDoc);
 }
 
-const char *JValue::write(string &strDoc) const
+const char* JValue::write(string& strDoc) const
 {
 	strDoc.clear();
 	JWriter::FastWrite((*this), strDoc);
 	return strDoc.c_str();
 }
 
-bool JValue::read(const string &strdoc, string *pstrerr)
+bool JValue::read(const string& strdoc, string* pstrerr)
 {
 	return read(strdoc.c_str(), pstrerr);
 }
 
-bool JValue::read(const char *pdoc, string *pstrerr)
+bool JValue::read(const char* pdoc, string* pstrerr)
 {
 	JReader reader;
 	bool bret = reader.parse(pdoc, *this);
-	if (!bret)
-	{
-		if (NULL != pstrerr)
-		{
+	if (!bret) {
+		if (NULL != pstrerr) {
 			reader.error(*pstrerr);
 		}
 	}
 	return bret;
 }
 
-JValue &JValue::front()
+JValue& JValue::front()
 {
-	if (E_ARRAY == m_eType)
-	{
-		if (size() > 0)
-		{
+	if (E_ARRAY == m_eType) {
+		if (size() > 0) {
 			return *(m_Value.vArray->begin());
 		}
-	}
-	else if (E_OBJECT == m_eType)
-	{
-		if (size() > 0)
-		{
+	} else if (E_OBJECT == m_eType) {
+		if (size() > 0) {
 			return m_Value.vObject->begin()->second;
 		}
 	}
 	return (*this);
 }
 
-JValue &JValue::back()
+JValue& JValue::back()
 {
-	if (E_ARRAY == m_eType)
-	{
-		if (size() > 0)
-		{
+	if (E_ARRAY == m_eType) {
+		if (size() > 0) {
 			return *(m_Value.vArray->rbegin());
 		}
-	}
-	else if (E_OBJECT == m_eType)
-	{
-		if (size() > 0)
-		{
+	} else if (E_OBJECT == m_eType) {
+		if (size() > 0) {
 			return m_Value.vObject->rbegin()->second;
 		}
 	}
 	return (*this);
 }
 
-bool JValue::join(JValue &jv)
+bool JValue::join(JValue& jv)
 {
-	if ((E_OBJECT == m_eType || E_NULL == m_eType) && E_OBJECT == jv.type())
-	{
+	if ((E_OBJECT == m_eType || E_NULL == m_eType) && E_OBJECT == jv.type()) {
 		vector<string> arrKeys;
 		jv.keys(arrKeys);
-		for (size_t i = 0; i < arrKeys.size(); i++)
-		{
+		for (size_t i = 0; i < arrKeys.size(); i++) {
 			(*this)[arrKeys[i]] = jv[arrKeys[i]];
 		}
 		return true;
-	}
-	else if ((E_ARRAY == m_eType || E_NULL == m_eType) && E_ARRAY == jv.type())
-	{
+	} else if ((E_ARRAY == m_eType || E_NULL == m_eType) && E_ARRAY == jv.type()) {
 		size_t count = this->size();
-		for (size_t i = 0; i < jv.size(); i++)
-		{
+		for (size_t i = 0; i < jv.size(); i++) {
 			(*this)[count] = jv[i];
 			count++;
 		}
@@ -738,10 +680,9 @@ bool JValue::join(JValue &jv)
 	return false;
 }
 
-bool JValue::append(JValue &jv)
+bool JValue::append(JValue& jv)
 {
-	if (E_ARRAY == m_eType || E_NULL == m_eType)
-	{
+	if (E_ARRAY == m_eType || E_NULL == m_eType) {
 		(*this)[((this->size() > 0) ? this->size() : 0)] = jv;
 		return true;
 	}
@@ -768,27 +709,26 @@ bool JValue::push_back(int64_t val)
 	return push_back(JValue(val));
 }
 
-bool JValue::push_back(const char *val)
+bool JValue::push_back(const char* val)
 {
 	return push_back(JValue(val));
 }
 
-bool JValue::push_back(const string &val)
+bool JValue::push_back(const string& val)
 {
 	return push_back(JValue(val));
 }
 
-bool JValue::push_back(const JValue &jval)
+bool JValue::push_back(const JValue& jval)
 {
-	if (E_ARRAY == m_eType || E_NULL == m_eType)
-	{
+	if (E_ARRAY == m_eType || E_NULL == m_eType) {
 		(*this)[size()] = jval;
 		return true;
 	}
 	return false;
 }
 
-bool JValue::push_back(const char *val, size_t len)
+bool JValue::push_back(const char* val, size_t len)
 {
 	return push_back(JValue(val, len));
 }
@@ -799,7 +739,7 @@ std::string JValue::styleWrite() const
 	return styleWrite(strDoc);
 }
 
-const char *JValue::styleWrite(string &strDoc) const
+const char* JValue::styleWrite(string& strDoc) const
 {
 	strDoc.clear();
 	JWriter jw;
@@ -814,7 +754,7 @@ void JValue::assignDate(time_t val)
 	m_Value.vDate = val;
 }
 
-void JValue::assignData(const char *val, size_t size)
+void JValue::assignData(const char* val, size_t size)
 {
 	Free();
 	m_eType = E_DATA;
@@ -831,16 +771,14 @@ void JValue::assignDateString(time_t val)
 
 time_t JValue::asDate() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_DATE:
 		return m_Value.vDate;
 		break;
 	case E_STRING:
 	{
-		if (isDateString())
-		{
-			tm ft = {0};
+		if (isDateString()) {
+			tm ft = { 0 };
 			sscanf(m_Value.vString + 5, "%04d-%02d-%02dT%02d:%02d:%02dZ", &ft.tm_year, &ft.tm_mon, &ft.tm_mday, &ft.tm_hour, &ft.tm_min, &ft.tm_sec);
 			ft.tm_mon -= 1;
 			ft.tm_year -= 1900;
@@ -856,18 +794,16 @@ time_t JValue::asDate() const
 
 string JValue::asData() const
 {
-	switch (m_eType)
-	{
+	switch (m_eType) {
 	case E_DATA:
 		return (NULL == m_Value.vData) ? nullData : *m_Value.vData;
 		break;
 	case E_STRING:
 	{
-		if (isDataString())
-		{
+		if (isDataString()) {
 			ZBase64 b64;
 			int nDataLen = 0;
-			const char *pdata = b64.Decode(m_Value.vString + 5, 0, &nDataLen);
+			const char* pdata = b64.Decode(m_Value.vString + 5, 0, &nDataLen);
 			string strdata;
 			strdata.append(pdata, nDataLen);
 			return strdata;
@@ -893,14 +829,10 @@ bool JValue::isDate() const
 
 bool JValue::isDataString() const
 {
-	if (E_STRING == m_eType)
-	{
-		if (NULL != m_Value.vString)
-		{
-			if (strlen(m_Value.vString) >= 5)
-			{
-				if (0 == memcmp(m_Value.vString, "data:", 5))
-				{
+	if (E_STRING == m_eType) {
+		if (NULL != m_Value.vString) {
+			if (strlen(m_Value.vString) >= 5) {
+				if (0 == memcmp(m_Value.vString, "data:", 5)) {
 					return true;
 				}
 			}
@@ -912,17 +844,12 @@ bool JValue::isDataString() const
 
 bool JValue::isDateString() const
 {
-	if (E_STRING == m_eType)
-	{
-		if (NULL != m_Value.vString)
-		{
-			if (25 == strlen(m_Value.vString))
-			{
-				if (0 == memcmp(m_Value.vString, "date:", 5))
-				{
-					const char *pdate = m_Value.vString + 5;
-					if ('T' == pdate[10] && 'Z' == pdate[19])
-					{
+	if (E_STRING == m_eType) {
+		if (NULL != m_Value.vString) {
+			if (25 == strlen(m_Value.vString)) {
+				if (0 == memcmp(m_Value.vString, "date:", 5)) {
+					const char* pdate = m_Value.vString + 5;
+					if ('T' == pdate[10] && 'Z' == pdate[19]) {
 						return true;
 					}
 				}
@@ -933,29 +860,25 @@ bool JValue::isDateString() const
 	return false;
 }
 
-bool JValue::readPList(const string &strdoc, string *pstrerr /*= NULL*/)
+bool JValue::readPList(const string& strdoc, string* pstrerr /*= NULL*/)
 {
 	return readPList(strdoc.data(), strdoc.size(), pstrerr);
 }
 
-bool JValue::readPList(const char *pdoc, size_t len /*= 0*/, string *pstrerr /*= NULL*/)
+bool JValue::readPList(const char* pdoc, size_t len /*= 0*/, string* pstrerr /*= NULL*/)
 {
-	if (NULL == pdoc)
-	{
+	if (NULL == pdoc) {
 		return false;
 	}
 
-	if (0 == len)
-	{
+	if (0 == len) {
 		len = strlen(pdoc);
 	}
 
 	PReader reader;
 	bool bret = reader.parse(pdoc, len, *this);
-	if (!bret)
-	{
-		if (NULL != pstrerr)
-		{
+	if (!bret) {
+		if (NULL != pstrerr) {
 			reader.error(*pstrerr);
 		}
 	}
@@ -963,27 +886,22 @@ bool JValue::readPList(const char *pdoc, size_t len /*= 0*/, string *pstrerr /*=
 	return bret;
 }
 
-bool JValue::readFile(const char *file, string *pstrerr /*= NULL*/)
+bool JValue::readFile(const char* file, string* pstrerr /*= NULL*/)
 {
-	if (NULL != file)
-	{
-		FILE *fp = fopen(file, "rb");
-		if (NULL != fp)
-		{
+	if (NULL != file) {
+		FILE* fp = fopen(file, "rb");
+		if (NULL != fp) {
 			string strdata;
 			struct stat stbuf;
-			if (0 == fstat(fileno(fp), &stbuf))
-			{
-				if (S_ISREG(stbuf.st_mode))
-				{
+			if (0 == fstat(fileno(fp), &stbuf)) {
+				if (S_ISREG(stbuf.st_mode)) {
 					strdata.reserve(stbuf.st_size);
 				}
 			}
 
-			char buf[4096] = {0};
+			char buf[4096] = { 0 };
 			int nread = (int)fread(buf, 1, 4096, fp);
-			while (nread > 0)
-			{
+			while (nread > 0) {
 				strdata.append(buf, nread);
 				nread = (int)fread(buf, 1, 4096, fp);
 			}
@@ -995,27 +913,22 @@ bool JValue::readFile(const char *file, string *pstrerr /*= NULL*/)
 	return false;
 }
 
-bool JValue::readPListFile(const char *file, string *pstrerr /*= NULL*/)
+bool JValue::readPListFile(const char* file, string* pstrerr /*= NULL*/)
 {
-	if (NULL != file)
-	{
-		FILE *fp = fopen(file, "rb");
-		if (NULL != fp)
-		{
+	if (NULL != file) {
+		FILE* fp = fopen(file, "rb");
+		if (NULL != fp) {
 			string strdata;
 			struct stat stbuf;
-			if (0 == fstat(fileno(fp), &stbuf))
-			{
-				if (S_ISREG(stbuf.st_mode))
-				{
+			if (0 == fstat(fileno(fp), &stbuf)) {
+				if (S_ISREG(stbuf.st_mode)) {
 					strdata.reserve(stbuf.st_size);
 				}
 			}
 
-			char buf[4096] = {0};
+			char buf[4096] = { 0 };
 			int nread = (int)fread(buf, 1, 4096, fp);
-			while (nread > 0)
-			{
+			while (nread > 0) {
 				strdata.append(buf, nread);
 				nread = (int)fread(buf, 1, 4096, fp);
 			}
@@ -1027,22 +940,18 @@ bool JValue::readPListFile(const char *file, string *pstrerr /*= NULL*/)
 	return false;
 }
 
-bool JValue::WriteDataToFile(const char *file, const char *data, size_t len)
+bool JValue::WriteDataToFile(const char* file, const char* data, size_t len)
 {
-	if (NULL == file || NULL == data || len <= 0)
-	{
+	if (NULL == file || NULL == data || len <= 0) {
 		return false;
 	}
 
-	FILE *fp = fopen(file, "wb");
-	if (NULL != fp)
-	{
+	FILE* fp = fopen(file, "wb");
+	if (NULL != fp) {
 		int towrite = (int)len;
-		while (towrite > 0)
-		{
+		while (towrite > 0) {
 			int nwrite = (int)fwrite(data + (len - towrite), 1, towrite, fp);
-			if (nwrite <= 0)
-			{
+			if (nwrite <= 0) {
 				break;
 			}
 			towrite -= nwrite;
@@ -1055,30 +964,30 @@ bool JValue::WriteDataToFile(const char *file, const char *data, size_t len)
 	return false;
 }
 
-bool JValue::writeFile(const char *file)
+bool JValue::writeFile(const char* file)
 {
 	string strdata;
 	write(strdata);
 	return WriteDataToFile(file, strdata.data(), strdata.size());
 }
 
-bool JValue::writePListFile(const char *file)
+bool JValue::writePListFile(const char* file)
 {
 	string strdata;
 	writePList(strdata);
 	return WriteDataToFile(file, strdata.data(), strdata.size());
 }
 
-bool JValue::styleWriteFile(const char *file)
+bool JValue::styleWriteFile(const char* file)
 {
 	string strdata;
 	styleWrite(strdata);
 	return WriteDataToFile(file, strdata.data(), strdata.size());
 }
 
-bool JValue::readPath(const char *path, ...)
+bool JValue::readPath(const char* path, ...)
 {
-	char file[1024] = {0};
+	char file[1024] = { 0 };
 	va_list args;
 	va_start(args, path);
 	vsnprintf(file, 1024, path, args);
@@ -1087,9 +996,9 @@ bool JValue::readPath(const char *path, ...)
 	return readFile(file);
 }
 
-bool JValue::readPListPath(const char *path, ...)
+bool JValue::readPListPath(const char* path, ...)
 {
-	char file[1024] = {0};
+	char file[1024] = { 0 };
 	va_list args;
 	va_start(args, path);
 	vsnprintf(file, 1024, path, args);
@@ -1098,9 +1007,9 @@ bool JValue::readPListPath(const char *path, ...)
 	return readPListFile(file);
 }
 
-bool JValue::writePath(const char *path, ...)
+bool JValue::writePath(const char* path, ...)
 {
-	char file[1024] = {0};
+	char file[1024] = { 0 };
 	va_list args;
 	va_start(args, path);
 	vsnprintf(file, 1024, path, args);
@@ -1109,9 +1018,9 @@ bool JValue::writePath(const char *path, ...)
 	return writeFile(file);
 }
 
-bool JValue::writePListPath(const char *path, ...)
+bool JValue::writePListPath(const char* path, ...)
 {
-	char file[1024] = {0};
+	char file[1024] = { 0 };
 	va_list args;
 	va_start(args, path);
 	vsnprintf(file, 1024, path, args);
@@ -1120,9 +1029,9 @@ bool JValue::writePListPath(const char *path, ...)
 	return writePListFile(file);
 }
 
-bool JValue::styleWritePath(const char *path, ...)
+bool JValue::styleWritePath(const char* path, ...)
 {
-	char file[1024] = {0};
+	char file[1024] = { 0 };
 	va_list args;
 	va_start(args, path);
 	vsnprintf(file, 1024, path, args);
@@ -1137,7 +1046,7 @@ string JValue::writePList() const
 	return writePList(strDoc);
 }
 
-const char *JValue::writePList(string &strDoc) const
+const char* JValue::writePList(string& strDoc) const
 {
 	strDoc.clear();
 	PWriter::FastWrite((*this), strDoc);
@@ -1146,11 +1055,10 @@ const char *JValue::writePList(string &strDoc) const
 
 // Class Reader
 // //////////////////////////////////////////////////////////////////
-bool JReader::parse(const char *pdoc, JValue &root)
+bool JReader::parse(const char* pdoc, JValue& root)
 {
 	root.clear();
-	if (NULL != pdoc)
-	{
+	if (NULL != pdoc) {
 		m_pBeg = pdoc;
 		m_pEnd = m_pBeg + strlen(pdoc);
 		m_pCur = m_pBeg;
@@ -1161,12 +1069,11 @@ bool JReader::parse(const char *pdoc, JValue &root)
 	return false;
 }
 
-bool JReader::readValue(JValue &jval)
+bool JReader::readValue(JValue& jval)
 {
 	Token token;
 	readToken(token);
-	switch (token.type)
-	{
+	switch (token.type) {
 	case Token::E_True:
 		jval = true;
 		break;
@@ -1189,8 +1096,7 @@ bool JReader::readValue(JValue &jval)
 	{
 		string strval;
 		bool bok = decodeString(token, strval);
-		if (bok)
-		{
+		if (bok) {
 			jval = strval.c_str();
 		}
 		return bok;
@@ -1203,12 +1109,11 @@ bool JReader::readValue(JValue &jval)
 	return true;
 }
 
-bool JReader::readToken(Token &token)
+bool JReader::readToken(Token& token)
 {
 	skipSpaces();
 	token.pbeg = m_pCur;
-	switch (GetNextChar())
-	{
+	switch (GetNextChar()) {
 	case '{':
 		token.type = Token::E_ObjectBegin;
 		break;
@@ -1276,31 +1181,24 @@ bool JReader::readToken(Token &token)
 
 void JReader::skipSpaces()
 {
-	while (m_pCur != m_pEnd)
-	{
+	while (m_pCur != m_pEnd) {
 		char c = *m_pCur;
-		if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
-		{
+		if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
 			m_pCur++;
-		}
-		else
-		{
+		} else {
 			break;
 		}
 	}
 }
 
-bool JReader::match(const char *pattern, int patternLength)
+bool JReader::match(const char* pattern, int patternLength)
 {
-	if (m_pEnd - m_pCur < patternLength)
-	{
+	if (m_pEnd - m_pCur < patternLength) {
 		return false;
 	}
 	int index = patternLength;
-	while (index--)
-	{
-		if (m_pCur[index] != pattern[index])
-		{
+	while (index--) {
+		if (m_pCur[index] != pattern[index]) {
 			return false;
 		}
 	}
@@ -1311,24 +1209,17 @@ bool JReader::match(const char *pattern, int patternLength)
 void JReader::skipComment()
 {
 	char c = GetNextChar();
-	if (c == '*')
-	{
-		while (m_pCur != m_pEnd)
-		{
+	if (c == '*') {
+		while (m_pCur != m_pEnd) {
 			char c = GetNextChar();
-			if (c == '*' && *m_pCur == '/')
-			{
+			if (c == '*' && *m_pCur == '/') {
 				break;
 			}
 		}
-	}
-	else if (c == '/')
-	{
-		while (m_pCur != m_pEnd)
-		{
+	} else if (c == '/') {
+		while (m_pCur != m_pEnd) {
 			char c = GetNextChar();
-			if (c == '\r' || c == '\n')
-			{
+			if (c == '\r' || c == '\n') {
 				break;
 			}
 		}
@@ -1337,15 +1228,11 @@ void JReader::skipComment()
 
 void JReader::readNumber()
 {
-	while (m_pCur != m_pEnd)
-	{
+	while (m_pCur != m_pEnd) {
 		char c = *m_pCur;
-		if ((c >= '0' && c <= '9') || (c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-'))
-		{
+		if ((c >= '0' && c <= '9') || (c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-')) {
 			++m_pCur;
-		}
-		else
-		{
+		} else {
 			break;
 		}
 	}
@@ -1354,71 +1241,59 @@ void JReader::readNumber()
 bool JReader::readString()
 {
 	char c = 0;
-	while (m_pCur != m_pEnd)
-	{
+	while (m_pCur != m_pEnd) {
 		c = GetNextChar();
-		if ('\\' == c)
-		{
+		if ('\\' == c) {
 			GetNextChar();
-		}
-		else if ('"' == c)
-		{
+		} else if ('"' == c) {
 			break;
 		}
 	}
 	return ('"' == c);
 }
 
-bool JReader::readObject(JValue &jval)
+bool JReader::readObject(JValue& jval)
 {
 	string name;
 	Token tokenName;
 	jval = JValue(JValue::E_OBJECT);
-	while (readToken(tokenName))
-	{
-		if (Token::E_ObjectEnd == tokenName.type)
-		{ //empty
+	while (readToken(tokenName)) {
+		if (Token::E_ObjectEnd == tokenName.type) { //empty
 			return true;
 		}
 
-		if (Token::E_String != tokenName.type)
-		{
+		if (Token::E_String != tokenName.type) {
 			break;
 		}
 
-		if (!decodeString(tokenName, name))
-		{
+		if (!decodeString(tokenName, name)) {
 			return false;
 		}
 
 		Token colon;
 		readToken(colon);
-		if (Token::E_MemberSeparator != colon.type)
-		{
+		if (Token::E_MemberSeparator != colon.type) {
 			return addError("Missing ':' after object member name", colon.pbeg);
 		}
 
-		if (!readValue(jval[name.c_str()]))
-		{ // error already set
+		if (!readValue(jval[name.c_str()])) { // error already set
 			return false;
 		}
 
 		Token comma;
 		readToken(comma);
-		if (Token::E_ObjectEnd == comma.type)
-		{
+		if (Token::E_ObjectEnd == comma.type) {
 			return true;
 		}
 
-		if (Token::E_ArraySeparator != comma.type)
-		{
+		if (Token::E_ArraySeparator != comma.type) {
 			return addError("Missing ',' or '}' in object declaration", comma.pbeg);
 		}
 	}
 	return addError("Missing '}' or object member name", tokenName.pbeg);
 }
 
-bool JReader::readArray(JValue &jval)
+bool JReader::readArray(JValue& jval)
 {
 	jval = JValue(JValue::E_ARRAY);
 	skipSpaces();
@@ -1430,50 +1305,39 @@ bool JReader::readArray(JValue &jval)
 	}
 
 	size_t index = 0;
-	while (true)
-	{
-		if (!readValue(jval[index++]))
-		{ //error already set
+	while (true) {
+		if (!readValue(jval[index++])) { //error already set
 			return false;
 		}
 
 		Token token;
 		readToken(token);
-		if (Token::E_ArrayEnd == token.type)
-		{
+		if (Token::E_ArrayEnd == token.type) {
 			break;
 		}
-		if (Token::E_ArraySeparator != token.type)
-		{
+		if (Token::E_ArraySeparator != token.type) {
 			return addError("Missing ',' or ']' in array declaration", token.pbeg);
 		}
 	}
 	return true;
 }
 
-bool JReader::decodeNumber(Token &token, JValue &jval)
+bool JReader::decodeNumber(Token& token, JValue& jval)
 {
 	int64_t val = 0;
 	bool isNeg = false;
-	const char *pcur = token.pbeg;
-	if ('-' == *pcur)
-	{
+	const char* pcur = token.pbeg;
+	if ('-' == *pcur) {
 		pcur++;
 		isNeg = true;
 	}
-	for (const char *p = pcur; p != token.pend; p++)
-	{
+	for (const char* p = pcur; p != token.pend; p++) {
 		char c = *p;
-		if ('.' == c || 'e' == c || 'E' == c)
-		{
+		if ('.' == c || 'e' == c || 'E' == c) {
 			return decodeDouble(token, jval);
-		}
-		else if (c < '0' || c > '9')
-		{
+		} else if (c < '0' || c > '9') {
 			return addError("'" + string(token.pbeg, token.pend) + "' is not a number.", token.pbeg);
-		}
-		else
-		{
+		} else {
 			val = val * 10 + (c - '0');
 		}
 	}
@@ -1481,18 +1345,16 @@ bool JReader::decodeNumber(Token &token, JValue &jval)
 	return true;
 }
 
-bool JReader::decodeDouble(Token &token, JValue &jval)
+bool JReader::decodeDouble(Token& token, JValue& jval)
 {
 	const size_t szbuf = 512;
 	size_t len = size_t(token.pend - token.pbeg);
-	if (len <= szbuf)
-	{
+	if (len <= szbuf) {
 		char buf[szbuf];
 		memcpy(buf, token.pbeg, len);
 		buf[len] = 0;
 		double val = 0;
-		if (1 == sscanf(buf, "%lf", &val))
-		{
+		if (1 == sscanf(buf, "%lf", &val)) {
 			jval = val;
 			return true;
 		}
@@ -1500,22 +1362,18 @@ bool JReader::decodeDouble(Token &token, JValue &jval)
 	return addError("'" + string(token.pbeg, token.pend) + "' is too large or not a number.", token.pbeg);
 }
 
-bool JReader::decodeString(Token &token, string &strdec)
+bool JReader::decodeString(Token& token, string& strdec)
 {
 	strdec = "";
-	const char *pcur = token.pbeg + 1;
-	const char *pend = token.pend - 1;
+	const char* pcur = token.pbeg + 1;
+	const char* pend = token.pend - 1;
 	strdec.reserve(size_t(token.pend - token.pbeg));
-	while (pcur != pend)
-	{
+	while (pcur != pend) {
 		char c = *pcur++;
-		if ('\\' == c)
-		{
-			if (pcur != pend)
-			{
+		if ('\\' == c) {
+			if (pcur != pend) {
 				char escape = *pcur++;
-				switch (escape)
-				{
+				switch (escape) {
 				case '"':
 					strdec += '"';
 					break;
@@ -1549,33 +1407,25 @@ bool JReader::decodeString(Token &token, string &strdec)
 					pcur += 4;
 
 					unsigned int cp = 0;
-					if (1 != sscanf(strUnic.c_str(), "%x", &cp))
-					{
+					if (1 != sscanf(strUnic.c_str(), "%x", &cp)) {
 						return addError("Bad escape sequence in string", pcur);
 					}
 
 					string strUTF8;
 
-					if (cp <= 0x7f)
-					{
+					if (cp <= 0x7f) {
 						strUTF8.resize(1);
 						strUTF8[0] = static_cast<char>(cp);
-					}
-					else if (cp <= 0x7FF)
-					{
+					} else if (cp <= 0x7FF) {
 						strUTF8.resize(2);
 						strUTF8[1] = static_cast<char>(0x80 | (0x3f & cp));
 						strUTF8[0] = static_cast<char>(0xC0 | (0x1f & (cp >> 6)));
-					}
-					else if (cp <= 0xFFFF)
-					{
+					} else if (cp <= 0xFFFF) {
 						strUTF8.resize(3);
 						strUTF8[2] = static_cast<char>(0x80 | (0x3f & cp));
 						strUTF8[1] = 0x80 | static_cast<char>((0x3f & (cp >> 6)));
 						strUTF8[0] = 0xE0 | static_cast<char>((0xf & (cp >> 12)));
-					}
-					else if (cp <= 0x10FFFF)
-					{
+					} else if (cp <= 0x10FFFF) {
 						strUTF8.resize(4);
 						strUTF8[3] = static_cast<char>(0x80 | (0x3f & cp));
 						strUTF8[2] = static_cast<char>(0x80 | (0x3f & (cp >> 6)));
@@ -1590,25 +1440,19 @@ bool JReader::decodeString(Token &token, string &strdec)
 					return addError("Bad escape sequence in string", pcur);
 					break;
 				}
-			}
-			else
-			{
+			} else {
 				return addError("Empty escape sequence in string", pcur);
 			}
-		}
-		else if ('"' == c)
-		{
+		} else if ('"' == c) {
 			break;
-		}
-		else
-		{
+		} else {
 			strdec += c;
 		}
 	}
 	return true;
 }
 
-bool JReader::addError(const string &message, const char *ploc)
+bool JReader::addError(const string& message, const char* ploc)
 {
 	m_pErr = ploc;
 	m_strErr = message;
@@ -1620,19 +1464,16 @@ char JReader::GetNextChar()
 	return (m_pCur == m_pEnd) ? 0 : *m_pCur++;
 }
 
-void JReader::error(string &strmsg) const
+void JReader::error(string& strmsg) const
 {
 	strmsg = "";
 	int row = 1;
-	const char *pcur = m_pBeg;
-	const char *plast = m_pBeg;
-	while (pcur < m_pErr && pcur <= m_pEnd)
-	{
+	const char* pcur = m_pBeg;
+	const char* plast = m_pBeg;
+	while (pcur < m_pErr && pcur <= m_pEnd) {
 		char c = *pcur++;
-		if (c == '\r' || c == '\n')
-		{
-			if (c == '\r' && *pcur == '\n')
-			{
+		if (c == '\r' || c == '\n') {
+			if (c == '\r' && *pcur == '\n') {
 				pcur++;
 			}
 			row++;
@@ -1646,17 +1487,16 @@ void JReader::error(string &strmsg) const
 
 // Class Writer
 // //////////////////////////////////////////////////////////////////
-void JWriter::FastWrite(const JValue &jval, string &strDoc)
+void JWriter::FastWrite(const JValue& jval, string& strDoc)
 {
 	strDoc = "";
 	FastWriteValue(jval, strDoc);
 	//strDoc += "\n";
 }
 
-void JWriter::FastWriteValue(const JValue &jval, string &strDoc)
+void JWriter::FastWriteValue(const JValue& jval, string& strDoc)
 {
-	switch (jval.type())
-	{
+	switch (jval.type()) {
 	case JValue::E_NULL:
 		strDoc += "null";
 		break;
@@ -1676,8 +1516,7 @@ void JWriter::FastWriteValue(const JValue &jval, string &strDoc)
 	{
 		strDoc += "[";
 		size_t usize = jval.size();
-		for (size_t i = 0; i < usize; i++)
-		{
+		for (size_t i = 0; i < usize; i++) {
 			strDoc += (i > 0) ? "," : "";
 			FastWriteValue(jval[i], strDoc);
 		}
@@ -1690,9 +1529,8 @@ void JWriter::FastWriteValue(const JValue &jval, string &strDoc)
 		vector<string> arrKeys;
 		jval.keys(arrKeys);
 		size_t usize = arrKeys.size();
-		for (size_t i = 0; i < usize; i++)
-		{
-			const string &name = arrKeys[i];
+		for (size_t i = 0; i < usize; i++) {
+			const string& name = arrKeys[i];
 			strDoc += (i > 0) ? "," : "";
 			strDoc += v2s(name.c_str()) + ":";
 			FastWriteValue(jval[name.c_str()], strDoc);
@@ -1710,7 +1548,7 @@ void JWriter::FastWriteValue(const JValue &jval, string &strDoc)
 	case JValue::E_DATA:
 	{
 		strDoc += "\"data:";
-		const string &strData = jval.asData();
+		const string& strData = jval.asData();
 		ZBase64 b64;
 		strDoc += b64.Encode(strData.data(), (int)strData.size());
 		strDoc += "\"";
@@ -1719,7 +1557,7 @@ void JWriter::FastWriteValue(const JValue &jval, string &strDoc)
 	}
 }
 
-const string &JWriter::StyleWrite(const JValue &jval)
+const string& JWriter::StyleWrite(const JValue& jval)
 {
 	m_strDoc = "";
 	m_strTab = "";
@@ -1729,10 +1567,9 @@ const string &JWriter::StyleWrite(const JValue &jval)
 	return m_strDoc;
 }
 
-void JWriter::StyleWriteValue(const JValue &jval)
+void JWriter::StyleWriteValue(const JValue& jval)
 {
-	switch (jval.type())
-	{
+	switch (jval.type()) {
 	case JValue::E_NULL:
 		PushValue("null");
 		break;
@@ -1755,23 +1592,19 @@ void JWriter::StyleWriteValue(const JValue &jval)
 	{
 		vector<string> arrKeys;
 		jval.keys(arrKeys);
-		if (!arrKeys.empty())
-		{
+		if (!arrKeys.empty()) {
 			m_strDoc += '\n' + m_strTab + "{";
 			m_strTab += '\t';
 			size_t usize = arrKeys.size();
-			for (size_t i = 0; i < usize; i++)
-			{
-				const string &name = arrKeys[i];
+			for (size_t i = 0; i < usize; i++) {
+				const string& name = arrKeys[i];
 				m_strDoc += (i > 0) ? "," : "";
 				m_strDoc += '\n' + m_strTab + v2s(name.c_str()) + " : ";
 				StyleWriteValue(jval[name]);
 			}
 			m_strTab.resize(m_strTab.size() - 1);
 			m_strDoc += '\n' + m_strTab + "}";
-		}
-		else
-		{
+		} else {
 			PushValue("{}");
 		}
 	}
@@ -1789,7 +1622,7 @@ void JWriter::StyleWriteValue(const JValue &jval)
 	{
 		string strDoc;
 		strDoc += "\"data:";
-		const string &strData = jval.asData();
+		const string& strData = jval.asData();
 		ZBase64 b64;
 		strDoc += b64.Encode(strData.data(), (int)strData.size());
 		strDoc += "\"";
@@ -1799,73 +1632,57 @@ void JWriter::StyleWriteValue(const JValue &jval)
 	}
 }
 
-void JWriter::StyleWriteArrayValue(const JValue &jval)
+void JWriter::StyleWriteArrayValue(const JValue& jval)
 {
 	size_t usize = jval.size();
-	if (usize > 0)
-	{
+	if (usize > 0) {
 		bool isArrayMultiLine = isMultineArray(jval);
-		if (isArrayMultiLine)
-		{
+		if (isArrayMultiLine) {
 			m_strDoc += '\n' + m_strTab + "[";
 			m_strTab += '\t';
 			bool hasChildValue = !m_childValues.empty();
-			for (size_t i = 0; i < usize; i++)
-			{
+			for (size_t i = 0; i < usize; i++) {
 				m_strDoc += (i > 0) ? "," : "";
-				if (hasChildValue)
-				{
+				if (hasChildValue) {
 					m_strDoc += '\n' + m_strTab + m_childValues[i];
-				}
-				else
-				{
+				} else {
 					m_strDoc += '\n' + m_strTab;
 					StyleWriteValue(jval[i]);
 				}
 			}
 			m_strTab.resize(m_strTab.size() - 1);
 			m_strDoc += '\n' + m_strTab + "]";
-		}
-		else
-		{
+		} else {
 			m_strDoc += "[ ";
-			for (size_t i = 0; i < usize; ++i)
-			{
+			for (size_t i = 0; i < usize; ++i) {
 				m_strDoc += (i > 0) ? ", " : "";
 				m_strDoc += m_childValues[i];
 			}
 			m_strDoc += " ]";
 		}
-	}
-	else
-	{
+	} else {
 		PushValue("[]");
 	}
 }
 
-bool JWriter::isMultineArray(const JValue &jval)
+bool JWriter::isMultineArray(const JValue& jval)
 {
 	m_childValues.clear();
 	size_t usize = jval.size();
 	bool isMultiLine = (usize >= 25);
-	if (!isMultiLine)
-	{
-		for (size_t i = 0; i < usize; i++)
-		{
-			if (jval[i].size() > 0)
-			{
+	if (!isMultiLine) {
+		for (size_t i = 0; i < usize; i++) {
+			if (jval[i].size() > 0) {
 				isMultiLine = true;
 				break;
 			}
 		}
 	}
-	if (!isMultiLine)
-	{
+	if (!isMultiLine) {
 		m_bAddChild = true;
 		m_childValues.reserve(usize);
 		size_t lineLength = 4 + (usize - 1) * 2; // '[ ' + ', '*n + ' ]'
-		for (size_t i = 0; i < usize; i++)
-		{
+		for (size_t i = 0; i < usize; i++) {
 			StyleWriteValue(jval[i]);
 			lineLength += m_childValues[i].length();
 		}
@@ -1875,14 +1692,11 @@ bool JWriter::isMultineArray(const JValue &jval)
 	return isMultiLine;
 }
 
-void JWriter::PushValue(const string &strval)
+void JWriter::PushValue(const string& strval)
 {
-	if (!m_bAddChild)
-	{
+	if (!m_bAddChild) {
 		m_strDoc += strval;
-	}
-	else
-	{
+	} else {
 		m_childValues.push_back(strval);
 	}
 }
@@ -1905,7 +1719,7 @@ string JWriter::d2s(time_t t)
 {
 	//t = (t > 0x7933F8EFF) ? (0x7933F8EFF - 1) : t;
 
-	tm ft = {0};
+	tm ft = { 0 };
 
 #ifdef _WIN32
 	localtime_s(&ft, &t);
@@ -1920,33 +1734,27 @@ string JWriter::d2s(time_t t)
 	ft.tm_min = (ft.tm_min < 0) ? 0 : ft.tm_min;
 	ft.tm_sec = (ft.tm_sec < 0) ? 0 : ft.tm_sec;
 
-	char szDate[64] = {0};
+	char szDate[64] = { 0 };
 	snprintf(szDate, sizeof(szDate), "%04d-%02d-%02dT%02d:%02d:%02dZ", ft.tm_year + 1900, ft.tm_mon + 1, ft.tm_mday, ft.tm_hour, ft.tm_min, ft.tm_sec);
 	return szDate;
 }
 
-string JWriter::v2s(const char *pstr)
+string JWriter::v2s(const char* pstr)
 {
-	if (NULL != strpbrk(pstr, "\"\\\b\f\n\r\t"))
-	{
+	if (NULL != strpbrk(pstr, "\"\\\b\f\n\r\t")) {
 		string ret;
 		ret.reserve(strlen(pstr) * 2 + 3);
 		ret += "\"";
-		for (const char *c = pstr; 0 != *c; c++)
-		{
-			switch (*c)
-			{
+		for (const char* c = pstr; 0 != *c; c++) {
+			switch (*c) {
 			case '\\':
 			{
 				c++;
 				bool bUnicode = false;
-				if ('u' == *c)
-				{
+				if ('u' == *c) {
 					bool bFlag = true;
-					for (int i = 1; i <= 4; i++)
-					{
-						if (!isdigit(*(c + i)))
-						{
+					for (int i = 1; i <= 4; i++) {
+						if (!isdigit(*(c + i))) {
 							bFlag = false;
 							break;
 						}
@@ -1954,12 +1762,9 @@ string JWriter::v2s(const char *pstr)
 					bUnicode = bFlag;
 				}
 
-				if (true == bUnicode)
-				{
+				if (true == bUnicode) {
 					ret += "\\u";
-				}
-				else
-				{
+				} else {
 					ret += "\\\\";
 					c--;
 				}
@@ -1990,14 +1795,12 @@ string JWriter::v2s(const char *pstr)
 		}
 		ret += "\"";
 		return ret;
-	}
-	else
-	{
+	} else {
 		return string("\"") + pstr + "\"";
 	}
 }
 
-std::string JWriter::vstring2s(const char *pstr)
+std::string JWriter::vstring2s(const char* pstr)
 {
 	return string("\\\"") + pstr + "\\\"";
 }
@@ -2029,25 +1832,20 @@ PReader::PReader()
 	m_uDictParamSize = 0;
 }
 
-bool PReader::parse(const char *pdoc, size_t len, JValue &root)
+bool PReader::parse(const char* pdoc, size_t len, JValue& root)
 {
 	root.clear();
-	if (NULL == pdoc)
-	{
+	if (NULL == pdoc) {
 		return false;
 	}
 
-	if (len < 30)
-	{
+	if (len < 30) {
 		return false;
 	}
 
-	if (0 == memcmp(pdoc, "bplist00", 8))
-	{
+	if (0 == memcmp(pdoc, "bplist00", 8)) {
 		return parseBinary(pdoc, len, root);
-	}
-	else
-	{
+	} else {
 		m_pBeg = pdoc;
 		m_pEnd = m_pBeg + len;
 		m_pCur = m_pBeg;
@@ -2060,10 +1858,9 @@ bool PReader::parse(const char *pdoc, size_t len, JValue &root)
 	}
 }
 
-bool PReader::readValue(JValue &pval, Token &token)
+bool PReader::readValue(JValue& pval, Token& token)
 {
-	switch (token.type)
-	{
+	switch (token.type) {
 	case Token::E_True:
 		pval = true;
 		break;
@@ -2096,7 +1893,7 @@ bool PReader::readValue(JValue &pval, Token &token)
 		string strval;
 		decodeString(token, strval);
 
-		tm ft = {0};
+		tm ft = { 0 };
 		sscanf(strval.c_str(), "%04d-%02d-%02dT%02d:%02d:%02dZ", &ft.tm_year, &ft.tm_mon, &ft.tm_mday, &ft.tm_hour, &ft.tm_min, &ft.tm_sec);
 		ft.tm_mon -= 1;
 		ft.tm_year -= 1900;
@@ -2110,7 +1907,7 @@ bool PReader::readValue(JValue &pval, Token &token)
 
 		ZBase64 b64;
 		int nDecLen = 0;
-		const char *data = b64.Decode(strval.data(), (int)strval.size(), &nDecLen);
+		const char* data = b64.Decode(strval.data(), (int)strval.size(), &nDecLen);
 		pval.assignData(data, nDecLen);
 	}
 	break;
@@ -2129,13 +1926,12 @@ bool PReader::readValue(JValue &pval, Token &token)
 	return true;
 }
 
-bool PReader::readLabel(string &label)
+bool PReader::readLabel(string& label)
 {
 	skipSpaces();
 
 	char c = *m_pCur++;
-	if ('<' != c)
-	{
+	if ('<' != c) {
 		return false;
 	}
 
@@ -2144,31 +1940,23 @@ bool PReader::readLabel(string &label)
 	label += c;
 
 	bool bEnd = false;
-	while (m_pCur != m_pEnd)
-	{
+	while (m_pCur != m_pEnd) {
 		c = *m_pCur++;
-		if ('>' == c)
-		{
-			if ('/' == *(m_pCur - 1) || '?' == *(m_pCur - 1))
-			{
+		if ('>' == c) {
+			if ('/' == *(m_pCur - 1) || '?' == *(m_pCur - 1)) {
 				label += *(m_pCur - 1);
 			}
 
 			label += c;
 			break;
-		}
-		else if (' ' == c)
-		{
+		} else if (' ' == c) {
 			bEnd = true;
-		}
-		else if (!bEnd)
-		{
+		} else if (!bEnd) {
 			label += c;
 		}
 	}
 
-	if ('>' != c)
-	{
+	if ('>' != c) {
 		label.clear();
 		return false;
 	}
@@ -2176,128 +1964,88 @@ bool PReader::readLabel(string &label)
 	return (!label.empty());
 }
 
-void PReader::endLabel(Token &token, const char *szLabel)
+void PReader::endLabel(Token& token, const char* szLabel)
 {
 	string label;
 	readLabel(label);
-	if (szLabel != label)
-	{
+	if (szLabel != label) {
 		token.type = Token::E_Error;
 	}
 }
 
-bool PReader::readToken(Token &token)
+bool PReader::readToken(Token& token)
 {
 	string label;
-	if (!readLabel(label))
-	{
+	if (!readLabel(label)) {
 		token.type = Token::E_Error;
 		return false;
 	}
 
-	if ('?' == label.at(1) || '!' == label.at(1))
-	{
+	if ('?' == label.at(1) || '!' == label.at(1)) {
 		return readToken(token);
 	}
 
-	if ("<dict>" == label)
-	{
+	if ("<dict>" == label) {
 		token.type = Token::E_DictionaryBegin;
-	}
-	else if ("</dict>" == label)
-	{
+	} else if ("</dict>" == label) {
 		token.type = Token::E_DictionaryEnd;
-	}
-	else if ("<array>" == label)
-	{
+	} else if ("<array>" == label) {
 		token.type = Token::E_ArrayBegin;
-	}
-	else if ("</array>" == label)
-	{
+	} else if ("</array>" == label) {
 		token.type = Token::E_ArrayEnd;
-	}
-	else if ("<key>" == label)
-	{
+	} else if ("<key>" == label) {
 		token.pbeg = m_pCur;
 		token.type = readString() ? Token::E_Key : Token::E_Error;
 		token.pend = m_pCur;
 
 		endLabel(token, "</key>");
-	}
-	else if ("<key/>" == label)
-	{
+	} else if ("<key/>" == label) {
 		token.type = Token::E_Key;
-	}
-	else if ("<string>" == label)
-	{
+	} else if ("<string>" == label) {
 		token.pbeg = m_pCur;
 		token.type = readString() ? Token::E_String : Token::E_Error;
 		token.pend = m_pCur;
 
 		endLabel(token, "</string>");
-	}
-	else if ("<date>" == label)
-	{
+	} else if ("<date>" == label) {
 		token.pbeg = m_pCur;
 		token.type = readString() ? Token::E_Date : Token::E_Error;
 		token.pend = m_pCur;
 
 		endLabel(token, "</date>");
-	}
-	else if ("<data>" == label)
-	{
+	} else if ("<data>" == label) {
 		token.pbeg = m_pCur;
 		token.type = readString() ? Token::E_Data : Token::E_Error;
 		token.pend = m_pCur;
 
 		endLabel(token, "</data>");
-	}
-	else if ("<integer>" == label)
-	{
+	} else if ("<integer>" == label) {
 		token.pbeg = m_pCur;
 		token.type = readNumber() ? Token::E_Integer : Token::E_Error;
 		token.pend = m_pCur;
 
 		endLabel(token, "</integer>");
-	}
-	else if ("<real>" == label)
-	{
+	} else if ("<real>" == label) {
 		token.pbeg = m_pCur;
 		token.type = readNumber() ? Token::E_Real : Token::E_Error;
 		token.pend = m_pCur;
 
 		endLabel(token, "</real>");
-	}
-	else if ("<true/>" == label)
-	{
+	} else if ("<true/>" == label) {
 		token.type = Token::E_True;
-	}
-	else if ("<false/>" == label)
-	{
+	} else if ("<false/>" == label) {
 		token.type = Token::E_False;
-	}
-	else if ("<array/>" == label)
-	{
+	} else if ("<array/>" == label) {
 		token.type = Token::E_ArrayNull;
-	}
-	else if ("<dict/>" == label)
-	{
+	} else if ("<dict/>" == label) {
 		token.type = Token::E_DictionaryNull;
-	}
-	else if ("<data/>" == label || "<date/>" == label || "<string/>" == label || "<integer/>" == label || "<real/>" == label)
-	{
+	} else if ("<data/>" == label || "<date/>" == label || "<string/>" == label || "<integer/>" == label || "<real/>" == label) {
 		token.type = Token::E_Null;
-	}
-	else if ("<plist>" == label)
-	{
+	} else if ("<plist>" == label) {
 		return readToken(token);
-	}
-	else if ("</plist>" == label || "<plist/>" == label)
-	{
+	} else if ("</plist>" == label || "<plist/>" == label) {
 		token.type = Token::E_End;
-	}
-	else
-	{
+	} else {
 		token.type = Token::E_Error;
 	}
 
@@ -2306,15 +2054,11 @@ bool PReader::readToken(Token &token)
 
 void PReader::skipSpaces()
 {
-	while (m_pCur != m_pEnd)
-	{
+	while (m_pCur != m_pEnd) {
 		char c = *m_pCur;
-		if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
-		{
+		if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
 			m_pCur++;
-		}
-		else
-		{
+		} else {
 			break;
 		}
 	}
@@ -2322,15 +2066,11 @@ void PReader::skipSpaces()
 
 bool PReader::readNumber()
 {
-	while (m_pCur != m_pEnd)
-	{
+	while (m_pCur != m_pEnd) {
 		char c = *m_pCur;
-		if ((c >= '0' && c <= '9') || (c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-'))
-		{
+		if ((c >= '0' && c <= '9') || (c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-')) {
 			++m_pCur;
-		}
-		else
-		{
+		} else {
 			break;
 		}
 	}
@@ -2339,10 +2079,8 @@ bool PReader::readNumber()
 
 bool PReader::readString()
 {
-	while (m_pCur != m_pEnd)
-	{
-		if ('<' == *m_pCur)
-		{
+	while (m_pCur != m_pEnd) {
+		if ('<' == *m_pCur) {
 			break;
 		}
 		m_pCur++;
@@ -2350,56 +2088,48 @@ bool PReader::readString()
 	return ('<' == *m_pCur);
 }
 
-bool PReader::readDictionary(JValue &pval)
+bool PReader::readDictionary(JValue& pval)
 {
 	Token key;
 	string strKey;
 	pval = JValue(JValue::E_OBJECT);
-	while (readToken(key))
-	{
-		if (Token::E_DictionaryEnd == key.type)
-		{ //empty
+	while (readToken(key)) {
+		if (Token::E_DictionaryEnd == key.type) { //empty
 			return true;
 		}
 
-		if (Token::E_Key != key.type)
-		{
+		if (Token::E_Key != key.type) {
 			break;
 		}
 
 		strKey = "";
-		if (!decodeString(key, strKey))
-		{
+		if (!decodeString(key, strKey)) {
 			return false;
 		}
 		XMLUnescape(strKey);
 
 		Token val;
 		readToken(val);
-		if (!readValue(pval[strKey.c_str()], val))
-		{
+		if (!readValue(pval[strKey.c_str()], val)) {
 			return false;
 		}
 	}
 	return addError("Missing '</dict>' or dictionary member name", key.pbeg);
 }
 
-bool PReader::readArray(JValue &pval)
+bool PReader::readArray(JValue& pval)
 {
 	pval = JValue(JValue::E_ARRAY);
 
 	size_t index = 0;
-	while (true)
-	{
+	while (true) {
 		Token token;
 		readToken(token);
-		if (Token::E_ArrayEnd == token.type)
-		{
+		if (Token::E_ArrayEnd == token.type) {
 			return true;
 		}
 
-		if (!readValue(pval[index++], token))
-		{
+		if (!readValue(pval[index++], token)) {
 			return false;
 		}
 	}
@@ -2407,29 +2137,22 @@ bool PReader::readArray(JValue &pval)
 	return true;
 }
 
-bool PReader::decodeNumber(Token &token, JValue &pval)
+bool PReader::decodeNumber(Token& token, JValue& pval)
 {
 	int64_t val = 0;
 	bool isNeg = false;
-	const char *pcur = token.pbeg;
-	if ('-' == *pcur)
-	{
+	const char* pcur = token.pbeg;
+	if ('-' == *pcur) {
 		pcur++;
 		isNeg = true;
 	}
-	for (const char *p = pcur; p != token.pend; p++)
-	{
+	for (const char* p = pcur; p != token.pend; p++) {
 		char c = *p;
-		if ('.' == c || 'e' == c || 'E' == c)
-		{
+		if ('.' == c || 'e' == c || 'E' == c) {
 			return decodeDouble(token, pval);
-		}
-		else if (c < '0' || c > '9')
-		{
+		} else if (c < '0' || c > '9') {
 			return addError("'" + string(token.pbeg, token.pend) + "' is not a number.", token.pbeg);
-		}
-		else
-		{
+		} else {
 			val = val * 10 + (c - '0');
 		}
 	}
@@ -2437,18 +2160,16 @@ bool PReader::decodeNumber(Token &token, JValue &pval)
 	return true;
 }
 
-bool PReader::decodeDouble(Token &token, JValue &pval)
+bool PReader::decodeDouble(Token& token, JValue& pval)
 {
 	const size_t szbuf = 512;
 	size_t len = size_t(token.pend - token.pbeg);
-	if (len <= szbuf)
-	{
+	if (len <= szbuf) {
 		char buf[szbuf];
 		memcpy(buf, token.pbeg, len);
 		buf[len] = 0;
 		double val = 0;
-		if (1 == sscanf(buf, "%lf", &val))
-		{
+		if (1 == sscanf(buf, "%lf", &val)) {
 			pval = val;
 			return true;
 		}
@@ -2456,16 +2177,14 @@ bool PReader::decodeDouble(Token &token, JValue &pval)
 	return addError("'" + string(token.pbeg, token.pend) + "' is too large or not a number.", token.pbeg);
 }
 
-bool PReader::decodeString(Token &token, string &strdec, bool filter)
+bool PReader::decodeString(Token& token, string& strdec, bool filter)
 {
-	const char *pcur = token.pbeg;
-	const char *pend = token.pend;
+	const char* pcur = token.pbeg;
+	const char* pend = token.pend;
 	strdec.reserve(size_t(token.pend - token.pbeg) + 6);
-	while (pcur != pend)
-	{
+	while (pcur != pend) {
 		char c = *pcur++;
-		if (filter && ('\n' == c || '\r' == c || '\t' == c)) 
-		{
+		if (filter && ('\n' == c || '\r' == c || '\t' == c)) {
 			continue;
 		}
 		strdec += c;
@@ -2473,26 +2192,23 @@ bool PReader::decodeString(Token &token, string &strdec, bool filter)
 	return true;
 }
 
-bool PReader::addError(const string &message, const char *ploc)
+bool PReader::addError(const string& message, const char* ploc)
 {
 	m_pErr = ploc;
 	m_strErr = message;
 	return false;
 }
 
-void PReader::error(string &strmsg) const
+void PReader::error(string& strmsg) const
 {
 	strmsg = "";
 	int row = 1;
-	const char *pcur = m_pBeg;
-	const char *plast = m_pBeg;
-	while (pcur < m_pErr && pcur <= m_pEnd)
-	{
+	const char* pcur = m_pBeg;
+	const char* plast = m_pBeg;
+	while (pcur < m_pErr && pcur <= m_pEnd) {
 		char c = *pcur++;
-		if (c == '\r' || c == '\n')
-		{
-			if (c == '\r' && *pcur == '\n')
-			{
+		if (c == '\r' || c == '\n') {
+			if (c == '\r' && *pcur == '\n') {
 				pcur++;
 			}
 			row++;
@@ -2505,34 +2221,33 @@ void PReader::error(string &strmsg) const
 }
 
 //////////////////////////////////////////////////////////////////////////
-uint32_t PReader::getUInt24FromBE(const char *v)
+uint32_t PReader::getUInt24FromBE(const char* v)
 {
 	uint32_t ret = 0;
-	uint8_t *tmp = (uint8_t *)&ret;
+	uint8_t* tmp = (uint8_t*)&ret;
 	memcpy(tmp, v, 3 * sizeof(char));
 	byteConvert(tmp, sizeof(uint32_t));
 	return ret;
 }
 
-uint64_t PReader::getUIntVal(const char *v, size_t size)
+uint64_t PReader::getUIntVal(const char* v, size_t size)
 {
 	if (8 == size)
-		return BE64TOH(*((uint64_t *)v));
+		return BE64TOH(*((uint64_t*)v));
 	else if (4 == size)
-		return BE32TOH(*((uint32_t *)v));
+		return BE32TOH(*((uint32_t*)v));
 	else if (3 == size)
 		return getUInt24FromBE(v);
 	else if (2 == size)
-		return BE16TOH(*((uint16_t *)v));
+		return BE16TOH(*((uint16_t*)v));
 	else
-		return *((uint8_t *)v);
+		return *((uint8_t*)v);
 }
 
-void PReader::byteConvert(uint8_t *v, size_t size)
+void PReader::byteConvert(uint8_t* v, size_t size)
 {
 	uint8_t tmp = 0;
-	for (size_t i = 0, j = 0; i < (size / 2); i++)
-	{
+	for (size_t i = 0, j = 0; i < (size / 2); i++) {
 		tmp = v[i];
 		j = (size - 1) - i;
 		v[i] = v[j];
@@ -2540,12 +2255,11 @@ void PReader::byteConvert(uint8_t *v, size_t size)
 	}
 }
 
-bool PReader::readUIntSize(const char *&pcur, size_t &size)
+bool PReader::readUIntSize(const char*& pcur, size_t& size)
 {
 	JValue temp;
 	readBinaryValue(pcur, temp);
-	if (temp.isInt())
-	{
+	if (temp.isInt()) {
 		size = (size_t)temp.asInt64();
 		return true;
 	}
@@ -2554,42 +2268,34 @@ bool PReader::readUIntSize(const char *&pcur, size_t &size)
 	return false;
 }
 
-bool PReader::readUnicode(const char *pcur, size_t size, JValue &pv)
+bool PReader::readUnicode(const char* pcur, size_t size, JValue& pv)
 {
-	if (0 == size)
-	{
+	if (0 == size) {
 		pv = "";
 		return false;
 	}
 
-	uint16_t *unistr = (uint16_t *)malloc(2 * size);
+	uint16_t* unistr = (uint16_t*)malloc(2 * size);
 	memcpy(unistr, pcur, 2 * size);
-	for (size_t i = 0; i < size; i++)
-	{
-		byteConvert((uint8_t *)(unistr + i), 2);
+	for (size_t i = 0; i < size; i++) {
+		byteConvert((uint8_t*)(unistr + i), 2);
 	}
 
-	char *outbuf = (char *)malloc(3 * (size + 1));
+	char* outbuf = (char*)malloc(3 * (size + 1));
 
 	size_t p = 0;
 	size_t i = 0;
 	uint16_t wc = 0;
-	while (i < size)
-	{
+	while (i < size) {
 		wc = unistr[i++];
-		if (wc >= 0x800)
-		{
+		if (wc >= 0x800) {
 			outbuf[p++] = (char)(0xE0 + ((wc >> 12) & 0xF));
 			outbuf[p++] = (char)(0x80 + ((wc >> 6) & 0x3F));
 			outbuf[p++] = (char)(0x80 + (wc & 0x3F));
-		}
-		else if (wc >= 0x80)
-		{
+		} else if (wc >= 0x80) {
 			outbuf[p++] = (char)(0xC0 + ((wc >> 6) & 0x1F));
 			outbuf[p++] = (char)(0x80 + (wc & 0x3F));
-		}
-		else
-		{
+		} else {
 			outbuf[p++] = (char)(wc & 0x7F);
 		}
 	}
@@ -2606,7 +2312,7 @@ bool PReader::readUnicode(const char *pcur, size_t size, JValue &pv)
 	return true;
 }
 
-bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
+bool PReader::readBinaryValue(const char*& pcur, JValue& pv)
 {
 	enum
 	{
@@ -2632,12 +2338,10 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	uint8_t key = c & 0xF0;
 	uint8_t val = c & 0x0F;
 
-	switch (key)
-	{
+	switch (key) {
 	case BPLIST_NULL:
 	{
-		switch (val)
-		{
+		switch (val) {
 		case BPLIST_TRUE:
 		{
 			pv = true;
@@ -2665,22 +2369,21 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	case BPLIST_UINT:
 	{
 		size_t size = 1 << val;
-		switch (size)
-		{
-		case sizeof(uint8_t):
-		case sizeof(uint16_t):
-		case sizeof(uint32_t):
-		case sizeof(uint64_t):
-		{
-			pv = (int64_t)getUIntVal(pcur, size);
-		}
-		break;
-		default:
-		{
-			assert(0);
-			return false;
-		}
-		break;
+		switch (size) {
+			case sizeof(uint8_t) :
+				case sizeof(uint16_t) :
+				case sizeof(uint32_t) :
+				case sizeof(uint64_t) :
+			{
+				pv = (int64_t)getUIntVal(pcur, size);
+			}
+			break;
+				default:
+				{
+					assert(0);
+					return false;
+				}
+				break;
 		};
 
 		pcur += size;
@@ -2690,24 +2393,23 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	{
 		size_t size = 1 << val;
 
-		uint8_t *buf = (uint8_t *)malloc(size);
+		uint8_t* buf = (uint8_t*)malloc(size);
 		memcpy(buf, pcur, size);
 		byteConvert(buf, size);
 
-		switch (size)
-		{
-		case sizeof(float):
-			pv = (double)(*(float *)buf);
-		case sizeof(double):
-			pv = (*(double *)buf);
-			break;
-		default:
-		{
-			assert(0);
-			free(buf);
-			return false;
-		}
-		break;
+		switch (size) {
+			case sizeof(float) :
+				pv = (double)(*(float*)buf);
+				case sizeof(double) :
+					pv = (*(double*)buf);
+					break;
+				default:
+				{
+					assert(0);
+					free(buf);
+					return false;
+				}
+				break;
 		}
 
 		free(buf);
@@ -2716,17 +2418,14 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 
 	case BPLIST_DATE:
 	{
-		if (3 == val)
-		{
+		if (3 == val) {
 			size_t size = 1 << val;
-			uint8_t *buf = (uint8_t *)malloc(size);
+			uint8_t* buf = (uint8_t*)malloc(size);
 			memcpy(buf, pcur, size);
 			byteConvert(buf, size);
-			pv.assignDate(((time_t)(*(double *)buf)) + 978278400);
+			pv.assignDate(((time_t)(*(double*)buf)) + 978278400);
 			free(buf);
-		}
-		else
-		{
+		} else {
 			assert(0);
 			return false;
 		}
@@ -2736,10 +2435,8 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	case BPLIST_DATA:
 	{
 		size_t size = val;
-		if (0x0F == val)
-		{
-			if (!readUIntSize(pcur, size))
-			{
+		if (0x0F == val) {
+			if (!readUIntSize(pcur, size)) {
 				return false;
 			}
 		}
@@ -2750,10 +2447,8 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	case BPLIST_STRING:
 	{
 		size_t size = val;
-		if (0x0F == val)
-		{
-			if (!readUIntSize(pcur, size))
-			{
+		if (0x0F == val) {
+			if (!readUIntSize(pcur, size)) {
 				return false;
 			}
 		}
@@ -2768,10 +2463,8 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	case BPLIST_UNICODE:
 	{
 		size_t size = val;
-		if (0x0F == val)
-		{
-			if (!readUIntSize(pcur, size))
-			{
+		if (0x0F == val) {
+			if (!readUIntSize(pcur, size)) {
 				return false;
 			}
 		}
@@ -2783,24 +2476,18 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	case BPLIST_UNK_0x70:
 	{
 		size_t size = val;
-		if (0x0F == val)
-		{
-			if (!readUIntSize(pcur, size))
-			{
+		if (0x0F == val) {
+			if (!readUIntSize(pcur, size)) {
 				return false;
 			}
 		}
 
-		for (size_t i = 0; i < size; i++)
-		{
-			uint64_t uIndex = getUIntVal((const char *)pcur + i * m_uDictParamSize, m_uDictParamSize);
-			if (uIndex < m_uObjects)
-			{
-				const char *pval = (m_pBeg + getUIntVal(m_pOffsetTable + uIndex * m_uOffsetSize, m_uOffsetSize));
+		for (size_t i = 0; i < size; i++) {
+			uint64_t uIndex = getUIntVal((const char*)pcur + i * m_uDictParamSize, m_uDictParamSize);
+			if (uIndex < m_uObjects) {
+				const char* pval = (m_pBeg + getUIntVal(m_pOffsetTable + uIndex * m_uOffsetSize, m_uOffsetSize));
 				readBinaryValue(pval, pv[i]);
-			}
-			else
-			{
+			} else {
 				assert(0);
 				return false;
 			}
@@ -2812,36 +2499,30 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	case BPLIST_DICT:
 	{
 		size_t size = val;
-		if (0x0F == val)
-		{
-			if (!readUIntSize(pcur, size))
-			{
+		if (0x0F == val) {
+			if (!readUIntSize(pcur, size)) {
 				return false;
 			}
 		}
 
-		for (size_t i = 0; i < size; i++)
-		{
+		for (size_t i = 0; i < size; i++) {
 			JValue pvKey;
 			JValue pvVal;
 
-			uint64_t uKeyIndex = getUIntVal((const char *)pcur + i * m_uDictParamSize, m_uDictParamSize);
-			uint64_t uValIndex = getUIntVal((const char *)pcur + (i + size) * m_uDictParamSize, m_uDictParamSize);
+			uint64_t uKeyIndex = getUIntVal((const char*)pcur + i * m_uDictParamSize, m_uDictParamSize);
+			uint64_t uValIndex = getUIntVal((const char*)pcur + (i + size) * m_uDictParamSize, m_uDictParamSize);
 
-			if (uKeyIndex < m_uObjects)
-			{
-				const char *pval = (m_pBeg + getUIntVal(m_pOffsetTable + uKeyIndex * m_uOffsetSize, m_uOffsetSize));
+			if (uKeyIndex < m_uObjects) {
+				const char* pval = (m_pBeg + getUIntVal(m_pOffsetTable + uKeyIndex * m_uOffsetSize, m_uOffsetSize));
 				readBinaryValue(pval, pvKey);
 			}
 
-			if (uValIndex < m_uObjects)
-			{
-				const char *pval = (m_pBeg + getUIntVal(m_pOffsetTable + uValIndex * m_uOffsetSize, m_uOffsetSize));
+			if (uValIndex < m_uObjects) {
+				const char* pval = (m_pBeg + getUIntVal(m_pOffsetTable + uValIndex * m_uOffsetSize, m_uOffsetSize));
 				readBinaryValue(pval, pvVal);
 			}
 
-			if (pvKey.isString() && !pvVal.isNull())
-			{
+			if (pvKey.isString() && !pvVal.isNull()) {
 				pv[pvKey.asCString()] = pvVal;
 			}
 		}
@@ -2857,7 +2538,7 @@ bool PReader::readBinaryValue(const char *&pcur, JValue &pv)
 	return true;
 }
 
-bool PReader::parseBinary(const char *pbdoc, size_t len, JValue &pv)
+bool PReader::parseBinary(const char* pbdoc, size_t len, JValue& pv)
 {
 	m_pBeg = pbdoc;
 
@@ -2867,17 +2548,16 @@ bool PReader::parseBinary(const char *pbdoc, size_t len, JValue &pv)
 	m_uDictParamSize = m_pTrailer[1];
 	m_uObjects = getUIntVal(m_pTrailer + 2, 8);
 
-	if (0 == m_uObjects)
-	{
+	if (0 == m_uObjects) {
 		return false;
 	}
 
 	m_pOffsetTable = m_pBeg + getUIntVal(m_pTrailer + 18, 8);
-	const char *pval = (m_pBeg + getUIntVal(m_pOffsetTable, m_uOffsetSize));
+	const char* pval = (m_pBeg + getUIntVal(m_pOffsetTable, m_uOffsetSize));
 	return readBinaryValue(pval, pv);
 }
 
-void PReader::XMLUnescape(string &strval)
+void PReader::XMLUnescape(string& strval)
 {
 	PWriter::StringReplace(strval, "&amp;", "&");
 	PWriter::StringReplace(strval, "&lt;", "<");
@@ -2887,12 +2567,12 @@ void PReader::XMLUnescape(string &strval)
 }
 
 //////////////////////////////////////////////////////////////////////////
-void PWriter::FastWrite(const JValue &pval, string &strdoc)
+void PWriter::FastWrite(const JValue& pval, string& strdoc)
 {
 	strdoc.clear();
 	strdoc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-			 "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
-			 "<plist version=\"1.0\">\n";
+		"<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+		"<plist version=\"1.0\">\n";
 
 	string strindent;
 	FastWriteValue(pval, strdoc, strindent);
@@ -2900,25 +2580,20 @@ void PWriter::FastWrite(const JValue &pval, string &strdoc)
 	strdoc += "</plist>";
 }
 
-void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strindent)
+void PWriter::FastWriteValue(const JValue& pval, string& strdoc, string& strindent)
 {
-	if (pval.isObject())
-	{
+	if (pval.isObject()) {
 		strdoc += strindent;
-		if (pval.isEmpty())
-		{
+		if (pval.isEmpty()) {
 			strdoc += "<dict/>\n";
 			return;
 		}
 		strdoc += "<dict>\n";
 		vector<string> arrKeys;
-		if (pval.keys(arrKeys))
-		{
+		if (pval.keys(arrKeys)) {
 			strindent.push_back('\t');
-			for (size_t i = 0; i < arrKeys.size(); i++)
-			{
-				if (!pval[arrKeys[i].c_str()].isNull())
-				{
+			for (size_t i = 0; i < arrKeys.size(); i++) {
+				if (!pval[arrKeys[i].c_str()].isNull()) {
 					string strkey = arrKeys[i];
 					XMLEscape(strkey);
 					strdoc += strindent;
@@ -2932,34 +2607,26 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 		}
 		strdoc += strindent;
 		strdoc += "</dict>\n";
-	}
-	else if (pval.isArray())
-	{
+	} else if (pval.isArray()) {
 		strdoc += strindent;
-		if (pval.isEmpty())
-		{
+		if (pval.isEmpty()) {
 			strdoc += "<array/>\n";
 			return;
 		}
 		strdoc += "<array>\n";
 		strindent.push_back('\t');
-		for (size_t i = 0; i < pval.size(); i++)
-		{
+		for (size_t i = 0; i < pval.size(); i++) {
 			FastWriteValue(pval[i], strdoc, strindent);
 		}
 		strindent.erase(strindent.end() - 1);
 		strdoc += strindent;
 		strdoc += "</array>\n";
-	}
-	else if (pval.isDate())
-	{
+	} else if (pval.isDate()) {
 		strdoc += strindent;
 		strdoc += "<date>";
 		strdoc += JWriter::d2s(pval.asDate());
 		strdoc += "</date>\n";
-	}
-	else if (pval.isData())
-	{
+	} else if (pval.isData()) {
 		ZBase64 b64;
 		string strdata = pval.asData();
 		strdoc += strindent;
@@ -2969,67 +2636,48 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 		strdoc += "\n";
 		strdoc += strindent;
 		strdoc += "</data>\n";
-	}
-	else if (pval.isString())
-	{
+	} else if (pval.isString()) {
 		strdoc += strindent;
-		if (pval.isDateString())
-		{
+		if (pval.isDateString()) {
 			strdoc += "<date>";
 			strdoc += pval.asString().c_str() + 5;
 			strdoc += "</date>\n";
-		}
-		else if (pval.isDataString())
-		{
+		} else if (pval.isDataString()) {
 			strdoc += "<data>\n";
 			strdoc += strindent;
 			strdoc += pval.asString().c_str() + 5;
 			strdoc += "\n";
 			strdoc += strindent;
 			strdoc += "</data>\n";
-		}
-		else
-		{
+		} else {
 			string strval = pval.asCString();
 			XMLEscape(strval);
 			strdoc += "<string>";
 			strdoc += strval;
 			strdoc += "</string>\n";
 		}
-	}
-	else if (pval.isBool())
-	{
+	} else if (pval.isBool()) {
 		strdoc += strindent;
 		strdoc += (pval.asBool() ? "<true/>\n" : "<false/>\n");
-	}
-	else if (pval.isInt())
-	{
+	} else if (pval.isInt()) {
 		strdoc += strindent;
 		strdoc += "<integer>";
-		char temp[32] = {0};
+		char temp[32] = { 0 };
 		snprintf(temp, sizeof(temp), "%" PRId64, pval.asInt64());
 		strdoc += temp;
 		strdoc += "</integer>\n";
-	}
-	else if (pval.isFloat())
-	{
+	} else if (pval.isFloat()) {
 		strdoc += strindent;
 		strdoc += "<real>";
 
 		double v = pval.asFloat();
-		if (numeric_limits<double>::infinity() == v)
-		{
+		if (numeric_limits<double>::infinity() == v) {
 			strdoc += "+infinity";
-		}
-		else
-		{
-			char temp[32] = {0};
-			if (floor(v) == v)
-			{
+		} else {
+			char temp[32] = { 0 };
+			if (floor(v) == v) {
 				snprintf(temp, sizeof(temp), "%" PRId64, (int64_t)v);
-			}
-			else
-			{
+			} else {
 				snprintf(temp, sizeof(temp), "%.15lf", v);
 			}
 			strdoc += temp;
@@ -3039,7 +2687,7 @@ void PWriter::FastWriteValue(const JValue &pval, string &strdoc, string &strinde
 	}
 }
 
-void PWriter::XMLEscape(string &strval)
+void PWriter::XMLEscape(string& strval)
 {
 	StringReplace(strval, "&", "&amp;");
 	StringReplace(strval, "<", "&lt;");
@@ -3048,12 +2696,11 @@ void PWriter::XMLEscape(string &strval)
 	//StringReplace(strval, "\"", "&quot;");	//option
 }
 
-string &PWriter::StringReplace(string &context, const string &from, const string &to)
+string& PWriter::StringReplace(string& context, const string& from, const string& to)
 {
 	size_t lookHere = 0;
 	size_t foundHere;
-	while ((foundHere = context.find(from, lookHere)) != string::npos)
-	{
+	while ((foundHere = context.find(from, lookHere)) != string::npos) {
 		context.replace(foundHere, from.size(), to);
 		lookHere = foundHere + to.size();
 	}
