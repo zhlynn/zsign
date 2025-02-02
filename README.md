@@ -1,4 +1,4 @@
-Maybe is the most quickly codesign alternative for iOS12+ in the world, cross-platform  **Linux**, **macOS** & **Windows** , more features.
+Maybe it is the most quickly codesign alternative for iOS12+, cross-platform  **Linux**, **macOS** & **Windows** , more features.
 If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [Me](https://github.com/zhlynn).
 ## Compile on macOS:
 
@@ -7,7 +7,13 @@ brew install openssl
 ```
 and then (attention to replace your openssl version)
 ```bash
-g++ *.cpp common/*.cpp -lcrypto -I/usr/local/Cellar/openssl@1.1/1.1.1k/include -L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -O3 -o zsign
+g++ *.cpp common/*.cpp -lcrypto -std=c++11 -I/usr/local/Cellar/openssl@3/3.4.0/include -L/usr/local/Cellar/openssl@3/3.4.0/lib -O3 -o zsign
+```
+
+If you are on the Apple Silicon:
+
+```bash
+g++ *.cpp common/*.cpp -lcrypto -std=c++11 -I/opt/homebrew/Cellar/openssl@3/3.4.0/include -L/opt/homebrew/Cellar/openssl@3/3.4.0/lib -O3 -o zsign
 ```
 
 ## Compile on Linux:
@@ -50,7 +56,7 @@ apt-get install mingw-w64
 ```bash
 git clone git@github.com:witwall/mman-win32
 cd mman-win32
-./configure ----cross-prefix=x86_64-w64-mingw32-
+./configure --cross-prefix=x86_64-w64-mingw32-
 make
 ```
 
@@ -59,7 +65,7 @@ make
 git clone github.com:openssl/openssl
 cd openssl
 git checkout OpenSSL_1_0_2s
-./Configure --cross-compile-prefix=x86_64-w64-mingw32 mingw64
+./Configure --cross-compile-prefix=x86_64-w64-mingw32- mingw64
 make
 
 ```
@@ -67,13 +73,13 @@ make
 4. Build zsign
 ```bash
 x86_64-w64-mingw32-g++  \
-*.cpp common/*.cpp -o zsign.exe
--lcrypto -I../mman-win32
--std=c++11  -I../openssl/include/
--DWINDOWS -L../openssl
--L../mman-win32
--lmman -lgdi32
--m64 -static -static-libgcc
+*.cpp common/*.cpp -o zsign.exe  \
+-lcrypto -I../mman-win32  \
+-std=c++11  -I../openssl/include/  \
+-DWINDOWS -L../openssl  \
+-L../mman-win32  \
+-lmman -lgdi32  \
+-m64 -static -static-libgcc -lws2_32
 ```
 
 ## Optional Compile:
@@ -167,24 +173,28 @@ I have already tested on macOS and Linux, but you also need **unzip** and **zip*
 Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
 
 options:
--k, --pkey           Path to private key or p12 file. (PEM or DER format)
--m, --prov           Path to mobile provisioning profile.
--c, --cert           Path to certificate file. (PEM or DER format)
--d, --debug          Generate debug output files. (.zsign_debug folder)
--f, --force          Force sign without cache when signing folder.
--o, --output         Path to output ipa file.
--p, --password       Password for private key or p12 file.
--b, --bundle_id      New bundle id to change.
--n, --bundle_name    New bundle name to change.
--r, --bundle_version New bundle version to change.
--e, --entitlements   New entitlements to change.
--z, --zip_level      Compressed level when output the ipa file. (0-9)
--l, --dylib          Path to inject dylib file.
--w, --weak           Inject dylib as LC_LOAD_WEAK_DYLIB.
--i, --install        Install ipa file using ideviceinstaller command for test.
--q, --quiet          Quiet operation.
--v, --version        Show version.
--h, --help           Show help.
+-k, --pkey		Path to private key or p12 file. (PEM or DER format)
+-m, --prov		Path to mobile provisioning profile.
+-a, --adhoc		Perform ad-hoc signature only.
+-s, --single_inplace		Re-sign a single Mach-O binary in place. (incompatible with `-o`)
+-2, --sha256_only		Serialize a single code directory that uses SHA256.
+-c, --cert		Path to certificate file. (PEM or DER format)
+-d, --debug		Generate debug output files. (.zsign_debug folder)
+-f, --force		Force sign without cache when signing folder.
+-o, --output		Path to output ipa file.
+-p, --password		Password for private key or p12 file.
+-b, --bundle_id		New bundle id to change.
+-n, --bundle_name	New bundle name to change.
+-r, --bundle_version	New bundle version to change.
+-e, --entitlements	New entitlements to change.
+-z, --zip_level		Compressed level when output the ipa file. (0-9)
+-l, --dylib		Path to inject dylib file.
+			Use -l multiple time to inject multiple dylib files at once.
+-w, --weak		Inject dylib as LC_LOAD_WEAK_DYLIB.
+-i, --install		Install ipa file using ideviceinstaller command for test.
+-q, --quiet		Quiet operation.
+-v, --version		Shows version.
+-h, --help		Shows help (this message).
 ```
 
 1. Show mach-o and codesignature segment info.
@@ -235,16 +245,4 @@ When you re-sign the folder with other assets next time, zsign will use the cach
 
 ## License
 
-zsign is licensed under the terms of  BSD-3-Clause license. See the [LICENSE](LICENSE) file.
-
-> THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+zsign is licensed under the terms of MIT License. See the [LICENSE](LICENSE) file.
