@@ -68,20 +68,21 @@ int usage()
 string getCacheDirectory() {
     try {
 #ifdef _WIN32
-        const char* buffer = std::GetEnvironmentVariable("USERPROFILE");
+        const char* buffer = std::GetEnvironmentVariable("LOCALAPPDATA", nullptr, 0);
+		string cacheDir = std::filesystem::path(buffer) / "zsign_cache";
         if (!buffer) {
-            throw std::runtime_error("USERPROFILE environment variable is not set.");
+            throw std::runtime_error("LOCALAPPDATA environment variable is not set.");
         }
 #else
         const char* buffer = std::getenv("HOME");
+        string cacheDir = std::filesystem::path(buffer) / ".cache";
         if (!buffer) {
             throw std::runtime_error("HOME environment variable is not set.");
         }
 #endif
-        string cacheDir = std::filesystem::path(buffer) / ".cache";
-        if (!std::filesystem::exists(cacheDir) || !std::filesystem::is_directory(cacheDir)) {
-            throw std::runtime_error("Path exists but is not a directory: " + cacheDir);
-        }
+        if (!std::filesystem::exists(cacheDir)) {
+			std::filesystem::create_directory(cacheDir);
+		}
         return cacheDir;
     } catch (const std::exception& e) {
         ZLog::ErrorV("Error while getting cache directory: %s", e.what());
