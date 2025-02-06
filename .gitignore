@@ -1,5 +1,3 @@
-bin/*/zsign*
-zsign.exe
 .vscode
 *.dSYM
 *.ipa
@@ -8,11 +6,11 @@ zsign.exe
 .vs
 Debug
 Release
-*.vcxproj.user
 .DS_Store
 .build
+bin/zsign*
 test/assets/*
 test/packages/*
+*.vcxproj.user
 .theos/
 packages/
-

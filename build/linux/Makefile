@@ -7,28 +7,30 @@ GREEN = \033[0;32m
 NC = \033[0m
 
 OPENSSL_INCLUDE = $(shell pkg-config --cflags openssl)
-MINIZIP_NG_INCLUDE = $(shell pkg-config --cflags minizip)
+MINIZIP_INCLUDE = $(shell pkg-config --cflags minizip)
 OPENSSL_LIB = $(shell pkg-config --libs openssl)
-MINIZIP_NG_LIB = $(shell pkg-config --libs minizip)
+MINIZIP_LIB = $(shell pkg-config --libs minizip)
 
 INCLUDES = -I../../src -I../../src/common
 INCLUDES += $(OPENSSL_INCLUDE)
-INCLUDES += $(MINIZIP_NG_INCLUDE)
+INCLUDES += $(MINIZIP_INCLUDE)
 
 LIBS = $(OPENSSL_LIB)
-LIBS += $(MINIZIP_NG_LIB)
+LIBS += $(MINIZIP_LIB)
 
 OBJDIR = .build
+BINDIR = ../../bin
 
 SRCS = $(wildcard ../../src/*.cpp) $(wildcard ../../src/common/*.cpp)
 OBJS = $(SRCS:../../src/%.cpp=$(OBJDIR)/%.o)
 
-TARGET = ../../bin/linux/zsign
+TARGET = $(BINDIR)/zsign
 
 all: $(TARGET)
 	@$(ECHO) "$(GREEN)>>> Build OK!$(NC) -> $(abspath $(TARGET))"
 
 $(TARGET): $(OBJS)
+	@mkdir -p $(BINDIR)
 	$(CXX) $(OBJS) $(LIBS) -o $(TARGET)
 
 $(OBJDIR)/%.o: ../../src/%.cpp

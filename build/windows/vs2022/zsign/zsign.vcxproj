@@ -131,7 +131,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /I "$(TargetPath)" "..\..\..\..\bin\windows\"</Command>
+      <Command>xcopy /Y /I "$(TargetPath)" "..\..\..\..\bin\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

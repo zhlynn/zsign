@@ -9,7 +9,7 @@ for file in "$PACKAGES"/*.ipa; do
 
     echo -n "$file: "
     
-    ../../bin/linux/zsign -q -i -k $PRIVATE_KEY -m $MOBILE_PROVISION "$file" &>/dev/null 2>&1
+    ../../bin/zsign -q -i -k $PRIVATE_KEY -m $MOBILE_PROVISION "$file" &>/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
         echo -e "\033[32mOK.\033[0m"
