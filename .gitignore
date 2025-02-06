@@ -1,3 +1,4 @@
+bin/*/zsign*
 zsign.exe
 .vscode
 *.dSYM
@@ -7,7 +8,7 @@ zsign.exe
 .vs
 Debug
 Release
-.vcxproj.user
+*.vcxproj.user
 .DS_Store
 .build
 test/assets/*
