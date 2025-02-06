@@ -54,21 +54,21 @@ options:
 -a, --adhoc             Perform ad-hoc signature only.
 -d, --debug             Generate debug output files. (.zsign_debug folder)
 -f, --force             Force sign without cache when signing folder.
--o, --output		    Path to output ipa file.
--p, --password		    Password for private key or p12 file.
--b, --bundle_id		    New bundle id to change.
--n, --bundle_name	    New bundle name to change.
--r, --bundle_version	New bundle version to change.
--e, --entitlements	    New entitlements to change.
--z, --zip_level		    Compressed level when output the ipa file. (0-9)
--l, --dylib		        Path to inject dylib file. Use -l multiple time to inject multiple dylib files at once.
--w, --weak		        Inject dylib as LC_LOAD_WEAK_DYLIB.
--i, --install		    Install ipa file using ideviceinstaller command for test.
--t, --temp_folder	    Path to temporary folder for intermediate files.
--2, --sha256_only	    Serialize a single code directory that uses SHA256.
--q, --quiet		        Quiet operation.
--v, --version		    Shows version.
--h, --help		        Shows help (this message).
+-o, --output            Path to output ipa file.
+-p, --password          Password for private key or p12 file.
+-b, --bundle_id         New bundle id to change.
+-n, --bundle_name       New bundle name to change.
+-r, --bundle_version    New bundle version to change.
+-e, --entitlements      New entitlements to change.
+-z, --zip_level         Compressed level when output the ipa file. (0-9)
+-l, --dylib             Path to inject dylib file. Use -l multiple time to inject multiple dylib files at once.
+-w, --weak              Inject dylib as LC_LOAD_WEAK_DYLIB.
+-i, --install           Install ipa file using ideviceinstaller command for test.
+-t, --temp_folder       Path to temporary folder for intermediate files.
+-2, --sha256_only       Serialize a single code directory that uses SHA256.
+-q, --quiet             Quiet operation.
+-v, --version           Shows version.
+-h, --help              Shows help (this message).
 ```
 
 1. Show mach-o and codesignature segment info.
