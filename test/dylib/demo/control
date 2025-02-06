@@ -1,0 +1,9 @@
+Package: com.yourcompany.demo
+Name: demo
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: An awesome library of some sort!!
+Maintainer: mbp16
+Author: mbp16
+Section: System
+Tag: role::developer

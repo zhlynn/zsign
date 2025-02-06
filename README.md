@@ -1,205 +1,79 @@
-Maybe it is the most quickly codesign alternative for iOS12+, cross-platform  **Linux**, **macOS** & **Windows** , more features.
-If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [Me](https://github.com/zhlynn).
-## Compile on macOS:
+Maybe it is the most quickly codesign alternative for iOS12+, cross-platform **macOS**, **Linux** and **Windows**, more features.
+If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [ME](https://github.com/zhlynn).
+
+## Compile 
+
+### macOS:
 
 ```bash
-brew install openssl
-```
-and then (attention to replace your openssl version)
-```bash
-g++ *.cpp common/*.cpp -lcrypto -std=c++11 -I/usr/local/Cellar/openssl@3/3.4.0/include -L/usr/local/Cellar/openssl@3/3.4.0/lib -O3 -o zsign
-```
-
-If you are on the Apple Silicon:
-
-```bash
-g++ *.cpp common/*.cpp -lcrypto -std=c++11 -I/opt/homebrew/Cellar/openssl@3/3.4.0/include -L/opt/homebrew/Cellar/openssl@3/3.4.0/lib -O3 -o zsign
+brew install pkg-config openssl minizip
+git clone https://github.com/zhlynn/zsign.git
+cd zsign/build/macos
+make clean && make
 ```
 
-## Compile on Linux:
+### Linux:
 
-#### Ubuntu:
-
+#### Ubuntu 22.04 / Debian 12 / Mint 21:
 
 ```bash
-sudo apt-get install git
-git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
-./INSTALL.sh
+sudo apt-get install -y git g++ pkg-config libssl-dev libminizip-dev
+git clone https://github.com/zhlynn/zsign.git
+cd zsign/build/linux
+make clean && make
 ```
+#### CentOS:
 
-#### CentOS7:
+You must install `epel-release` first, eg:
 
-
+CentOS Stream 9:
 ```bash
-yum install git 
-git clone https://github.com/zhlynn/zsign.git; cd zsign && chmod +x INSTALL.sh &&
-./INSTALL.sh
+sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 ```
 
-
-#### Compile on Windows/MingW:
-
-Note:  These instructions describe how to cross-compile for Windows from
-Linux.  I haven't tested these steps compiling for Windows from Windows,
-but it should mostly work.
-
-These instructions assume that mman-win32, zsign, and openssl are all
-sibling directories
-
-1.  Install MingW
+Then install the dependencies and compile:
 ```bash
-apt-get install mingw-w64
-
-```
-2. Build mman-win32
-
-```bash
-git clone git@github.com:witwall/mman-win32
-cd mman-win32
-./configure --cross-prefix=x86_64-w64-mingw32-
-make
+sudo yum install -y git gcc-c++ pkg-config openssl-devel minizip-devel
+git clone https://github.com/zhlynn/zsign.git
+cd zsign/build/linux
+make clean && make
 ```
 
-3.  Build openssl
-```
-git clone github.com:openssl/openssl
-cd openssl
-git checkout OpenSSL_1_0_2s
-./Configure --cross-compile-prefix=x86_64-w64-mingw32- mingw64
-make
+### Windows:
 
-```
-
-4. Build zsign
-```bash
-x86_64-w64-mingw32-g++  \
-*.cpp common/*.cpp -o zsign.exe  \
--lcrypto -I../mman-win32  \
--std=c++11  -I../openssl/include/  \
--DWINDOWS -L../openssl  \
--L../mman-win32  \
--lmman -lgdi32  \
--m64 -static -static-libgcc -lws2_32
-```
-
-## Optional Compile:
-
-#### Compile it yourserlf:
-1. Install the required dependencies accodring to your Os. 
-2. Clone zsign repositorie.
-
-> Recommended  
-> 
-```bash
-mkdir build; cd build
-cmake ..
-make
-```
-or
-
-> Optional
-> 
-```bash
-g++ *.cpp common/*.cpp -std=gnu++11 -lcrypto -O3 -o zsign
-```
-
-## Compile zsign xmake:
-
-If you have [xmake](https://xmake.io) installed, you can use xmake to quickly compile and run it.
-
-#### Build
-
-```console
-xmake
-```
-
-#### Run
-
-```console
-xmake run zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
-```
-
-#### Install
-
-```console
-xmake install
-```
-
-#### Get zsign binary
-
-```console
-xmake install -o outputdir
-```
-
-binary: `outputdir/bin/zsign`
-
-## Compile using Docker:
-
-1. Build:
-```
-docker build -t zsign https://github.com/zhlynn/zsign.git
-```
-
-2. Run:
-
-*Mount current directory (stored in $PWD) to container and set WORKDIR to it:*
-```
-docker run -v "$PWD:$PWD" -w "$PWD" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
-```
-
-*If input files are outside current folder, you will need to mount different folder:*
-```
-docker run -v "/source/input:/target/input" -w "/target/input" zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
-```
-
-3. Extract the zsign executable
-
-*You can extract the static linked zsign executable from the container image and deploy it to other server:*
-```
-docker run -v $PWD:/out --rm --entrypoint /bin/cp zsign zsign /out
-
-```
-<br>
-
-## Compile tutorial in Chinese.
-- https://blog.csdn.net/a513436535/article/details/108539238
-
-  <br>
+Use `Visual Studio 2022` to open `build/windows/vs2022/zsign.sln` and compile it on Windows 10/11.
   
-## zsign usage:
-I have already tested on macOS and Linux, but you also need **unzip** and **zip** command installed.
+## Usage:
 
 ```bash
 Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
-
 options:
--k, --pkey		Path to private key or p12 file. (PEM or DER format)
--m, --prov		Path to mobile provisioning profile.
--a, --adhoc		Perform ad-hoc signature only.
--s, --single_inplace		Re-sign a single Mach-O binary in place. (incompatible with `-o`)
--2, --sha256_only		Serialize a single code directory that uses SHA256.
--c, --cert		Path to certificate file. (PEM or DER format)
--d, --debug		Generate debug output files. (.zsign_debug folder)
--f, --force		Force sign without cache when signing folder.
--o, --output		Path to output ipa file.
--p, --password		Password for private key or p12 file.
--b, --bundle_id		New bundle id to change.
--n, --bundle_name	New bundle name to change.
+-k, --pkey              Path to private key or p12 file. (PEM or DER format)
+-m, --prov              Path to mobile provisioning profile.
+-c, --cert              Path to certificate file. (PEM or DER format)
+-a, --adhoc             Perform ad-hoc signature only.
+-d, --debug             Generate debug output files. (.zsign_debug folder)
+-f, --force             Force sign without cache when signing folder.
+-o, --output		    Path to output ipa file.
+-p, --password		    Password for private key or p12 file.
+-b, --bundle_id		    New bundle id to change.
+-n, --bundle_name	    New bundle name to change.
 -r, --bundle_version	New bundle version to change.
--e, --entitlements	New entitlements to change.
--z, --zip_level		Compressed level when output the ipa file. (0-9)
--l, --dylib		Path to inject dylib file.
-			Use -l multiple time to inject multiple dylib files at once.
--w, --weak		Inject dylib as LC_LOAD_WEAK_DYLIB.
--i, --install		Install ipa file using ideviceinstaller command for test.
--q, --quiet		Quiet operation.
--v, --version		Shows version.
--h, --help		Shows help (this message).
+-e, --entitlements	    New entitlements to change.
+-z, --zip_level		    Compressed level when output the ipa file. (0-9)
+-l, --dylib		        Path to inject dylib file. Use -l multiple time to inject multiple dylib files at once.
+-w, --weak		        Inject dylib as LC_LOAD_WEAK_DYLIB.
+-i, --install		    Install ipa file using ideviceinstaller command for test.
+-t, --temp_folder	    Path to temporary folder for intermediate files.
+-2, --sha256_only	    Serialize a single code directory that uses SHA256.
+-q, --quiet		        Quiet operation.
+-v, --version		    Shows version.
+-h, --help		        Shows help (this message).
 ```
 
 1. Show mach-o and codesignature segment info.
 ```bash
-./zsign demo.app/execute
+./zsign demo.app/demo
 ```
 
 2. Sign ipa with private key and mobileprovisioning file.
@@ -217,25 +91,31 @@ options:
 ./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
 ```
 
-5. Inject dylib into ipa and re-sign.
+5. Sign ipa with ad-hoc.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -l demo.dylib demo.ipa
+./zsign -a -o output.ipa demo.ipa
 ```
 
-6. Change bundle id and bundle name
+6. Inject dylib into ipa and re-sign.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa -b 'com.tree.new.bee' -n 'TreeNewBee' demo.ipa
+./zsign -k dev.p12 -p 123 -m dev.prov -l demo.dylib -o output.ipa demo.ipa
 ```
 
-7. Inject dylib(LC_LOAD_DYLIB) into mach-o file.
+7. Change bundle id and bundle name
 ```bash
-./zsign -l "@executable_path/demo.dylib" demo.app/execute
+./zsign -k dev.p12 -p 123 -m dev.prov -b 'com.new.bundle.id' -n 'NewName' -o output.ipa demo.ipa
 ```
 
-8. Inject dylib(LC_LOAD_WEAK_DYLIB) into mach-o file.
+8. Inject dylib(LC_LOAD_DYLIB) into mach-o file.
+```bash
+./zsign -a -l "@executable_path/demo1.dylib" -l "@executable_path/demo2.dylib" demo.app/execute
+```
+
+9. Inject dylib(LC_LOAD_WEAK_DYLIB) into mach-o file.
 ```bash
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
+
 ## How to sign quickly?
 
 You can unzip the ipa file at first, and then using zsign to sign folder with assets.
