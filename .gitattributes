@@ -1,1 +1,2 @@
-build/windows/include/*   linguist-vendored
+*.md linguist-documentation
+build/windows/vs2022/include/* linguist-vendored
