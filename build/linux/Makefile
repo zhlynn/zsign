@@ -2,7 +2,6 @@ CXX = g++
 CXXFLAGS = -std=c++11 -O3 -Wno-unused-result
 
 ECHO := $(shell if echo -e "" | grep -q '^-e'; then echo "echo"; else echo "echo -e"; fi)
-
 GREEN = \033[0;32m
 NC = \033[0m
 
@@ -34,11 +33,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(OBJS) $(LIBS) -o $(TARGET)
 
 $(OBJDIR)/%.o: ../../src/%.cpp
-	@mkdir -p $(OBJDIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
-
-$(OBJDIR)/common/%.o: ../../src/common/%.cpp
-	@mkdir -p $(OBJDIR)/common
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
