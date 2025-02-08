@@ -1,2 +1,4 @@
 *.md linguist-documentation
-build/windows/vs2022/include/* linguist-vendored
+build/windows/vs2022/include/zlib/* linguist-vendored
+build/windows/vs2022/include/minizip/* linguist-vendored
+build/windows/vs2022/include/openssl/* linguist-vendored
