@@ -1,7 +1,12 @@
 #include "zip.h"
 
+#ifdef _WIN32
 #include <minizip/zip.h>
 #include <minizip/unzip.h>
+#else
+#include <zip.h>
+#include <unzip.h>
+#endif
 
 void Zip::GetModificationTime(const char* path, void* zfi)
 {
