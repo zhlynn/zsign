@@ -1,4 +1,4 @@
-#include "zip.h"
+#include "archive.h"
 
 #ifdef _WIN32
 #include <minizip/zip.h>
