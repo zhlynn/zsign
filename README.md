@@ -33,7 +33,7 @@ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch
 
 Then install the dependencies and compile:
 ```bash
-sudo yum install -y git gcc-c++ pkg-config openssl-devel minizip-devel
+sudo yum install -y git gcc-c++ pkg-config openssl-devel minizip1.2-devel
 git clone https://github.com/zhlynn/zsign.git
 cd zsign/build/linux
 make clean && make
