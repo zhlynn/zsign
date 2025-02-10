@@ -29,9 +29,9 @@ private:
 	bool ReallocCodeSignSpace();
 
 private:
-	size_t m_sSize;
-	string m_strFile;
-	uint8_t* m_pBase;
-	bool m_bCSRealloced;
+	size_t			m_sSize;
+	string			m_strFile;
+	uint8_t*		m_pBase;
+	bool			m_bCSRealloced;
 	vector<ZArchO*> m_arrArchOes;
 };

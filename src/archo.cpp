@@ -14,6 +14,7 @@ ZArchO::ZArchO()
 	m_uSignLength = 0;
 	m_pHeader = NULL;
 	m_uHeaderSize = 0;
+	m_uFileType = 0;
 	m_bEncrypted = false;
 	m_b64Bit = false;
 	m_bBigEndian = false;
@@ -37,6 +38,7 @@ bool ZArchO::Init(uint8_t* pBase, uint32_t uLength)
 		return false;
 	}
 
+	m_uFileType = BO(m_pHeader->filetype);
 	m_b64Bit = (MH_MAGIC_64 == m_pHeader->magic || MH_CIGAM_64 == m_pHeader->magic) ? true : false;
 	m_bBigEndian = (MH_CIGAM == m_pHeader->magic || MH_CIGAM_64 == m_pHeader->magic) ? true : false;
 	m_uHeaderSize = m_b64Bit ? sizeof(mach_header_64) : sizeof(mach_header);
@@ -364,13 +366,18 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 		ZSign::GetCodeSignatureExistsCodeSlotsData(m_pSignBase, pCodeSlots1Data, uCodeSlots1DataLength, pCodeSlots256Data, uCodeSlots256DataLength);
 	}
 
-	uint64_t uExecSegFlags = pSignAsset->m_bSingleBinary ? CS_EXECSEG_MAIN_BINARY : 0U;
+	uint64_t uExecSegFlags = 0;
+	if (MH_EXECUTE == m_uFileType) {
+		if (pSignAsset->m_bAdhoc || pSignAsset->m_bSingleBinary) {
+			uExecSegFlags = CS_EXECSEG_MAIN_BINARY;
+		}
+	}
+
 	if (NULL != strstr(strEntitlementsSlot.data() + 8, "<key>get-task-allow</key>")) {
 		// TODO: Check if get-task-allow is actually set to true
 		uExecSegFlags |= CS_EXECSEG_MAIN_BINARY | CS_EXECSEG_ALLOW_UNSIGNED;
 	}
 
-	string strCMSSignatureSlot;
 	string strCodeDirectorySlot;
 	string strAltnateCodeDirectorySlot;
 	if (!pSignAsset->m_bSHA256Only) {
@@ -415,7 +422,11 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 		// code directory if `m_bUseSHA256Only == true`.
 		strAltnateCodeDirectorySlot.swap(strCodeDirectorySlot);
 	}
-	ZSign::SlotBuildCMSSignature(pSignAsset, strCodeDirectorySlot, strAltnateCodeDirectorySlot, strCMSSignatureSlot);
+
+	string strCMSSignatureSlot;
+	if (!pSignAsset->m_bAdhoc) { //adhoc remove cms signature slot
+		ZSign::SlotBuildCMSSignature(pSignAsset, strCodeDirectorySlot, strAltnateCodeDirectorySlot, strCMSSignatureSlot);
+	}
 
 	uint32_t uCodeDirectorySlotLength = (uint32_t)strCodeDirectorySlot.size();
 	uint32_t uRequirementsSlotLength = (uint32_t)strRequirementsSlot.size();
@@ -448,30 +459,35 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 		blob.offset = BE(uSuperBlobHeaderLength);
 		arrBlobIndexes.push_back(blob);
 	}
+
 	if (uRequirementsSlotLength > 0) {
 		CS_BlobIndex blob;
 		blob.type = BE((uint32_t)CSSLOT_REQUIREMENTS);
 		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
+
 	if (uEntitlementsSlotLength > 0) {
 		CS_BlobIndex blob;
 		blob.type = BE((uint32_t)CSSLOT_ENTITLEMENTS);
 		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
+
 	if (uDerEntitlementsLength > 0) {
 		CS_BlobIndex blob;
 		blob.type = BE((uint32_t)CSSLOT_DER_ENTITLEMENTS);
 		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength);
 		arrBlobIndexes.push_back(blob);
 	}
+
 	if (uAltnateCodeDirectorySlotLength > 0) {
 		CS_BlobIndex blob;
 		blob.type = BE((uint32_t)CSSLOT_ALTERNATE_CODEDIRECTORIES);
 		blob.offset = BE(uSuperBlobHeaderLength + uCodeDirectorySlotLength + uRequirementsSlotLength + uEntitlementsSlotLength + uDerEntitlementsLength);
 		arrBlobIndexes.push_back(blob);
 	}
+
 	if (uCMSSignatureSlotLength > 0) {
 		CS_BlobIndex blob;
 		blob.type = BE((uint32_t)CSSLOT_SIGNATURESLOT);

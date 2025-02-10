@@ -60,7 +60,7 @@
     <ClCompile Include="..\..\..\..\src\common\sha.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\common\zip.cpp">
+    <ClCompile Include="..\..\..\..\src\common\archive.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -110,10 +110,10 @@
     <ClInclude Include="..\..\..\..\src\common\sha.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\src\common\zip.h">
+    <ClInclude Include="src\common_win32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\common_win32.h">
+    <ClInclude Include="..\..\..\..\src\common\archive.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

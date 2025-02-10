@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\archo.cpp" />
     <ClCompile Include="..\..\..\..\src\bundle.cpp" />
+    <ClCompile Include="..\..\..\..\src\common\archive.cpp" />
     <ClCompile Include="..\..\..\..\src\common\base64.cpp" />
     <ClCompile Include="..\..\..\..\src\common\fs.cpp" />
     <ClCompile Include="..\..\..\..\src\common\json.cpp" />
@@ -144,7 +145,6 @@
     <ClCompile Include="..\..\..\..\src\common\sha.cpp" />
     <ClCompile Include="..\..\..\..\src\common\timer.cpp" />
     <ClCompile Include="..\..\..\..\src\common\util.cpp" />
-    <ClCompile Include="..\..\..\..\src\common\zip.cpp" />
     <ClCompile Include="..\..\..\..\src\macho.cpp" />
     <ClCompile Include="..\..\..\..\src\openssl.cpp" />
     <ClCompile Include="..\..\..\..\src\signing.cpp" />
@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\archo.h" />
     <ClInclude Include="..\..\..\..\src\bundle.h" />
+    <ClInclude Include="..\..\..\..\src\common\archive.h" />
     <ClInclude Include="..\..\..\..\src\common\base64.h" />
     <ClInclude Include="..\..\..\..\src\common\common.h" />
     <ClInclude Include="..\..\..\..\src\common\fs.h" />
@@ -163,7 +164,6 @@
     <ClInclude Include="..\..\..\..\src\common\sha.h" />
     <ClInclude Include="..\..\..\..\src\common\timer.h" />
     <ClInclude Include="..\..\..\..\src\common\util.h" />
-    <ClInclude Include="..\..\..\..\src\common\zip.h" />
     <ClInclude Include="..\..\..\..\src\macho.h" />
     <ClInclude Include="..\..\..\..\src\openssl.h" />
     <ClInclude Include="..\..\..\..\src\signing.h" />
