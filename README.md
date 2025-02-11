@@ -12,6 +12,11 @@ cd zsign/build/macos
 make clean && make
 ```
 
+Install `ideviceinstaller` for test:
+```bash
+brew install ideviceinstaller
+```
+
 ### Linux:
 
 #### Ubuntu 22.04 / Debian 12 / Mint 21:
@@ -22,6 +27,12 @@ git clone https://github.com/zhlynn/zsign.git
 cd zsign/build/linux
 make clean && make
 ```
+
+Install `ideviceinstaller` for test:
+```bash
+sudo apt-get install -y ideviceinstaller
+```
+
 #### CentOS:
 
 You must install `epel-release` first, eg:
