@@ -263,13 +263,6 @@ int main(int argc, char* argv[])
 		atimer.PrintResult(true, ">>> Unzip OK!");
 	}
 
-#ifdef _WIN32
-	if (!strDisplayName.empty()) {
-		iconv ic;
-		strDisplayName = ic.A2U8(strDisplayName);
-	}
-#endif
-
 	//sign
 	atimer.Reset();
 	ZBundle bundle;

@@ -421,25 +421,42 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 	}
 
 	if (!strDisplayName.empty()) {
+
+		string strNewDisplayName = strDisplayName;
+
+#ifdef _WIN32
+		iconv ic;
+		strNewDisplayName = ic.A2U8(strDisplayName);
+#endif
+
 		string strOldDisplayName = jvInfo["CFBundleDisplayName"];
-		jvInfo["CFBundleName"] = strDisplayName;
-		jvInfo["CFBundleDisplayName"] = strDisplayName;
+		if (strOldDisplayName.empty()) {
+			strOldDisplayName = jvInfo["CFBundleName"].as_cstr();
+		}
+
+		jvInfo["CFBundleName"] = strNewDisplayName;
+		jvInfo["CFBundleDisplayName"] = strNewDisplayName;
 
 		jvalue jvInfoStrings;
 		if (jvInfoStrings.read_plist_from_file("%s/zh_CN.lproj/InfoPlist.strings", m_strAppFolder.c_str())) {
-			jvInfoStrings["CFBundleName"] = strDisplayName;
-			jvInfoStrings["CFBundleDisplayName"] = strDisplayName;
+			jvInfoStrings["CFBundleName"] = strNewDisplayName;
+			jvInfoStrings["CFBundleDisplayName"] = strNewDisplayName;
 			jvInfoStrings.style_write_plist_to_file("%s/zh_CN.lproj/InfoPlist.strings", m_strAppFolder.c_str());
 		}
 
 		jvInfoStrings.clear();
 		if (jvInfoStrings.read_plist_from_file("%s/zh-Hans.lproj/InfoPlist.strings", m_strAppFolder.c_str())) {
-			jvInfoStrings["CFBundleName"] = strDisplayName;
-			jvInfoStrings["CFBundleDisplayName"] = strDisplayName;
+			jvInfoStrings["CFBundleName"] = strNewDisplayName;
+			jvInfoStrings["CFBundleDisplayName"] = strNewDisplayName;
 			jvInfoStrings.style_write_plist_to_file("%s/zh-Hans.lproj/InfoPlist.strings", m_strAppFolder.c_str());
 		}
 
-		ZLog::PrintV(">>> BundleName: %s -> %s\n", strOldDisplayName.c_str(), strDisplayName.c_str());
+#ifdef _WIN32
+		strOldDisplayName = ic.U82A(strOldDisplayName);
+		strNewDisplayName = ic.U82A(strNewDisplayName);
+#endif
+
+		ZLog::PrintV(">>> BundleName: %s -> %s\n", strOldDisplayName.c_str(), strNewDisplayName.c_str());
 	}
 
 	if (!strBundleVersion.empty()) {
