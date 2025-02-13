@@ -33,11 +33,16 @@ Install `ideviceinstaller` for test:
 sudo apt-get install -y ideviceinstaller
 ```
 
-#### CentOS:
+#### RHEL / CentOS / Alma / Rocky / Other clones:
 
 You must install `epel-release` first, eg:
 
-CentOS Stream 9:
+RHEL / CentOS / Alma / Rocky 8:
+```bash
+sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+```
+
+RHEL / CentOS / Alma / Rocky 9:
 ```bash
 sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 ```
