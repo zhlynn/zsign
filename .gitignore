@@ -9,6 +9,7 @@ Release
 .DS_Store
 .build
 bin/zsign*
+test/ipa
 test/assets/*
 test/packages/*
 *.vcxproj.user
