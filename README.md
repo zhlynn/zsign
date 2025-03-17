@@ -1,5 +1,5 @@
-Maybe it is the most quickly codesign alternative for iOS12+, cross-platform **macOS**, **Linux** and **Windows**, more features.
-If this tool can help you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [ME](https://github.com/zhlynn).
+It might be the quickest cross-platform codesign alternative for iOS 12+, supporting macOS, Linux, Windows, and more features.
+If this tool helps you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [ME](https://github.com/zhlynn).
 
 ## Compile 
 
@@ -47,7 +47,7 @@ RHEL / CentOS / Alma / Rocky 9:
 sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 ```
 
-Then install the dependencies and compile:
+Then, install the dependencies and compile:
 ```bash
 sudo yum install -y git gcc-c++ pkg-config openssl-devel minizip1.2-devel
 git clone https://github.com/zhlynn/zsign.git
@@ -57,7 +57,7 @@ make clean && make
 
 ### Windows:
 
-Use `Visual Studio 2022` to open `build/windows/vs2022/zsign.sln` and compile it on Windows 10/11.
+Use `Visual Studio 2022` to open `build/windows/vs2022/zsign.sln`, then compile it on Windows 10/11.
   
 ## Usage:
 
@@ -134,10 +134,7 @@ options:
 
 ## How to sign quickly?
 
-You can unzip the ipa file at first, and then using zsign to sign folder with assets.
-At the first time of sign, zsign will perform the complete signing and cache the signed info into *.zsign_cache* dir at the current path.
-When you re-sign the folder with other assets next time, zsign will use the cache to accelerate the operation. Extremely fast! You can have a try!
-
+First, unzip the IPA file, then use zsign to sign the folder containing assets. During the initial signing, zsign will perform a complete signature and cache the signing information into a .zsign_cache directory in the current path. When re-signing the folder with different assets, zsign will utilize the cached data to significantly speed up the process—making signing extremely fast! Give it a try!
 
 ## License
 
