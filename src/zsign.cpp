@@ -78,6 +78,7 @@ int main(int argc, char* argv[])
 	bool bWeakInject = false;
 	bool bAdhoc = false;
 	bool bSHA256Only = false;
+	bool bCheckSignature = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
