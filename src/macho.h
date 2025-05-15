@@ -12,6 +12,7 @@ public:
 	bool InitV(const char* szPath, ...);
 	bool Free();
 	void PrintInfo();
+	void ZMachO::CheckSignature() const;
 	bool Sign(ZSignAsset* pSignAsset,
 				bool bForce, 
 				string strBundleId, 

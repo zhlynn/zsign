@@ -231,6 +231,14 @@ bool ZArchO::IsExecute()
 	return false;
 }
 
+bool ZArchO::IsSigned() const 
+{
+	if (NULL == m_pSignBase || m_uSignLength <= 0) {
+		return false;
+	}
+	return true;
+}
+
 void ZArchO::PrintInfo()
 {
 	if (NULL == m_pHeader) {

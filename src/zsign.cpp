@@ -31,6 +31,7 @@ const struct option options[] = {
 	{"temp_folder", required_argument, NULL, 't'},
 	{"sha256_only", no_argument, NULL, '2'},
 	{"install", no_argument, NULL, 'i'},
+	{"check", no_argument, NULL, 'C'},
 	{"quiet", no_argument, NULL, 'q'},
 	{"help", no_argument, NULL, 'h'},
 	{}
@@ -59,6 +60,7 @@ int usage()
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-t, --temp_folder\tPath to temporary folder for intermediate files.\n");
 	ZLog::Print("-2, --sha256_only\tSerialize a single code directory that uses SHA256.\n");
+	ZLog::Print("-C, --check\t\tCheck if the file is signed.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
@@ -149,6 +151,9 @@ int main(int argc, char* argv[])
 		case '2':
 			bSHA256Only = true;
 			break;
+		case 'C':
+			bCheckSignature = true;
+			break;
 		case 'q':
 			ZLog::SetLogLever(ZLog::E_NONE);
 			break;
@@ -202,8 +207,12 @@ int main(int argc, char* argv[])
 		}
 
 		if (!bAdhoc && arrDylibFiles.empty() && (strPKeyFile.empty() || strProvFile.empty())) {
-			macho->PrintInfo();
-			return 0;
+			if (bCheckSignature) {
+				return macho->CheckSignature() ? 0 : -2;
+			} else {
+				macho->PrintInfo();
+				return 0;
+			}
 		}
 
 		ZSignAsset zsa;
