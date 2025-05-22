@@ -547,8 +547,7 @@ bool ZSignAsset::GetCMSContent(const string& strCMSDataInput, string& strContent
 	return (!strContentOutput.empty());
 }
 
-bool ZSignAsset::GetCertSubjectCN(void* pcert, string& strSubjectCN)
-{
+bool ZSignAsset::GetCertSubjectField(void *pcert, int nid, string &output) {
 	if (!pcert) {
 		return CMSError();
 	}
@@ -557,7 +556,7 @@ bool ZSignAsset::GetCertSubjectCN(void* pcert, string& strSubjectCN)
 
 	const X509_NAME* name = X509_get_subject_name(cert);
 
-	int common_name_loc = X509_NAME_get_index_by_NID(name, NID_commonName, -1);
+	int common_name_loc = X509_NAME_get_index_by_NID(name, nid, -1);
 	if (common_name_loc < 0) {
 		return CMSError();
 	}
@@ -572,28 +571,19 @@ bool ZSignAsset::GetCertSubjectCN(void* pcert, string& strSubjectCN)
 		return CMSError();
 	}
 
-	strSubjectCN.clear();
-	strSubjectCN.append((const char*)ASN1_STRING_get0_data(common_name_asn1), ASN1_STRING_length(common_name_asn1));
-	return (!strSubjectCN.empty());
+	output.clear();
+	output.append((const char*)ASN1_STRING_get0_data(common_name_asn1), ASN1_STRING_length(common_name_asn1));
+	return (!output.empty());
 }
 
-bool ZSignAsset::GetCertSubjectCN(const string& strCertData, string& strSubjectCN)
+bool ZSignAsset::GetCertSubjectCN(void* pcert, string& strSubjectCN)
 {
-	if (strCertData.empty()) {
-		return false;
-	}
+	return GetCertSubjectField(pcert, NID_commonName, strSubjectCN);
+}
 
-	BIO* bcert = BIO_new_mem_buf(strCertData.c_str(), (int)strCertData.size());
-	if (!bcert) {
-		return CMSError();
-	}
-
-	X509* cert = PEM_read_bio_X509(bcert, NULL, 0, NULL);
-	if (!cert) {
-		return CMSError();
-	}
-
-	return GetCertSubjectCN(cert, strSubjectCN);
+bool ZSignAsset::GetCertSubjectOU(void* pcert, string& strSubjectOU)
+{
+	return GetCertSubjectField(pcert, NID_organizationalUnitName, strSubjectOU);
 }
 
 void ZSignAsset::ParseCertSubject(const string& strSubject, jvalue& jvSubject)
@@ -827,9 +817,9 @@ ZSignAsset::ZSignAsset()
 
 bool ZSignAsset::Init(
 	const string& strCertFile,
-	const string& strPKeyFile, 
-	const string& strProvFile, 
-	const string& strEntitleFile, 
+	const string& strPKeyFile,
+	const string& strProvFile,
+	const string& strEntitleFile,
 	const string& strPassword,
 	bool bAdhoc,
 	bool bSHA256Only,
@@ -951,6 +941,57 @@ bool ZSignAsset::Init(
 
 	if (!GetCertSubjectCN(x509Cert, m_strSubjectCN)) {
 		ZLog::Error(">>> Can't find paired certificate subject common name!\n");
+		return false;
+	}
+
+	m_evpPKey = evpPKey;
+	m_x509Cert = x509Cert;
+	return true;
+}
+
+bool ZSignAsset::Init(
+	X509* x509Cert,
+	EVP_PKEY* evpPKey,
+	const string& profile,
+	const string& entitlements,
+	bool bAdhoc,
+	bool bSHA256Only,
+	bool bSingleBinary)
+{
+	m_bAdhoc = bAdhoc;
+	m_bSHA256Only = bSHA256Only;
+	m_bSingleBinary = bSingleBinary;
+	m_strProvData = profile;
+	m_strEntitleData = entitlements;
+
+	if (m_bAdhoc) {
+		return true;
+	}
+
+	if (NULL == evpPKey || NULL == x509Cert || !X509_check_private_key(x509Cert, evpPKey)) {
+		ZLog::Error(">>> Invalid certificate/private key pair!\n");
+		return false;
+	}
+
+	if (!m_strProvData.empty()) {
+		jvalue jvProv;
+		string strProvContent;
+		if (GetCMSContent(m_strProvData, strProvContent) && jvProv.read_plist(strProvContent)) {
+			m_strApplicationId = jvProv["Entitlements"]["application-identifier"].as_cstr();
+			m_strTeamId = jvProv["TeamIdentifier"][0].as_cstr();
+			if (m_strEntitleData.empty()) {
+				jvProv["Entitlements"].style_write_plist(m_strEntitleData);
+			}
+		}
+	}
+
+	if (!GetCertSubjectCN(x509Cert, m_strSubjectCN)) {
+		ZLog::Error(">>> Can't find paired certificate subject common name!\n");
+		return false;
+	}
+
+	if (m_strTeamId.empty() && !GetCertSubjectOU(x509Cert, m_strTeamId)) {
+		ZLog::Error(">>> Can't find paired certificate subject organizational unit!\n");
 		return false;
 	}
 

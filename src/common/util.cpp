@@ -1,5 +1,9 @@
 #include "util.h"
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 #ifdef _WIN32
 #define PRId64						"lld"
 #elif __APPLE__

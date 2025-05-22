@@ -48,12 +48,14 @@ public:
 	static void _DERLength(string& strBlob, uint64_t uLength);
 
 	static bool ParseCodeSignature(uint8_t* pCSBase);
-	static bool SlotParseEntitlements(uint8_t* pSlotBase, CS_BlobIndex* pbi);
+	static bool SlotParseEntitlements(uint8_t* pSlotBase, CS_BlobIndex* pbi, string& strEnts);
 	static bool SlotParseDerEntitlements(uint8_t* pSlotBase, CS_BlobIndex* pbi);
 	static bool SlotParseCodeDirectory(uint8_t* pSlotBase, CS_BlobIndex* pbi);
 	static bool SlotParseCMSSignature(uint8_t* pSlotBase, CS_BlobIndex* pbi);
 	static bool SlotParseRequirements(uint8_t* pSlotBase, CS_BlobIndex* pbi);
 	static void SlotParseGeneralTailer(uint8_t* pSlotBase, uint32_t uSlotLength);
 	static uint32_t SlotParseGeneralHeader(const char* szSlotName, uint8_t* pSlotBase, CS_BlobIndex* pbi);
+
+	static bool ParseCodeSignatureEntitlements(uint8_t *pCSBase, string &entitlements);
 };
 

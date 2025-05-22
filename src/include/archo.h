@@ -1,6 +1,7 @@
 #pragma once
-#include "mach-o.h"
+#include "common/mach-o.h"
 #include "openssl.h"
+#include <set>
 
 class ZArchO
 {

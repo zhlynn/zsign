@@ -103,14 +103,18 @@ bool ZLog::PrintResultV(bool bSuccess, const char* szFormat, ...)
 
 bool ZLog::Warn(const char* szLog)
 {
-	_Print(szLog, 6);
+	if (g_nLogLevel >= E_WARN) {
+		_Print(szLog, 6);
+	}
 	return false;
 }
 
 bool ZLog::WarnV(const char* szFormat, ...)
 {
-	FORMAT_V(szFormat, szLog);
-	_Print(szLog, 6);
+	if (g_nLogLevel >= E_WARN) {
+		FORMAT_V(szFormat, szLog);
+		_Print(szLog, 6);
+	}
 	return false;
 }
 

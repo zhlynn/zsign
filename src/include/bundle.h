@@ -1,6 +1,6 @@
 #pragma once
-#include "common.h"
-#include "json.h"
+#include "common/common.h"
+#include "common/json.h"
 #include "openssl.h"
 #include <vector>
 #include <list>

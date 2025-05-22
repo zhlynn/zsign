@@ -1,3 +1,5 @@
+#if 0
+
 #include "archive.h"
 
 #if defined(ZSIGN_SYSTEM_MINIZIP_NG)
@@ -296,3 +298,5 @@ bool Zip::Extract(const char* zip_file, const char* output_folder)
 	}
 	return true;
 }
+
+#endif

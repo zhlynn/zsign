@@ -19,3 +19,8 @@ CLAUDE.md
 .claude/
 compile_commands.json
 .cache/
+
+# SwiftPM
+xcuserdata/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata

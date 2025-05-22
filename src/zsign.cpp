@@ -1,3 +1,5 @@
+#if 0
+
 #include "common.h"
 #include <list>
 #include <set>
@@ -515,3 +517,5 @@ int main(int argc, char* argv[])
 	gtimer.Print(">>> Done.");
 	return bRet ? 0 : -1;
 }
+
+#endif
