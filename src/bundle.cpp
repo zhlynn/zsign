@@ -823,8 +823,8 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 		}
 	}
 
-	ZFile::RemoveFileV("%s/embedded.mobileprovision", m_strAppFolder.c_str());
 	if (!pSignAsset->m_strProvData.empty()) {
+		ZFile::RemoveFileV("%s/embedded.mobileprovision", m_strAppFolder.c_str());
 		if (!ZFile::WriteFileV(pSignAsset->m_strProvData, "%s/embedded.mobileprovision", m_strAppFolder.c_str())) { // embedded.mobileprovision
 			ZLog::ErrorV(">>> Can't write embedded.mobileprovision!\n");
 			return false;
