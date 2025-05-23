@@ -1,6 +1,8 @@
 #pragma once
 #include "common.h"
 
+#include <functional>
+
 typedef function<bool (bool bFolder, const string& strPath)> enum_folder_callback;
 
 class ZFile
