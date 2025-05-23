@@ -43,5 +43,6 @@ let package = Package(
                 .product(name: "SignerSupport", package: "xtool-core")
             ]
         ),
-    ]
+    ],
+    cxxLanguageStandard: .cxx11
 )
