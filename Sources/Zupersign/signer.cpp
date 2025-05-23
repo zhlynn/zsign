@@ -35,25 +35,31 @@ int zsign_sign(
 
     progress(progressContext, -1);
 
-    ERR_clear_error();
-    BIO *private_key_bio = BIO_new_mem_buf(private_key_data, (int)private_key_len);
-    if (!private_key_bio) {
-        print_ssl_err(exception, "Missing private key");
-        return -1;
-    }
+    EVP_PKEY *pkey = NULL;
+    X509 *cert = NULL;
 
-    EVP_PKEY *pkey = PEM_read_bio_PrivateKey(private_key_bio, NULL, NULL, NULL);
-    BIO_free(private_key_bio);
-    if (!pkey) {
-        print_ssl_err(exception, "Invalid private key");
-        return -1;
-    }
+    bool is_adhoc = private_key_len == 0 || cert_len == 0;
 
-    X509 *cert = d2i_X509(NULL, (const unsigned char **)&cert_data, cert_len);
-    if (!cert) {
-        print_ssl_err(exception, "Invalid developer certificate");
-        EVP_PKEY_free(pkey);
-        return -1;
+    if (!is_adhoc) {
+        ERR_clear_error();
+        BIO *private_key_bio = BIO_new_mem_buf(private_key_data, (int)private_key_len);
+        if (!private_key_bio) {
+            print_ssl_err(exception, "Missing private key");
+            return -1;
+        }
+        pkey = PEM_read_bio_PrivateKey(private_key_bio, NULL, NULL, NULL);
+        BIO_free(private_key_bio);
+        if (!pkey) {
+            print_ssl_err(exception, "Invalid private key");
+            return -1;
+        }
+
+        cert = d2i_X509(NULL, (const unsigned char **)&cert_data, cert_len);
+        if (!cert) {
+            print_ssl_err(exception, "Invalid developer certificate");
+            EVP_PKEY_free(pkey);
+            return -1;
+        }
     }
 
     ZSignAsset asset;
@@ -61,7 +67,7 @@ int zsign_sign(
     success = asset.Init(
         cert, pkey, "",
         string(static_cast<const char *>(entitlements[0].data), entitlements[0].len),
-        false, false, false
+        is_adhoc, false, false
     );
     if (!success) {
         *exception = strdup("Invalid developer certificate/private key");
