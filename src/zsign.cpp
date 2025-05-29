@@ -31,6 +31,7 @@ const struct option options[] = {
 	{"temp_folder", required_argument, NULL, 't'},
 	{"sha256_only", no_argument, NULL, '2'},
 	{"install", no_argument, NULL, 'i'},
+	{"check", no_argument, NULL, 'C'},
 	{"quiet", no_argument, NULL, 'q'},
 	{"help", no_argument, NULL, 'h'},
 	{}
@@ -59,6 +60,7 @@ int usage()
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-t, --temp_folder\tPath to temporary folder for intermediate files.\n");
 	ZLog::Print("-2, --sha256_only\tSerialize a single code directory that uses SHA256.\n");
+	ZLog::Print("-C, --check\t\tCheck if the file is signed.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
@@ -76,6 +78,7 @@ int main(int argc, char* argv[])
 	bool bWeakInject = false;
 	bool bAdhoc = false;
 	bool bSHA256Only = false;
+	bool bCheckSignature = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -92,7 +95,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwc:k:m:o:p:e:b:n:z:l:t:r:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCc:k:m:o:p:e:b:n:z:l:t:r:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -149,6 +152,9 @@ int main(int argc, char* argv[])
 		case '2':
 			bSHA256Only = true;
 			break;
+		case 'C':
+			bCheckSignature = true;
+			break;
 		case 'q':
 			ZLog::SetLogLever(ZLog::E_NONE);
 			break;
@@ -202,8 +208,12 @@ int main(int argc, char* argv[])
 		}
 
 		if (!bAdhoc && arrDylibFiles.empty() && (strPKeyFile.empty() || strProvFile.empty())) {
-			macho->PrintInfo();
-			return 0;
+			if (bCheckSignature) {
+				return macho->CheckSignature() ? 0 : -2;
+			} else {
+				macho->PrintInfo();
+				return 0;
+			}
 		}
 
 		ZSignAsset zsa;

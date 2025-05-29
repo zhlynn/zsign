@@ -82,6 +82,7 @@ options:
 -i, --install           Install ipa file using ideviceinstaller command for test.
 -t, --temp_folder       Path to temporary folder for intermediate files.
 -2, --sha256_only       Serialize a single code directory that uses SHA256.
+-C, --check             Check if the file is signed.
 -q, --quiet             Quiet operation.
 -v, --version           Shows version.
 -h, --help              Shows help (this message).

@@ -231,6 +231,17 @@ bool ZArchO::IsExecute()
 	return false;
 }
 
+bool ZArchO::IsSigned() const 
+{
+	if (NULL == m_pSignBase || m_uSignLength <= 0) {
+		ZLog::PrintV("File is not signed.\n");
+		return false;
+	}
+	
+	ZLog::PrintV("File is signed.\n");
+	return true;
+}
+
 void ZArchO::PrintInfo()
 {
 	if (NULL == m_pHeader) {

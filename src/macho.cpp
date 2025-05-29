@@ -112,6 +112,15 @@ void ZMachO::PrintInfo()
 	}
 }
 
+bool ZMachO::CheckSignature() const
+{
+	return std::all_of(m_arrArchOes.cbegin(), m_arrArchOes.cend(), 
+		[](ZArchO const * archo) {
+			return archo->IsSigned();
+		}
+	);
+}
+
 bool ZMachO::Sign(ZSignAsset* pSignAsset, bool bForce, string strBundleId, string strInfoSHA1, string strInfoSHA256, const string& strCodeResourcesData)
 {
 	if (NULL == m_pBase || m_arrArchOes.empty()) {

@@ -20,6 +20,7 @@ public:
 
 	void PrintInfo();
 	bool IsExecute();
+	bool IsSigned() const;
 	bool InjectDylib(bool bWeakInject, const char* szDylibFile);
 	void RemoveDylibs(set<string> setDylibs);
 	uint32_t ReallocCodeSignSpace(const string& strNewFile);
