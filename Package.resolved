@@ -1,5 +1,5 @@
 {
-  "originHash" : "cba02d5bfa8bf286b968c3ad5ab7577fc2d1a03b24ff631e6f17fcdc1fc04f08",
+  "originHash" : "a78f61faac278483b1c5abecc1cedf4f68ac5779192c6fd462f59d91ab720a3d",
   "pins" : [
     {
       "identity" : "swift-concurrency-extras",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xtool-org/xtool-core",
       "state" : {
-        "revision" : "63c644eef014f7faff53daaebe8bad37c31fbbe5",
-        "version" : "1.3.0"
+        "revision" : "d412ac768d1e73d16ad7ccc6805f12fc701709f6",
+        "version" : "1.4.0"
       }
     }
   ],
