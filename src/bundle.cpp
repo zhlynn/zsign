@@ -79,25 +79,48 @@ bool ZBundle::GetSignFolderInfo(const string& strFolder, jvalue& jvNode, bool bG
 
 bool ZBundle::GetObjectsToSign(const string& strFolder, jvalue& jvInfo)
 {
-	ZFile::EnumFolder(strFolder.c_str(), true, NULL, [&](bool bFolder, const string& strPath) {
-		if (bFolder) {
-			if (ZFile::IsPathSuffix(strPath, ".app") ||
-				ZFile::IsPathSuffix(strPath, ".appex") ||
-				ZFile::IsPathSuffix(strPath, ".framework") ||
-				ZFile::IsPathSuffix(strPath, ".xctest")) {
-				jvalue jvNode;
-				if (GetSignFolderInfo(strPath, jvNode)) {
-					jvInfo["folders"].push_back(jvNode);
+	vector<string> allBundles;
+	
+	std::function<void(const string&)> findAllBundles = [&](const string& currentPath) {
+		ZFile::EnumFolder(currentPath.c_str(), false, NULL, [&](bool bFolder, const string& strPath) {
+			if (bFolder) {
+				if (ZFile::IsPathSuffix(strPath, ".app") ||
+					ZFile::IsPathSuffix(strPath, ".appex") ||
+					ZFile::IsPathSuffix(strPath, ".framework") ||
+					ZFile::IsPathSuffix(strPath, ".xctest")) {
+					allBundles.push_back(strPath);
+					findAllBundles(strPath);
+				} else {
+					findAllBundles(strPath);
 				}
 			}
-		} else {
-			if (ZFile::IsPathSuffix(strPath, ".dylib")) {
-				jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
-			}
+			return false;
+		});
+	};
+	
+	findAllBundles(strFolder);
+	
+	sort(allBundles.begin(), allBundles.end(), [](const string& a, const string& b) {
+		size_t depthA = count(a.begin(), a.end(), '/');
+		size_t depthB = count(b.begin(), b.end(), '/');
+		// deeper paths first
+		return depthA > depthB;
+	});
+	
+	for (const string& bundlePath : allBundles) {
+		jvalue jvNode;
+		if (GetSignFolderInfo(bundlePath, jvNode)) {
+			jvInfo["folders"].push_back(jvNode);
+		}
+	}
+	
+	ZFile::EnumFolder(strFolder.c_str(), true, NULL, [&](bool bFolder, const string& strPath) {
+		if (!bFolder && ZFile::IsPathSuffix(strPath, ".dylib")) {
+			jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
 		}
 		return false;
 	});
-
+	
 	return true;
 }
 
@@ -236,14 +259,6 @@ void ZBundle::GetNodeChangedFiles(jvalue& jvNode)
 
 bool ZBundle::SignNode(jvalue& jvNode)
 {
-	if (jvNode.has("folders")) {
-		for (size_t i = 0; i < jvNode["folders"].size(); i++) {
-			if (!SignNode(jvNode["folders"][i])) {
-				return false;
-			}
-		}
-	}
-
 	if (jvNode.has("files")) {
 		for (size_t i = 0; i < jvNode["files"].size(); i++) {
 			string strFile = jvNode["files"][i];
@@ -254,6 +269,14 @@ bool ZBundle::SignNode(jvalue& jvNode)
 					return false;
 				}
 			} else {
+				return false;
+			}
+		}
+	}
+	
+	if (jvNode.has("folders")) {
+		for (size_t i = 0; i < jvNode["folders"].size(); i++) {
+			if (!SignNode(jvNode["folders"][i])) {
 				return false;
 			}
 		}
