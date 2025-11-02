@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
 
 	//install
 	if (bRet && bInstall) {
-		bRet = ZUtil::SystemExecV("ideviceinstaller -i  \"%s\"", strOutputFile.c_str());
+		bRet = ZUtil::SystemExecV("ideviceinstaller install  \"%s\"", strOutputFile.c_str());
 	}
 
 	//clean
