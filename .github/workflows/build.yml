@@ -1,48 +1,237 @@
-name: build
+name: Build Multi-Platform
 
 on:
   push:
-    branches: [master]
+    branches: [main, master, develop]
+    tags:
+      - 'v*'
   pull_request:
-    branches: [master]
+    branches: [main, master, develop]
   workflow_dispatch:
 
 jobs:
-  linux:
+  build-linux:
+    name: Build Linux (${{ matrix.arch }})
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@v4
-      - name: install deps
+
+      - name: install deps (x86_64)
+        if: matrix.arch == 'x86_64'
         run: sudo apt-get update && sudo apt-get install -y g++ pkg-config libssl-dev libminizip-dev
-      - name: build
-        run: cd build/linux && make clean && make -j$(nproc)
+
+      - name: setup qemu (aarch64)
+        if: matrix.arch == 'aarch64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: build (x86_64)
+        if: matrix.arch == 'x86_64'
+        run: |
+          cd build/linux && make clean && make -j$(nproc)
+          strip ../../bin/zsign
+
+      - name: build (aarch64)
+        if: matrix.arch == 'aarch64'
+        run: |
+          docker run --rm --platform linux/arm64 -v $PWD:/workspace -w /workspace ubuntu:22.04 bash -c "
+            apt-get update && \
+            apt-get install -y g++ pkg-config libssl-dev libminizip-dev && \
+            cd build/linux && make clean && make -j\$(nproc) && \
+            strip ../../bin/zsign
+          "
+
       - name: smoke test
+        if: matrix.arch == 'x86_64'
         run: ./bin/zsign -v
 
-  macos:
-    runs-on: macos-14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-linux-${{ matrix.arch }}
+          path: bin/zsign
+
+  build-macos:
+    name: Build macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x86_64
+            runner: macos-13
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
+
       - name: install deps
         run: brew install pkg-config openssl minizip
+
       - name: fix minizip includes
         run: |
           PREFIX=$(brew --prefix minizip)
           if [ -d "$PREFIX/include/minizip" ] && [ ! -f "$PREFIX/include/zip.h" ]; then
             ln -sf "$PREFIX/include/minizip/"*.h "$PREFIX/include/"
           fi
+
       - name: build
         run: cd build/macos && make clean && make -j$(sysctl -n hw.ncpu)
+
       - name: smoke test
         run: ./bin/zsign -v
 
-  windows:
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-macos-${{ matrix.arch }}
+          path: bin/zsign
+
+  build-macos-universal:
+    name: Build macOS (Universal)
+    needs: [build-macos]
+    runs-on: macos-14
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: zsign-macos-x86_64
+          path: bin-x86_64
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: zsign-macos-arm64
+          path: bin-arm64
+
+      - name: create universal binary
+        run: |
+          mkdir -p bin
+          lipo -create bin-x86_64/zsign bin-arm64/zsign -output bin/zsign
+          chmod +x bin/zsign
+          file bin/zsign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-macos-universal
+          path: bin/zsign
+
+  build-windows:
+    name: Build Windows (x64)
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+
       - name: setup msbuild
         uses: microsoft/setup-msbuild@v2
+
       - name: build
         run: msbuild build\windows\vs2022\zsign.sln /p:Configuration=Release /p:Platform=x64 /m
+
       - name: smoke test
         run: .\build\windows\vs2022\x64\Release\zsign.exe -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-windows-x64
+          path: build/windows/vs2022/x64/Release/zsign.exe
+
+  build-android:
+    name: Build Android (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: armeabi-v7a
+            ndk_target: armv7a-linux-androideabi
+            openssl_target: android-arm
+          - arch: arm64-v8a
+            ndk_target: aarch64-linux-android
+            openssl_target: android-arm64
+    env:
+      API: 21
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup ndk
+        run: |
+          NDK_VERSION=r26d
+          wget -q https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip
+          unzip -q android-ndk-${NDK_VERSION}-linux.zip
+          echo "NDK_HOME=$PWD/android-ndk-${NDK_VERSION}" >> $GITHUB_ENV
+          echo "TOOLCHAIN=$PWD/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64" >> $GITHUB_ENV
+
+      - name: build openssl
+        run: |
+          git clone --depth 1 --branch openssl-3.2.1 https://github.com/openssl/openssl.git openssl-src
+          cd openssl-src
+          export ANDROID_NDK_HOME=$NDK_HOME
+          export PATH=$TOOLCHAIN/bin:$PATH
+          ./Configure ${{ matrix.openssl_target }} -D__ANDROID_API__=$API --prefix=$PWD/../android-deps no-shared no-tests
+          make -j$(nproc) > /dev/null 2>&1
+          make install_sw > /dev/null 2>&1
+
+      - name: build minizip
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake
+          git clone --depth 1 https://github.com/madler/zlib.git zlib-src
+          cd zlib-src
+          export CC=$TOOLCHAIN/bin/${{ matrix.ndk_target }}$API-clang
+          ./configure --prefix=$PWD/../android-deps --static
+          make -j$(nproc) && make install
+          cd ..
+          # build minizip from zlib's contrib
+          cd zlib-src/contrib/minizip
+          $TOOLCHAIN/bin/${{ matrix.ndk_target }}$API-clang -O3 -I$PWD/../../../android-deps/include -c ioapi.c minizip.c zip.c unzip.c
+          $TOOLCHAIN/bin/llvm-ar rcs $PWD/../../../android-deps/lib/libminizip.a ioapi.o zip.o unzip.o
+          cp *.h $PWD/../../../android-deps/include/
+
+      - name: build zsign
+        run: |
+          CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}$API-clang++
+          mkdir -p bin
+          $CXX -std=c++11 -O3 \
+            -I./src -I./src/common \
+            -I./android-deps/include \
+            $(find src -name "*.cpp") \
+            -L./android-deps/lib \
+            -lssl -lcrypto -lminizip -lz \
+            -static-libstdc++ \
+            -o bin/zsign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-android-${{ matrix.arch }}
+          path: bin/zsign
+
+  create-release:
+    name: Create Release
+    needs: [build-linux, build-macos-universal, build-windows, build-android]
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: package
+        run: |
+          mkdir -p releases
+          cd artifacts
+          for dir in zsign-linux-* zsign-android-*; do
+            [ -d "$dir" ] && tar -czf ../releases/${dir}.tar.gz -C $dir zsign
+          done
+          [ -d zsign-macos-universal ] && tar -czf ../releases/zsign-macos-universal.tar.gz -C zsign-macos-universal zsign
+          [ -d zsign-windows-x64 ] && (cd zsign-windows-x64 && zip ../../releases/zsign-windows-x64.zip zsign.exe)
+          cd ..
+          ls -lh releases/
+
+      - name: release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: releases/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
