@@ -27,6 +27,8 @@ jobs:
       - name: setup qemu (aarch64)
         if: matrix.arch == 'aarch64'
         uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
 
       - name: build (x86_64)
         if: matrix.arch == 'x86_64'
@@ -37,12 +39,15 @@ jobs:
       - name: build (aarch64)
         if: matrix.arch == 'aarch64'
         run: |
-          docker run --rm --platform linux/arm64 -v $PWD:/workspace -w /workspace ubuntu:22.04 bash -c "
-            apt-get update && \
-            apt-get install -y g++ pkg-config libssl-dev libminizip-dev && \
-            cd build/linux && make clean && make -j\$(nproc) && \
-            strip ../../bin/zsign
-          "
+          docker run --rm \
+            --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            ubuntu:22.04 bash -c "\
+              apt-get update && \
+              apt-get install -y g++ make pkg-config libssl-dev libminizip-dev && \
+              cd build/linux && make clean && make -j\$(nproc) && \
+              strip ../../bin/zsign"
 
       - name: smoke test
         if: matrix.arch == 'x86_64'
@@ -149,55 +154,60 @@ jobs:
             ndk_target: aarch64-linux-android
             openssl_target: android-arm64
     env:
-      API: 21
+      API: "21"
     steps:
       - uses: actions/checkout@v4
 
       - name: setup ndk
-        run: |
-          NDK_VERSION=r26d
-          wget -q https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip
-          unzip -q android-ndk-${NDK_VERSION}-linux.zip
-          echo "NDK_HOME=$PWD/android-ndk-${NDK_VERSION}" >> $GITHUB_ENV
-          echo "TOOLCHAIN=$PWD/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64" >> $GITHUB_ENV
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26d
 
-      - name: build openssl
+      - name: build deps and zsign
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
-          git clone --depth 1 --branch openssl-3.2.1 https://github.com/openssl/openssl.git openssl-src
-          cd openssl-src
-          export ANDROID_NDK_HOME=$NDK_HOME
-          export PATH=$TOOLCHAIN/bin:$PATH
-          ./Configure ${{ matrix.openssl_target }} -D__ANDROID_API__=$API --prefix=$PWD/../android-deps no-shared no-tests
+          TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
+          CC=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang
+          CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang++
+          AR=$TOOLCHAIN/bin/llvm-ar
+          RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+          DEPS=$PWD/android-deps
+
+          # openssl
+          curl -sL https://github.com/openssl/openssl/releases/download/openssl-3.2.1/openssl-3.2.1.tar.gz | tar xz
+          cd openssl-3.2.1
+          export ANDROID_NDK_HOME PATH=$TOOLCHAIN/bin:$PATH
+          ./Configure ${{ matrix.openssl_target }} -D__ANDROID_API__=$API --prefix=$DEPS no-shared no-tests 2>&1 | tail -1
           make -j$(nproc) > /dev/null 2>&1
           make install_sw > /dev/null 2>&1
+          cd ..
 
-      - name: build minizip
-        run: |
-          sudo apt-get update && sudo apt-get install -y cmake
-          git clone --depth 1 https://github.com/madler/zlib.git zlib-src
-          cd zlib-src
-          export CC=$TOOLCHAIN/bin/${{ matrix.ndk_target }}$API-clang
-          ./configure --prefix=$PWD/../android-deps --static
+          # zlib
+          curl -sL https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz | tar xz
+          cd zlib-1.3.1
+          CC=$CC ./configure --prefix=$DEPS --static
           make -j$(nproc) && make install
           cd ..
-          # build minizip from zlib's contrib
-          cd zlib-src/contrib/minizip
-          $TOOLCHAIN/bin/${{ matrix.ndk_target }}$API-clang -O3 -I$PWD/../../../android-deps/include -c ioapi.c minizip.c zip.c unzip.c
-          $TOOLCHAIN/bin/llvm-ar rcs $PWD/../../../android-deps/lib/libminizip.a ioapi.o zip.o unzip.o
-          cp *.h $PWD/../../../android-deps/include/
 
-      - name: build zsign
-        run: |
-          CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}$API-clang++
+          # minizip (from zlib contrib)
+          cd zlib-1.3.1/contrib/minizip
+          $CC -O3 -I$DEPS/include -c ioapi.c zip.c unzip.c
+          $AR rcs $DEPS/lib/libminizip.a ioapi.o zip.o unzip.o
+          cp *.h $DEPS/include/
+          cd ../../..
+
+          # zsign
           mkdir -p bin
           $CXX -std=c++11 -O3 \
-            -I./src -I./src/common \
-            -I./android-deps/include \
+            -I./src -I./src/common -I$DEPS/include \
             $(find src -name "*.cpp") \
-            -L./android-deps/lib \
-            -lssl -lcrypto -lminizip -lz \
+            -L$DEPS/lib -lssl -lcrypto -lminizip -lz \
             -static-libstdc++ \
             -o bin/zsign
+
+          file bin/zsign
 
       - uses: actions/upload-artifact@v4
         with:
