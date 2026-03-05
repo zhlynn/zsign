@@ -1,0 +1,48 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: install deps
+        run: sudo apt-get update && sudo apt-get install -y g++ pkg-config libssl-dev libminizip-dev
+      - name: build
+        run: cd build/linux && make clean && make -j$(nproc)
+      - name: smoke test
+        run: ./bin/zsign -v
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: install deps
+        run: brew install pkg-config openssl minizip
+      - name: fix minizip includes
+        run: |
+          PREFIX=$(brew --prefix minizip)
+          if [ -d "$PREFIX/include/minizip" ] && [ ! -f "$PREFIX/include/zip.h" ]; then
+            ln -sf "$PREFIX/include/minizip/"*.h "$PREFIX/include/"
+          fi
+      - name: build
+        run: cd build/macos && make clean && make -j$(sysctl -n hw.ncpu)
+      - name: smoke test
+        run: ./bin/zsign -v
+
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup msbuild
+        uses: microsoft/setup-msbuild@v2
+      - name: build
+        run: msbuild build\windows\vs2022\zsign.sln /p:Configuration=Release /p:Platform=x64 /m
+      - name: smoke test
+        run: .\build\windows\vs2022\x64\Release\zsign.exe -v
