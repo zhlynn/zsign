@@ -53,7 +53,7 @@ bool Zip::_WriteFileToZip(void* hZip, const string& strFile, const string& strRe
 	}
 
 	bool bRet = true;
-	char buffer[4096];
+	char buffer[65536];
 	size_t bytes_read = fread(buffer, 1, sizeof(buffer), fp);
 	while (bytes_read > 0) {
 		if (zipWriteInFileInZip(hZip, buffer, (uint32_t)bytes_read) < 0) {
@@ -198,9 +198,9 @@ bool Zip::_ReadFileFromZip(void* hZip, const string& strPath, const string& strR
 	}
 
 	bool bRet = true;
-	uint32_t uBufSize = 512 * 1024;
-	char* pbuff = (char*)malloc(uBufSize);
-	if (NULL != pbuff) {
+	static const uint32_t uBufSize = 65536;
+	char pbuff[uBufSize];
+	{
 		int32_t nReaded = unzReadCurrentFile(hZip, pbuff, uBufSize);
 		while (nReaded > 0) {
 			if (nReaded != fwrite(pbuff, 1, nReaded, fp)) {
@@ -209,9 +209,6 @@ bool Zip::_ReadFileFromZip(void* hZip, const string& strPath, const string& strR
 			}
 			nReaded = unzReadCurrentFile(hZip, pbuff, uBufSize);
 		}
-		free(pbuff);
-	} else {
-		bRet = false;
 	}
 
 	fclose(fp);

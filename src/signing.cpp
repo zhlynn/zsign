@@ -3,6 +3,7 @@
 #include "mach-o.h"
 #include "openssl.h"
 #include "signing.h"
+#include <openssl/sha.h>
 
 void ZSign::_DERLength(string& strBlob, uint64_t uLength)
 {
@@ -440,7 +441,7 @@ bool ZSign::SlotBuildCodeDirectory(bool bAlternate,
 		arrSpecialSlots.erase(arrSpecialSlots.begin(), itLastUsedSpecialSlot);
 	}
 
-	uint32_t uPageSize = (uint32_t)pow(2, cdHeader.pageSize);
+	uint32_t uPageSize = 1u << cdHeader.pageSize;
 	uint32_t uPages = uCodeLength / uPageSize;
 	uint32_t uRemain = uCodeLength % uPageSize;
 	uint32_t uCodeSlots = uPages + (uRemain > 0 ? 1 : 0);
@@ -468,6 +469,7 @@ bool ZSign::SlotBuildCodeDirectory(bool bAlternate,
 	uint32_t uCodeSlotsLength = uCodeSlots * cdHeader.hashSize;
 
 	uint32_t uSlotLength = uHeaderLength + uBundleIDLength + uSpecialSlotsLength + uCodeSlotsLength;
+	strOutput.reserve(uSlotLength + uTeamIDLength); // pre-allocate to avoid reallocations
 	if (uVersion >= 0x20100) {
 		//todo
 	}
@@ -508,23 +510,24 @@ bool ZSign::SlotBuildCodeDirectory(bool bAlternate,
 	if (NULL != pCodeSlotsData && (uCodeSlotsDataLength == uCodeSlots * cdHeader.hashSize)) { //use exists
 		strOutput.append((const char*)pCodeSlotsData, uCodeSlotsDataLength);
 	} else {
+		uint8_t hash[32]; // large enough for both SHA1 (20) and SHA256 (32)
 		for (uint32_t i = 0; i < uPages; i++) {
-			string strSHASum;
 			if (1 == cdHeader.hashType) {
-				ZSHA::SHA1(pCodeBase + uPageSize * i, uPageSize, strSHASum);
-			} else  {
-				ZSHA::SHA256(pCodeBase + uPageSize * i, uPageSize, strSHASum);
-			} 
-			strOutput.append(strSHASum.data(), strSHASum.size());
+				::SHA1(pCodeBase + uPageSize * i, uPageSize, hash);
+				strOutput.append((const char*)hash, 20);
+			} else {
+				::SHA256(pCodeBase + uPageSize * i, uPageSize, hash);
+				strOutput.append((const char*)hash, 32);
+			}
 		}
 		if (uRemain > 0) {
-			string strSHASum;
 			if (1 == cdHeader.hashType) {
-				ZSHA::SHA1(pCodeBase + uPageSize * uPages, uRemain, strSHASum);
+				::SHA1(pCodeBase + uPageSize * uPages, uRemain, hash);
+				strOutput.append((const char*)hash, 20);
 			} else {
-				ZSHA::SHA256(pCodeBase + uPageSize * uPages, uRemain, strSHASum);
+				::SHA256(pCodeBase + uPageSize * uPages, uRemain, hash);
+				strOutput.append((const char*)hash, 32);
 			}
-			strOutput.append(strSHASum.data(), strSHASum.size());
 		}
 	}
 

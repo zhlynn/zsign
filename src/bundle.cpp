@@ -152,7 +152,7 @@ bool ZBundle::GenerateCodeResources(const string& strFolder, jvalue& jvCodeRes)
 	jvCodeRes["files"] = jvalue(jvalue::E_OBJECT);
 	jvCodeRes["files2"] = jvalue(jvalue::E_OBJECT);
 
-	for (string strKey : setFiles) {
+	for (const string& strKey : setFiles) {
 		string strFile = strFolder + "/" + strKey;
 		string strSHA1Base64;
 		string strSHA256Base64;

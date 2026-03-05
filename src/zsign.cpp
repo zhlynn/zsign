@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
 		}
 
 		if (!arrDylibFiles.empty()) {
-			for (string dyLibFile : arrDylibFiles) {
+			for (const string& dyLibFile : arrDylibFiles) {
 				if (!macho->InjectDylib(bWeakInject, dyLibFile.c_str())) {
 					return -1;
 				}
