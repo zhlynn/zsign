@@ -234,9 +234,136 @@ jobs:
           name: zsign-docker
           path: zsign-docker.tar.gz
 
+  build-linux-musl:
+    name: Build Linux (musl-static)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build static binary
+        run: |
+          docker build -t zsign-musl -f - . <<'MUSL'
+          FROM alpine:3.19 AS builder
+          RUN apk add --no-cache g++ make pkgconf openssl-dev openssl-libs-static minizip-dev zlib-dev zlib-static
+          COPY . /src
+          WORKDIR /src
+          RUN mkdir -p bin && g++ -std=c++11 -O3 -static -Wno-unused-result \
+            -I./src -I./src/common \
+            $(pkg-config --cflags openssl minizip) \
+            $(find src -name "*.cpp") \
+            $(pkg-config --libs --static openssl minizip) -lz \
+            -o bin/zsign && strip bin/zsign
+          MUSL
+          docker create --name musl-extract zsign-musl
+          docker cp musl-extract:/src/bin/zsign bin/zsign-musl
+          docker rm musl-extract
+
+      - name: smoke test
+        run: |
+          chmod +x bin/zsign-musl
+          file bin/zsign-musl
+          bin/zsign-musl -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-linux-musl-static
+          path: bin/zsign-musl
+
+  build-linux-armv7:
+    name: Build Linux (armv7)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install cross-compiler and deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-arm-linux-gnueabihf
+          sudo dpkg --add-architecture armhf
+          sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
+          echo "deb [arch=armhf] http://ports.ubuntu.com/ jammy main restricted universe" | sudo tee -a /etc/apt/sources.list
+          echo "deb [arch=armhf] http://ports.ubuntu.com/ jammy-updates main restricted universe" | sudo tee -a /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev:armhf libminizip-dev:armhf
+
+      - name: build
+        run: |
+          mkdir -p bin
+          arm-linux-gnueabihf-g++ -std=c++11 -O3 -Wno-unused-result \
+            -I./src -I./src/common -I/usr/include -I/usr/include/minizip \
+            $(find src -name "*.cpp") \
+            -L/usr/lib/arm-linux-gnueabihf \
+            -lssl -lcrypto -lminizip \
+            -o bin/zsign
+
+      - name: verify arch
+        run: file bin/zsign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-linux-armv7
+          path: bin/zsign
+
+  build-freebsd:
+    name: Build FreeBSD (x86_64)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build on freebsd
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y openssl minizip pkgconf gmake
+          run: |
+            cd build/linux
+            gmake clean
+            gmake CXX=c++ -j$(sysctl -n hw.ncpu)
+            strip ../../bin/zsign
+            ../../bin/zsign -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-freebsd-x86_64
+          path: bin/zsign
+
+  build-windows-arm64:
+    name: Build Windows (ARM64)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup msbuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: setup vcpkg and deps
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+          C:\vcpkg\vcpkg install openssl:arm64-windows-static minizip:arm64-windows-static zlib:arm64-windows-static
+        shell: cmd
+
+      - name: build
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsamd64_arm64.bat"
+          set VCPKG=C:\vcpkg\installed\arm64-windows-static
+          set INCLUDES=/I src /I src\common /I "%VCPKG%\include"
+          set LIBS=/LIBPATH:"%VCPKG%\lib" libssl.lib libcrypto.lib minizip.lib zlib.lib ws2_32.lib crypt32.lib advapi32.lib user32.lib
+          cl.exe /nologo /std:c++14 /O2 /EHsc /D_WIN32 /DWIN32_LEAN_AND_MEAN /DNOMINMAX %INCLUDES% src\*.cpp src\common\*.cpp /Fe:bin\zsign.exe /link %LIBS% /MACHINE:ARM64 /SUBSYSTEM:CONSOLE
+        shell: cmd
+
+      - name: verify arch
+        run: dumpbin /headers bin\zsign.exe | findstr machine
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-windows-arm64
+          path: bin/zsign.exe
+
   create-release:
     name: Create Release
-    needs: [build-linux, build-macos, build-windows, build-android, build-docker]
+    needs: [build-linux, build-macos, build-windows, build-android, build-docker, build-linux-musl, build-linux-armv7, build-freebsd, build-windows-arm64]
     runs-on: ubuntu-22.04
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -248,11 +375,13 @@ jobs:
         run: |
           mkdir -p releases
           cd artifacts
-          for dir in zsign-linux-* zsign-android-*; do
+          for dir in zsign-linux-x86_64 zsign-linux-aarch64 zsign-linux-armv7 zsign-android-armeabi-v7a zsign-android-arm64-v8a zsign-freebsd-x86_64; do
             [ -d "$dir" ] && tar -czf ../releases/${dir}.tar.gz -C $dir zsign
           done
+          [ -d zsign-linux-musl-static ] && tar -czf ../releases/zsign-linux-musl-static.tar.gz -C zsign-linux-musl-static zsign-musl
           [ -d zsign-macos-arm64 ] && tar -czf ../releases/zsign-macos-arm64.tar.gz -C zsign-macos-arm64 zsign
           [ -d zsign-windows-x64 ] && (cd zsign-windows-x64 && zip ../../releases/zsign-windows-x64.zip zsign.exe)
+          [ -d zsign-windows-arm64 ] && (cd zsign-windows-arm64 && zip ../../releases/zsign-windows-arm64.zip zsign.exe)
           [ -f zsign-docker/zsign-docker.tar.gz ] && cp zsign-docker/zsign-docker.tar.gz ../releases/
           cd ..
           ls -lh releases/
