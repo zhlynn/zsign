@@ -232,7 +232,7 @@ bool ZMachO::ReallocCodeSignSpace()
 
 		for (size_t i = 0; i < arrArches.size(); i++) {
 			size_t sSize = 0;
-			string strNewArchOFile = m_strFile + ".archo." + jvalue((int)i).as_string();
+			string strNewArchOFile = m_strFile + ".archo." + std::to_string(i);
 			uint8_t* pData = (uint8_t*)ZFile::MapFile(strNewArchOFile.c_str(), 0, 0, &sSize, true);
 			if (NULL == pData) {
 				ZFile::RemoveFile(strNewFatMachOFile.c_str());

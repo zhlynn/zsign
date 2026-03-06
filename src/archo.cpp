@@ -697,7 +697,7 @@ bool ZArchO::InjectDylib(bool bWeakInject, const char* szDylibFile)
 	return true;
 }
 
-void ZArchO::RemoveDylibs(set<string> setDylibs)
+void ZArchO::RemoveDylibs(const set<string>& setDylibs)
 {
 	uint8_t* pLoadCommand = m_pBase + m_uHeaderSize;
 	uint32_t old_load_command_size = m_pHeader->sizeofcmds;
