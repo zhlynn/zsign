@@ -83,6 +83,7 @@ options:
 -t, --temp_folder       Path to temporary folder for intermediate files.
 -2, --sha256_only       Serialize a single code directory that uses SHA256.
 -C, --check             Check if the file is signed.
+-x, --metadata          Extract metadata and icon to the specified directory.
 -q, --quiet             Quiet operation.
 -v, --version           Shows version.
 -h, --help              Shows help (this message).
@@ -131,6 +132,12 @@ options:
 9. Inject dylib(LC_LOAD_WEAK_DYLIB) into mach-o file.
 ```bash
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
+```
+
+10. Sign ipa and extract metadata (app info + icon) to a directory.
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -x ./metadata -o output.ipa demo.ipa
+# writes ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
 ## How to sign quickly?
