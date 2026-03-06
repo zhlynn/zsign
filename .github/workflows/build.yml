@@ -64,16 +64,8 @@ jobs:
           path: bin/zsign
 
   build-macos:
-    name: Build macOS (${{ matrix.arch }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-14
-          - arch: x86_64
-            runner: macos-13
-    runs-on: ${{ matrix.runner }}
+    name: Build macOS (arm64)
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
@@ -98,34 +90,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: zsign-macos-${{ matrix.arch }}
-          path: bin/zsign
-
-  build-macos-universal:
-    name: Build macOS (Universal)
-    needs: [build-macos]
-    runs-on: macos-14
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: zsign-macos-x86_64
-          path: bin-x86_64
-
-      - uses: actions/download-artifact@v4
-        with:
           name: zsign-macos-arm64
-          path: bin-arm64
-
-      - name: create universal binary
-        run: |
-          mkdir -p bin
-          lipo -create bin-x86_64/zsign bin-arm64/zsign -output bin/zsign
-          chmod +x bin/zsign
-          file bin/zsign
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: zsign-macos-universal
           path: bin/zsign
 
   build-windows:
@@ -230,9 +195,48 @@ jobs:
           name: zsign-android-${{ matrix.arch }}
           path: bin/zsign
 
+  build-docker:
+    name: Build Docker
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: build image
+        run: |
+          docker build -t zsign:latest -f - . <<'EOF'
+          FROM ubuntu:22.04 AS builder
+          RUN apt-get update && \
+              apt-get install -y g++ make pkg-config libssl-dev libminizip-dev && \
+              rm -rf /var/lib/apt/lists/*
+          COPY . /src
+          WORKDIR /src/build/linux
+          RUN make clean && make -j$(nproc) && strip ../../bin/zsign
+
+          FROM ubuntu:22.04
+          RUN apt-get update && \
+              apt-get install -y libssl3 libminizip1 && \
+              rm -rf /var/lib/apt/lists/*
+          COPY --from=builder /src/bin/zsign /usr/local/bin/zsign
+          ENTRYPOINT ["zsign"]
+          EOF
+
+      - name: smoke test
+        run: docker run --rm zsign:latest -v
+
+      - name: save image
+        run: docker save zsign:latest | gzip > zsign-docker.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-docker
+          path: zsign-docker.tar.gz
+
   create-release:
     name: Create Release
-    needs: [build-linux, build-macos-universal, build-windows, build-android]
+    needs: [build-linux, build-macos, build-windows, build-android, build-docker]
     runs-on: ubuntu-22.04
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -247,8 +251,9 @@ jobs:
           for dir in zsign-linux-* zsign-android-*; do
             [ -d "$dir" ] && tar -czf ../releases/${dir}.tar.gz -C $dir zsign
           done
-          [ -d zsign-macos-universal ] && tar -czf ../releases/zsign-macos-universal.tar.gz -C zsign-macos-universal zsign
+          [ -d zsign-macos-arm64 ] && tar -czf ../releases/zsign-macos-arm64.tar.gz -C zsign-macos-arm64 zsign
           [ -d zsign-windows-x64 ] && (cd zsign-windows-x64 && zip ../../releases/zsign-windows-x64.zip zsign.exe)
+          [ -f zsign-docker/zsign-docker.tar.gz ] && cp zsign-docker/zsign-docker.tar.gz ../releases/
           cd ..
           ls -lh releases/
 
