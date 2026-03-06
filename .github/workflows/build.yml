@@ -248,6 +248,7 @@ jobs:
           RUN curl -sL https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz | tar xz && \
               cd zlib-1.3.1/contrib/minizip && \
               cc -O3 -c ioapi.c zip.c unzip.c && \
+              mkdir -p /usr/local/lib /usr/local/include && \
               ar rcs /usr/local/lib/libminizip.a ioapi.o zip.o unzip.o && \
               cp *.h /usr/local/include/
           COPY . /src
