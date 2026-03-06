@@ -585,7 +585,7 @@ uint32_t ZArchO::ReallocCodeSignSpace(const string& strNewFile)
 {
 	ZFile::RemoveFile(strNewFile.c_str());
 
-	uint32_t uNewLength = m_uCodeLength + ZUtil::ByteAlign(((m_uCodeLength / 4096) + 1) * (20 + 32), 4096) + 16384; //16K May Be Enough
+	uint32_t uNewLength = m_uCodeLength + ZUtil::ByteAlign(((m_uCodeLength / 4096) + 1) * (20 + 32), 4096) + 32768; //32K Should Be Enough
 	if (NULL == m_pLinkEditSegment || uNewLength <= m_uLength) {
 		return 0;
 	}
@@ -697,7 +697,7 @@ bool ZArchO::InjectDylib(bool bWeakInject, const char* szDylibFile)
 	return true;
 }
 
-void ZArchO::RemoveDylibs(set<string> setDylibs)
+void ZArchO::RemoveDylibs(const set<string>& setDylibs)
 {
 	uint8_t* pLoadCommand = m_pBase + m_uHeaderSize;
 	uint32_t old_load_command_size = m_pHeader->sizeofcmds;
