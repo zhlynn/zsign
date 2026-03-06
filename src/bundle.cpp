@@ -117,14 +117,30 @@ bool ZBundle::GetObjectsToSign(const string& strFolder, jvalue& jvInfo)
 	}
 	
 	ZFile::EnumFolder(strFolder.c_str(), true, NULL, [&](bool bFolder, const string& strPath) {
-		if (!bFolder && ZFile::IsPathSuffix(strPath, ".dylib")) {
-			if (string::npos == strPath.find(".dSYM")) {
-				jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
+		if (bFolder || string::npos != strPath.find(".dSYM")) {
+			return false;
+		}
+		bool bMachO = false;
+		if (ZFile::IsPathSuffix(strPath, ".dylib")) {
+			bMachO = true;
+		} else {
+			FILE* fp = fopen(strPath.c_str(), "rb");
+			if (fp) {
+				uint32_t magic = 0;
+				if (1 == fread(&magic, sizeof(magic), 1, fp)) {
+					bMachO = (magic == MH_MAGIC || magic == MH_CIGAM ||
+							  magic == MH_MAGIC_64 || magic == MH_CIGAM_64 ||
+							  magic == FAT_MAGIC || magic == FAT_CIGAM);
+				}
+				fclose(fp);
 			}
+		}
+		if (bMachO) {
+			jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
 		}
 		return false;
 	});
-	
+
 	return true;
 }
 
