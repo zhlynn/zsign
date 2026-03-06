@@ -271,3 +271,10 @@ bool ZMachO::InjectDylib(bool bWeakInject, const char* szDylibFile)
 	ZLog::Warn(">>> Success!\n");
 	return true;
 }
+
+void ZMachO::RemoveDylibs(const set<string>& setDylibs)
+{
+	for (size_t i = 0; i < m_arrArchOes.size(); i++) {
+		m_arrArchOes[i]->RemoveDylibs(setDylibs);
+	}
+}
