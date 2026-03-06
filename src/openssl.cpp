@@ -211,13 +211,14 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 	}
 
 	// add CDHashes
+	static const char hex_upper[] = "0123456789ABCDEF";
 	string sha256;
-	char buf[16] = { 0 };
+	sha256.reserve(strAltnateCodeDirectorySlot256.size() * 2);
 	for (size_t i = 0; i < strAltnateCodeDirectorySlot256.size(); i++) {
-		snprintf(buf, sizeof(buf), "%02x", (uint8_t)strAltnateCodeDirectorySlot256[i]);
-		sha256 += buf;
+		uint8_t c = (uint8_t)strAltnateCodeDirectorySlot256[i];
+		sha256 += hex_upper[c >> 4];
+		sha256 += hex_upper[c & 0x0F];
 	}
-	transform(sha256.begin(), sha256.end(), sha256.begin(), ::toupper);
 
 	ASN1_OBJECT* obj2 = OBJ_txt2obj("1.2.840.113635.100.9.2", 1);
 	if (!obj2) {
@@ -476,11 +477,13 @@ bool ZSignAsset::GetCMSInfo(uint8_t * pCMSData, uint32_t uCMSLength, jvalue & jv
 			} else if (0 == strcmp("1.2.840.113549.1.9.4", txtobj)) { //V_ASN1_OCTET_STRING
 				ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
 				if (NULL != av) {
+					static const char hex_lower[] = "0123456789abcdef";
 					string strSHASum;
-					char buf[16] = { 0 };
+					strSHASum.reserve(av->value.octet_string->length * 2);
 					for (int m = 0; m < av->value.octet_string->length; m++) {
-						snprintf(buf, sizeof(buf), "%02x", (uint8_t)av->value.octet_string->data[m]);
-						strSHASum += buf;
+						uint8_t c = (uint8_t)av->value.octet_string->data[m];
+						strSHASum += hex_lower[c >> 4];
+						strSHASum += hex_lower[c & 0x0F];
 					}
 					jvOutput["attrs"]["MessageDigest"]["obj"] = txtobj;
 					jvOutput["attrs"]["MessageDigest"]["data"] = strSHASum;
