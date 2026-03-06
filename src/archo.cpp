@@ -585,7 +585,7 @@ uint32_t ZArchO::ReallocCodeSignSpace(const string& strNewFile)
 {
 	ZFile::RemoveFile(strNewFile.c_str());
 
-	uint32_t uNewLength = m_uCodeLength + ZUtil::ByteAlign(((m_uCodeLength / 4096) + 1) * (20 + 32), 4096) + 16384; //16K May Be Enough
+	uint32_t uNewLength = m_uCodeLength + ZUtil::ByteAlign(((m_uCodeLength / 4096) + 1) * (20 + 32), 4096) + 32768; //32K Should Be Enough
 	if (NULL == m_pLinkEditSegment || uNewLength <= m_uLength) {
 		return 0;
 	}
