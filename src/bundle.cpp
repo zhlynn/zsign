@@ -124,7 +124,12 @@ bool ZBundle::GetObjectsToSign(const string& strFolder, jvalue& jvInfo)
 		if (ZFile::IsPathSuffix(strPath, ".dylib")) {
 			bMachO = true;
 		} else {
-			FILE* fp = fopen(strPath.c_str(), "rb");
+			FILE* fp = NULL;
+#ifdef _WIN32
+			fopen_s(&fp, strPath.c_str(), "rb");
+#else
+			fp = fopen(strPath.c_str(), "rb");
+#endif
 			if (fp) {
 				uint32_t magic = 0;
 				if (1 == fread(&magic, sizeof(magic), 1, fp)) {
