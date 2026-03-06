@@ -35,6 +35,7 @@ const struct option options[] = {
 	{"check", no_argument, NULL, 'C'},
 	{"quiet", no_argument, NULL, 'q'},
 	{"metadata", required_argument, NULL, 'x'},
+	{"rm_provision", no_argument, NULL, 'R'},
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
@@ -65,6 +66,7 @@ int usage()
 	ZLog::Print("-C, --check\t\tCheck if the file is signed.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
+	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
@@ -82,6 +84,7 @@ int main(int argc, char* argv[])
 	bool bAdhoc = false;
 	bool bSHA256Only = false;
 	bool bCheckSignature = false;
+	bool bRemoveProvision = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -99,7 +102,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCc:k:m:o:p:e:b:n:z:l:t:r:x:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRc:k:m:o:p:e:b:n:z:l:t:r:x:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -164,6 +167,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'x':
 			strMetadataDir = ZFile::GetFullPath(optarg);
+			break;
+		case 'R':
+			bRemoveProvision = true;
 			break;
 		case 'v': {
 			printf("version: %s\n", ZSIGN_VERSION);
@@ -283,7 +289,7 @@ int main(int argc, char* argv[])
 	//sign
 	atimer.Reset();
 	ZBundle bundle;
-	bool bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache);
+	bool bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache, bRemoveProvision);
 	atimer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	//archive

@@ -84,6 +84,7 @@ options:
 -2, --sha256_only       Serialize a single code directory that uses SHA256.
 -C, --check             Check if the file is signed.
 -x, --metadata          Extract metadata and icon to the specified directory.
+-R, --rm_provision      Remove mobileprovision file after signing.
 -q, --quiet             Quiet operation.
 -v, --version           Shows version.
 -h, --help              Shows help (this message).
