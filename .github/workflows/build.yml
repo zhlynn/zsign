@@ -244,15 +244,20 @@ jobs:
         run: |
           docker build -t zsign-musl -f - . <<'MUSL'
           FROM alpine:3.19 AS builder
-          RUN apk add --no-cache g++ make pkgconf openssl-dev openssl-libs-static minizip-dev zlib-dev zlib-static
+          RUN apk add --no-cache g++ make pkgconf openssl-dev openssl-libs-static zlib-dev zlib-static curl
+          RUN curl -sL https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz | tar xz && \
+              cd zlib-1.3.1/contrib/minizip && \
+              cc -O3 -c ioapi.c zip.c unzip.c && \
+              ar rcs /usr/local/lib/libminizip.a ioapi.o zip.o unzip.o && \
+              cp *.h /usr/local/include/
           COPY . /src
           WORKDIR /src
           RUN mkdir -p bin && g++ -std=c++11 -O3 -static -Wno-unused-result \
             -include cstdint -include ctime \
-            -I./src -I./src/common \
-            $(pkg-config --cflags openssl minizip) \
+            -I./src -I./src/common -I/usr/local/include \
+            $(pkg-config --cflags openssl) \
             $(find src -name "*.cpp") \
-            $(pkg-config --libs --static openssl minizip) -lz \
+            $(pkg-config --libs --static openssl) -L/usr/local/lib -lminizip -lz \
             -o bin/zsign && strip bin/zsign
           MUSL
           docker create --name musl-extract zsign-musl
@@ -343,6 +348,10 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
           C:\vcpkg\vcpkg install openssl:arm64-windows-static minizip:arm64-windows-static zlib:arm64-windows-static
+          echo === installed includes ===
+          dir /s /b C:\vcpkg\installed\arm64-windows-static\include\*.h 2>nul || echo "no headers found"
+          echo === installed libs ===
+          dir /s /b C:\vcpkg\installed\arm64-windows-static\lib\*.lib 2>nul || echo "no libs found"
         shell: cmd
 
       - name: build
@@ -350,8 +359,8 @@ jobs:
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsamd64_arm64.bat"
           set VCPKG=C:\vcpkg\installed\arm64-windows-static
           set WINBUILD=build\windows\vs2022
-          set INCLUDES=/I src /I src\common /I %WINBUILD%\zsign\src /I "%VCPKG%\include" /I "%VCPKG%\include\minizip"
-          set LIBS=/LIBPATH:"%VCPKG%\lib" libssl.lib libcrypto.lib minizip.lib zlib.lib ws2_32.lib crypt32.lib advapi32.lib user32.lib
+          set INCLUDES=/I src /I src\common /I %WINBUILD%\zsign\src /I %VCPKG%\include
+          set LIBS=/LIBPATH:%VCPKG%\lib libssl.lib libcrypto.lib minizip.lib zlib.lib ws2_32.lib crypt32.lib advapi32.lib user32.lib
           if not exist bin mkdir bin
           cl.exe /nologo /std:c++14 /O2 /EHsc /D_WIN32 /DNOMINMAX %INCLUDES% src\*.cpp src\common\*.cpp /Fe:bin\zsign.exe /link %LIBS% /MACHINE:ARM64 /SUBSYSTEM:CONSOLE
         shell: cmd
