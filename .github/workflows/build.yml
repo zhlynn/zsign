@@ -349,9 +349,17 @@ jobs:
         run: |
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
-          C:\vcpkg\vcpkg install openssl:arm64-windows-static minizip:arm64-windows-static zlib:arm64-windows-static || exit /b 1
-          echo === vcpkg installed libs ===
-          dir /s /b C:\vcpkg\installed\arm64-windows-static\lib\*.lib 2>nul
+          C:\vcpkg\vcpkg install openssl:arm64-windows-static minizip:arm64-windows-static zlib:arm64-windows-static
+        shell: cmd
+
+      - name: verify vcpkg
+        run: |
+          echo === all installed files ===
+          dir /s /b C:\vcpkg\installed\ 2>nul
+          echo === checking for libssl ===
+          dir /s /b C:\vcpkg\installed\*ssl* 2>nul
+          echo === checking for minizip ===
+          dir /s /b C:\vcpkg\installed\*minizip* 2>nul
         shell: cmd
 
       - name: build
