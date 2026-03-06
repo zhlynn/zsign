@@ -65,7 +65,7 @@ Use `Visual Studio 2022` to open `build/windows/vs2022/zsign.sln`, then compile 
 Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
 options:
 -k, --pkey              Path to private key or p12 file. (PEM or DER format)
--m, --prov              Path to mobile provisioning profile.
+-m, --prov              Path to mobile provisioning profile. Use -m multiple times for app extensions.
 -c, --cert              Path to certificate file. (PEM or DER format)
 -a, --adhoc             Perform ad-hoc signature only.
 -d, --debug             Generate debug output files. (.zsign_debug folder)

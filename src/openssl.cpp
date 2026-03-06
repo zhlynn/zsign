@@ -601,6 +601,7 @@ bool ZSignAsset::Init(
 	string strProvContent;
 	if (GetCMSContent(m_strProvData, strProvContent)) {
 		if (jvProv.read_plist(strProvContent)) {
+			m_strApplicationId = jvProv["Entitlements"]["application-identifier"].as_cstr();
 			m_strTeamId = jvProv["TeamIdentifier"][0].as_cstr();
 			if (m_strEntitleData.empty()) {
 				jvProv["Entitlements"].style_write_plist(m_strEntitleData);

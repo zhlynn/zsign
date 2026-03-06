@@ -1,4 +1,5 @@
 #include "common.h"
+#include <list>
 #include "macho.h"
 #include "bundle.h"
 #include "openssl.h"
@@ -90,6 +91,7 @@ int main(int argc, char* argv[])
 	string strCertFile;
 	string strPKeyFile;
 	string strProvFile;
+	vector<string> arrProvFiles;
 	string strPassword;
 	string strBundleId;
 	string strBundleVersion;
@@ -119,6 +121,7 @@ int main(int argc, char* argv[])
 			break;
 		case 'm':
 			strProvFile = ZFile::GetFullPath(optarg);
+			arrProvFiles.push_back(strProvFile);
 			break;
 		case 'a':
 			bAdhoc = true;
@@ -289,7 +292,20 @@ int main(int argc, char* argv[])
 	//sign
 	atimer.Reset();
 	ZBundle bundle;
-	bool bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+	bool bRet;
+	if (arrProvFiles.size() > 1) {
+		list<ZSignAsset> zsaList;
+		for (const string& provFile : arrProvFiles) {
+			zsaList.push_back(ZSignAsset());
+			if (!zsaList.back().Init(strCertFile, strPKeyFile, provFile, strEntitleFile, strPassword, bAdhoc, bSHA256Only, false)) {
+				ZLog::ErrorV(">>> Failed to init provision: %s\n", provFile.c_str());
+				zsaList.pop_back();
+			}
+		}
+		bRet = bundle.SignFolder(&zsaList, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+	} else {
+		bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+	}
 	atimer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	//archive

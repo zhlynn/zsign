@@ -3,6 +3,7 @@
 #include "json.h"
 #include "openssl.h"
 #include <vector>
+#include <list>
 
 class ZBundle
 {
@@ -11,6 +12,17 @@ public:
 
 public:
 	bool SignFolder(ZSignAsset* pSignAsset,
+					const string& strFolder,
+					const string& strBundleId,
+					const string& strBundleVersion,
+					const string& strDisplayName,
+					const vector<string>& arrDylibFiles,
+					bool bForce,
+					bool bWeakInject,
+					bool bEnableCache,
+					bool bRemoveProvision = false);
+
+	bool SignFolder(list<ZSignAsset>* pSignAssets,
 					const string& strFolder,
 					const string& strBundleId,
 					const string& strBundleVersion,
@@ -41,6 +53,7 @@ private:
 	bool			m_bWeakInject;
 	bool			m_bRemoveProvision;
 	ZSignAsset*		m_pSignAsset;
+	list<ZSignAsset>*	m_pSignAssets;
 	vector<string>	m_arrInjectDylibs;
 
 public:
