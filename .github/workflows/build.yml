@@ -349,18 +349,25 @@ jobs:
         run: |
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
-          C:\vcpkg\vcpkg install openssl:arm64-windows-static minizip:arm64-windows-static zlib:arm64-windows-static
-          echo === installed includes ===
-          dir /s /b C:\vcpkg\installed\arm64-windows-static\include\*.h 2>nul || echo "no headers found"
-          echo === installed libs ===
-          dir /s /b C:\vcpkg\installed\arm64-windows-static\lib\*.lib 2>nul || echo "no libs found"
+          C:\vcpkg\vcpkg install openssl:arm64-windows-static minizip:arm64-windows-static zlib:arm64-windows-static || exit /b 1
+          echo === vcpkg installed libs ===
+          dir /s /b C:\vcpkg\installed\arm64-windows-static\lib\*.lib 2>nul
         shell: cmd
 
       - name: build
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsamd64_arm64.bat"
           if not exist bin mkdir bin
-          cl.exe /nologo /std:c++14 /O2 /EHsc /D_WIN32 /DNOMINMAX /I src /I src\common /I build\windows\vs2022\zsign\src /I C:\vcpkg\installed\arm64-windows-static\include src\*.cpp src\common\*.cpp /Fe:bin\zsign.exe /link /LIBPATH:C:\vcpkg\installed\arm64-windows-static\lib libssl.lib libcrypto.lib minizip.lib zlib.lib ws2_32.lib crypt32.lib advapi32.lib user32.lib /MACHINE:ARM64 /SUBSYSTEM:CONSOLE
+          cl.exe /nologo /std:c++14 /O2 /EHsc /D_WIN32 /DNOMINMAX ^
+            /I src /I src\common /I build\windows\vs2022\zsign\src ^
+            /I build\windows\vs2022\include ^
+            /I build\windows\vs2022\include\zlib ^
+            src\*.cpp src\common\*.cpp ^
+            /Fe:bin\zsign.exe ^
+            /link /LIBPATH:C:\vcpkg\installed\arm64-windows-static\lib ^
+            libssl.lib libcrypto.lib minizip.lib zlib.lib ^
+            ws2_32.lib crypt32.lib advapi32.lib user32.lib ^
+            /MACHINE:ARM64 /SUBSYSTEM:CONSOLE
         shell: cmd
 
       - name: verify arch
