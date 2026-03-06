@@ -10,6 +10,7 @@ ZBundle::ZBundle()
 	m_pSignAsset = NULL;
 	m_bForceSign = false;
 	m_bWeakInject = false;
+	m_bRemoveProvision = false;
 }
 
 bool ZBundle::FindAppFolder(const string& strFolder, string& strAppFolder)
@@ -153,6 +154,13 @@ bool ZBundle::GenerateCodeResources(const string& strFolder, jvalue& jvCodeRes)
 	jvCodeRes["files2"] = jvalue(jvalue::E_OBJECT);
 
 	for (string strKey : setFiles) {
+		if (m_bRemoveProvision && strKey == "embedded.mobileprovision") {
+			string strProvFile = strFolder + "/embedded.mobileprovision";
+			remove(strProvFile.c_str());
+			ZLog::Print(">>> Removed embedded.mobileprovision\n");
+			continue;
+		}
+
 		string strFile = strFolder + "/" + strKey;
 		string strSHA1Base64;
 		string strSHA256Base64;
@@ -501,11 +509,13 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 							const vector<string>& arrInjectDylibs,
 							bool bForce,
 							bool bWeakInject,
-							bool bEnableCache)
+							bool bEnableCache,
+							bool bRemoveProvision)
 {
 	m_bForceSign = bForce;
 	m_pSignAsset = pSignAsset;
 	m_bWeakInject = bWeakInject;
+	m_bRemoveProvision = bRemoveProvision;
 	if (NULL == m_pSignAsset) {
 		return false;
 	}
