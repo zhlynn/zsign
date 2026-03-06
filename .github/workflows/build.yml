@@ -65,11 +65,15 @@ jobs:
 
   build-macos:
     name: Build macOS (${{ matrix.arch }})
-    runs-on: macos-14
     strategy:
       fail-fast: false
       matrix:
-        arch: [arm64, x86_64]
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x86_64
+            runner: macos-13
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -84,23 +88,9 @@ jobs:
           fi
 
       - name: build
-        run: |
-          if [ "${{ matrix.arch }}" = "x86_64" ]; then
-            OPENSSL=$(brew --prefix openssl)
-            MINIZIP=$(brew --prefix minizip)
-            mkdir -p bin
-            g++ -std=c++11 -O3 -arch x86_64 \
-              -I./src -I./src/common -I$OPENSSL/include -I$MINIZIP/include -I$MINIZIP/include/minizip \
-              $(find src -name "*.cpp") \
-              -L$OPENSSL/lib -L$MINIZIP/lib \
-              -lssl -lcrypto -lminizip \
-              -o bin/zsign
-          else
-            cd build/macos && make clean && make -j$(sysctl -n hw.ncpu)
-          fi
+        run: cd build/macos && make clean && make -j$(sysctl -n hw.ncpu)
 
       - name: smoke test
-        if: matrix.arch == 'arm64'
         run: ./bin/zsign -v
 
       - name: verify arch
@@ -197,7 +187,8 @@ jobs:
           echo "=== building openssl ==="
           curl -sL https://github.com/openssl/openssl/releases/download/openssl-3.2.1/openssl-3.2.1.tar.gz | tar xz
           cd openssl-3.2.1
-          export ANDROID_NDK_HOME PATH=$TOOLCHAIN/bin:$PATH
+          export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME
+          export PATH=$TOOLCHAIN/bin:$PATH
           ./Configure ${{ matrix.openssl_target }} -D__ANDROID_API__=$API --prefix=$DEPS no-shared no-tests
           make -j$(nproc)
           make install_sw
