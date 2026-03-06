@@ -18,7 +18,8 @@ public:
 					const vector<string>& arrDylibFiles,
 					bool bForce,
 					bool bWeakInject,
-					bool bEnableCache);
+					bool bEnableCache,
+					bool bRemoveProvision = false);
 
 private:
 	bool SignNode(jvalue& jvNode);
@@ -38,6 +39,7 @@ private:
 private:
 	bool			m_bForceSign;
 	bool			m_bWeakInject;
+	bool			m_bRemoveProvision;
 	ZSignAsset*		m_pSignAsset;
 	vector<string>	m_arrInjectDylibs;
 
