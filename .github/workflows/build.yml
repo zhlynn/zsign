@@ -209,7 +209,7 @@ jobs:
           docker build -t zsign:latest -f - . <<'EOF'
           FROM ubuntu:22.04 AS builder
           RUN apt-get update && \
-              apt-get install -y g++ make pkg-config libssl-dev libminizip-dev && \
+              apt-get install -y g++ make pkg-config libssl-dev libminizip-dev zlib1g-dev && \
               rm -rf /var/lib/apt/lists/*
           COPY . /src
           WORKDIR /src/build/linux
