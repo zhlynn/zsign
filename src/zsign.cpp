@@ -4,6 +4,7 @@
 #include "openssl.h"
 #include "timer.h"
 #include "archive.h"
+#include "metadata.h"
 
 #ifdef _WIN32
 #include "common_win32.h"
@@ -33,6 +34,7 @@ const struct option options[] = {
 	{"install", no_argument, NULL, 'i'},
 	{"check", no_argument, NULL, 'C'},
 	{"quiet", no_argument, NULL, 'q'},
+	{"metadata", required_argument, NULL, 'x'},
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
@@ -62,6 +64,7 @@ int usage()
 	ZLog::Print("-2, --sha256_only\tSerialize a single code directory that uses SHA256.\n");
 	ZLog::Print("-C, --check\t\tCheck if the file is signed.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
+	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
@@ -91,11 +94,12 @@ int main(int argc, char* argv[])
 	string strDisplayName;
 	string strEntitleFile;
 	vector<string> arrDylibFiles;
+	string strMetadataDir;
 	string strTempFolder = ZFile::GetTempFolder();
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCc:k:m:o:p:e:b:n:z:l:t:r:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCc:k:m:o:p:e:b:n:z:l:t:r:x:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -157,6 +161,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'q':
 			ZLog::SetLogLever(ZLog::E_NONE);
+			break;
+		case 'x':
+			strMetadataDir = ZFile::GetFullPath(optarg);
 			break;
 		case 'v': {
 			printf("version: %s\n", ZSIGN_VERSION);
@@ -222,7 +229,7 @@ int main(int argc, char* argv[])
 		}
 
 		if (!arrDylibFiles.empty()) {
-			for (string dyLibFile : arrDylibFiles) {
+			for (const string& dyLibFile : arrDylibFiles) {
 				if (!macho->InjectDylib(bWeakInject, dyLibFile.c_str())) {
 					return -1;
 				}
@@ -291,6 +298,10 @@ int main(int argc, char* argv[])
 				bRet = false;
 			} else {
 				atimer.PrintResult(true, ">>> Archive OK! (%s)", ZFile::GetFileSizeString(strOutputFile.c_str()).c_str());
+				if (bRet && !strMetadataDir.empty()) {
+					ZFile::CreateFolder(strMetadataDir.c_str());
+					GetMetadata(bundle.m_strAppFolder, strMetadataDir, strOutputFile);
+				}
 			}
 		} else {
 			ZLog::Error(">>> Can't find payload directory!\n");
