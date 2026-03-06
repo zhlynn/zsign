@@ -7,9 +7,11 @@
 
 ZBundle::ZBundle()
 {
+	m_pSignAssets = NULL;
 	m_pSignAsset = NULL;
 	m_bForceSign = false;
 	m_bWeakInject = false;
+	m_bRemoveProvision = false;
 }
 
 bool ZBundle::FindAppFolder(const string& strFolder, string& strAppFolder)
@@ -153,6 +155,13 @@ bool ZBundle::GenerateCodeResources(const string& strFolder, jvalue& jvCodeRes)
 	jvCodeRes["files2"] = jvalue(jvalue::E_OBJECT);
 
 	for (string strKey : setFiles) {
+		if (m_bRemoveProvision && strKey == "embedded.mobileprovision") {
+			string strProvFile = strFolder + "/embedded.mobileprovision";
+			remove(strProvFile.c_str());
+			ZLog::Print(">>> Removed embedded.mobileprovision\n");
+			continue;
+		}
+
 		string strFile = strFolder + "/" + strKey;
 		string strSHA1Base64;
 		string strSHA256Base64;
@@ -370,6 +379,23 @@ bool ZBundle::SignNode(jvalue& jvNode)
 		}
 	}
 
+	if (m_pSignAssets) {
+		auto endsWith = [](const string& str, const string& suffix) {
+			return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
+		};
+
+		for (auto it = m_pSignAssets->rbegin(); it != m_pSignAssets->rend(); ++it) {
+			m_pSignAsset = &(*it);
+			if (endsWith(m_pSignAsset->m_strApplicationId, strBundleId)) {
+				if (!ZFile::WriteFileV(m_pSignAsset->m_strProvData, "%s/%s/embedded.mobileprovision", m_strAppFolder.c_str(), strFolder.c_str())) {
+					ZLog::ErrorV(">>> Can't write embedded.mobileprovision!\n");
+					return false;
+				}
+				break;
+			}
+		}
+	}
+
 	if (!macho.Sign(m_pSignAsset, bForceSign, strBundleId, strInfoSHA1, strInfoSHA256, strCodeResData)) {
 		return false;
 	}
@@ -501,11 +527,13 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 							const vector<string>& arrInjectDylibs,
 							bool bForce,
 							bool bWeakInject,
-							bool bEnableCache)
+							bool bEnableCache,
+							bool bRemoveProvision)
 {
 	m_bForceSign = bForce;
 	m_pSignAsset = pSignAsset;
 	m_bWeakInject = bWeakInject;
+	m_bRemoveProvision = bRemoveProvision;
 	if (NULL == m_pSignAsset) {
 		return false;
 	}
@@ -586,4 +614,19 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 	}
 
 	return false;
+}
+
+bool ZBundle::SignFolder(list<ZSignAsset>* pSignAssets,
+						const string& strFolder,
+						const string& strBundleId,
+						const string& strBundleVersion,
+						const string& strDisplayName,
+						const vector<string>& arrInjectDylibs,
+						bool bForce,
+						bool bWeakInject,
+						bool bEnableCache,
+						bool bRemoveProvision)
+{
+	m_pSignAssets = pSignAssets;
+	return SignFolder(&m_pSignAssets->front(), strFolder, strBundleId, strBundleVersion, strDisplayName, arrInjectDylibs, bForce, bWeakInject, bEnableCache, bRemoveProvision);
 }

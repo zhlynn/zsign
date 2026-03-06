@@ -65,7 +65,7 @@ Use `Visual Studio 2022` to open `build/windows/vs2022/zsign.sln`, then compile 
 Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
 options:
 -k, --pkey              Path to private key or p12 file. (PEM or DER format)
--m, --prov              Path to mobile provisioning profile.
+-m, --prov              Path to mobile provisioning profile. Use -m multiple times for app extensions.
 -c, --cert              Path to certificate file. (PEM or DER format)
 -a, --adhoc             Perform ad-hoc signature only.
 -d, --debug             Generate debug output files. (.zsign_debug folder)
@@ -83,6 +83,8 @@ options:
 -t, --temp_folder       Path to temporary folder for intermediate files.
 -2, --sha256_only       Serialize a single code directory that uses SHA256.
 -C, --check             Check if the file is signed.
+-x, --metadata          Extract metadata and icon to the specified directory.
+-R, --rm_provision      Remove mobileprovision file after signing.
 -q, --quiet             Quiet operation.
 -v, --version           Shows version.
 -h, --help              Shows help (this message).
@@ -131,6 +133,12 @@ options:
 9. Inject dylib(LC_LOAD_WEAK_DYLIB) into mach-o file.
 ```bash
 ./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
+```
+
+10. Sign ipa and extract metadata (app info + icon) to a directory.
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -x ./metadata -o output.ipa demo.ipa
+# writes ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
 ## How to sign quickly?
