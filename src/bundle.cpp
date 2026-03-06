@@ -400,6 +400,17 @@ bool ZBundle::SignNode(jvalue& jvNode)
 				bForceSign = true;
 			}
 		}
+		if (!m_setRemoveDylibs.empty()) {
+			macho.RemoveDylibs(m_setRemoveDylibs);
+			for (const string& name : m_setRemoveDylibs) {
+				string baseName = name;
+				if (baseName.find("@executable_path/") == 0) {
+					baseName = baseName.substr(17);
+				}
+				ZFile::RemoveFileV("%s/%s", m_strAppFolder.c_str(), baseName.c_str());
+			}
+			bForceSign = true;
+		}
 	}
 
 	if (m_pSignAssets) {
@@ -548,6 +559,7 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 							const string& strBundleVersion,
 							const string& strDisplayName,
 							const vector<string>& arrInjectDylibs,
+							const vector<string>& arrRemoveDylibNames,
 							bool bForce,
 							bool bWeakInject,
 							bool bEnableCache,
@@ -557,6 +569,10 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 	m_pSignAsset = pSignAsset;
 	m_bWeakInject = bWeakInject;
 	m_bRemoveProvision = bRemoveProvision;
+	m_setRemoveDylibs.clear();
+	for (const string& name : arrRemoveDylibNames) {
+		m_setRemoveDylibs.insert("@executable_path/" + name);
+	}
 	if (NULL == m_pSignAsset) {
 		return false;
 	}
@@ -645,11 +661,12 @@ bool ZBundle::SignFolder(list<ZSignAsset>* pSignAssets,
 						const string& strBundleVersion,
 						const string& strDisplayName,
 						const vector<string>& arrInjectDylibs,
+						const vector<string>& arrRemoveDylibNames,
 						bool bForce,
 						bool bWeakInject,
 						bool bEnableCache,
 						bool bRemoveProvision)
 {
 	m_pSignAssets = pSignAssets;
-	return SignFolder(&m_pSignAssets->front(), strFolder, strBundleId, strBundleVersion, strDisplayName, arrInjectDylibs, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+	return SignFolder(&m_pSignAssets->front(), strFolder, strBundleId, strBundleVersion, strDisplayName, arrInjectDylibs, arrRemoveDylibNames, bForce, bWeakInject, bEnableCache, bRemoveProvision);
 }

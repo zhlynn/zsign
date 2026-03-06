@@ -4,6 +4,7 @@
 #include "openssl.h"
 #include <vector>
 #include <list>
+#include <set>
 
 class ZBundle
 {
@@ -17,6 +18,7 @@ public:
 					const string& strBundleVersion,
 					const string& strDisplayName,
 					const vector<string>& arrDylibFiles,
+					const vector<string>& arrRemoveDylibNames,
 					bool bForce,
 					bool bWeakInject,
 					bool bEnableCache,
@@ -28,6 +30,7 @@ public:
 					const string& strBundleVersion,
 					const string& strDisplayName,
 					const vector<string>& arrDylibFiles,
+					const vector<string>& arrRemoveDylibNames,
 					bool bForce,
 					bool bWeakInject,
 					bool bEnableCache,
@@ -55,6 +58,7 @@ private:
 	ZSignAsset*		m_pSignAsset;
 	list<ZSignAsset>*	m_pSignAssets;
 	vector<string>	m_arrInjectDylibs;
+	set<string>		m_setRemoveDylibs;
 
 public:
 	string			m_strAppFolder;
