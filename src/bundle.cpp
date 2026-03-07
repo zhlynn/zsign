@@ -117,14 +117,35 @@ bool ZBundle::GetObjectsToSign(const string& strFolder, jvalue& jvInfo)
 	}
 	
 	ZFile::EnumFolder(strFolder.c_str(), true, NULL, [&](bool bFolder, const string& strPath) {
-		if (!bFolder && ZFile::IsPathSuffix(strPath, ".dylib")) {
-			if (string::npos == strPath.find(".dSYM")) {
-				jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
+		if (bFolder || string::npos != strPath.find(".dSYM")) {
+			return false;
+		}
+		bool bMachO = false;
+		if (ZFile::IsPathSuffix(strPath, ".dylib")) {
+			bMachO = true;
+		} else {
+			FILE* fp = NULL;
+#ifdef _WIN32
+			fopen_s(&fp, strPath.c_str(), "rb");
+#else
+			fp = fopen(strPath.c_str(), "rb");
+#endif
+			if (fp) {
+				uint32_t magic = 0;
+				if (1 == fread(&magic, sizeof(magic), 1, fp)) {
+					bMachO = (magic == MH_MAGIC || magic == MH_CIGAM ||
+							  magic == MH_MAGIC_64 || magic == MH_CIGAM_64 ||
+							  magic == FAT_MAGIC || magic == FAT_CIGAM);
+				}
+				fclose(fp);
 			}
+		}
+		if (bMachO) {
+			jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
 		}
 		return false;
 	});
-	
+
 	return true;
 }
 
@@ -389,6 +410,23 @@ bool ZBundle::SignNode(jvalue& jvNode)
 				ZFile::RemoveFileV("%s/%s", m_strAppFolder.c_str(), baseName.c_str());
 			}
 			bForceSign = true;
+		}
+	}
+
+	if (m_pSignAssets) {
+		auto endsWith = [](const string& str, const string& suffix) {
+			return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
+		};
+
+		for (auto it = m_pSignAssets->rbegin(); it != m_pSignAssets->rend(); ++it) {
+			m_pSignAsset = &(*it);
+			if (endsWith(m_pSignAsset->m_strApplicationId, strBundleId)) {
+				if (!ZFile::WriteFileV(m_pSignAsset->m_strProvData, "%s/%s/embedded.mobileprovision", m_strAppFolder.c_str(), strFolder.c_str())) {
+					ZLog::ErrorV(">>> Can't write embedded.mobileprovision!\n");
+					return false;
+				}
+				break;
+			}
 		}
 	}
 
