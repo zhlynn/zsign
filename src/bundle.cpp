@@ -121,9 +121,7 @@ bool ZBundle::GetObjectsToSign(const string& strFolder, jvalue& jvInfo)
 			return false;
 		}
 		bool bMachO = false;
-		if (ZFile::IsPathSuffix(strPath, ".dylib")) {
-			bMachO = true;
-		} else {
+		{
 			FILE* fp = NULL;
 #ifdef _WIN32
 			fopen_s(&fp, strPath.c_str(), "rb");
@@ -301,7 +299,7 @@ bool ZBundle::SignNode(jvalue& jvNode)
 					return false;
 				}
 			} else {
-				return false;
+				ZLog::WarnV(">>> Warning: Skipping non-Mach-O file: \t%s\n", strFile.c_str());
 			}
 		}
 	}
