@@ -118,7 +118,9 @@ bool ZBundle::GetObjectsToSign(const string& strFolder, jvalue& jvInfo)
 	
 	ZFile::EnumFolder(strFolder.c_str(), true, NULL, [&](bool bFolder, const string& strPath) {
 		if (!bFolder && ZFile::IsPathSuffix(strPath, ".dylib")) {
-			jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
+			if (string::npos == strPath.find(".dSYM")) {
+				jvInfo["files"].push_back(strPath.substr(m_strAppFolder.size() + 1));
+			}
 		}
 		return false;
 	});
