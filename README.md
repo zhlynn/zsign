@@ -78,6 +78,7 @@ options:
 -e, --entitlements      New entitlements to change.
 -z, --zip_level         Compressed level when output the ipa file. (0-9)
 -l, --dylib             Path to inject dylib file. Use -l multiple time to inject multiple dylib files at once.
+-D, --rm_dylib          Name of dylib to remove. Use -D multiple times to remove multiple dylibs at once.
 -w, --weak              Inject dylib as LC_LOAD_WEAK_DYLIB.
 -i, --install           Install ipa file using ideviceinstaller command for test.
 -t, --temp_folder       Path to temporary folder for intermediate files.
