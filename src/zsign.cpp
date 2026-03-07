@@ -29,6 +29,7 @@ const struct option options[] = {
 	{"output", required_argument, NULL, 'o'},
 	{"zip_level", required_argument, NULL, 'z'},
 	{"dylib", required_argument, NULL, 'l'},
+	{"rm_dylib", required_argument, NULL, 'D'},
 	{"weak", no_argument, NULL, 'w'},
 	{"temp_folder", required_argument, NULL, 't'},
 	{"sha256_only", no_argument, NULL, '2'},
@@ -60,6 +61,7 @@ int usage()
 	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
 	ZLog::Print("-z, --zip_level\t\tCompressed level when output the ipa file. (0-9)\n");
 	ZLog::Print("-l, --dylib\t\tPath to inject dylib file. Use -l multiple time to inject multiple dylib files at once.\n");
+	ZLog::Print("-D, --rm_dylib\t\tName of dylib to remove. Use -D multiple times to remove multiple dylibs at once.\n");
 	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-t, --temp_folder\tPath to temporary folder for intermediate files.\n");
@@ -99,12 +101,13 @@ int main(int argc, char* argv[])
 	string strDisplayName;
 	string strEntitleFile;
 	vector<string> arrDylibFiles;
+	vector<string> arrRemoveDylibNames;
 	string strMetadataDir;
 	string strTempFolder = ZFile::GetTempFolder();
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRc:k:m:o:p:e:b:n:z:l:t:r:x:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -143,6 +146,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'l':
 			arrDylibFiles.push_back(ZFile::GetFullPath(optarg));
+			break;
+		case 'D':
+			arrRemoveDylibNames.push_back(optarg);
 			break;
 		case 'i':
 			bInstall = true;
@@ -302,9 +308,9 @@ int main(int argc, char* argv[])
 				zsaList.pop_back();
 			}
 		}
-		bRet = bundle.SignFolder(&zsaList, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+		bRet = bundle.SignFolder(&zsaList, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, arrRemoveDylibNames, bForce, bWeakInject, bEnableCache, bRemoveProvision);
 	} else {
-		bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+		bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, arrRemoveDylibNames, bForce, bWeakInject, bEnableCache, bRemoveProvision);
 	}
 	atimer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
