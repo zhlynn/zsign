@@ -1,15 +1,17 @@
 #include "common.h"
+#include <list>
 #include "macho.h"
 #include "bundle.h"
 #include "openssl.h"
 #include "timer.h"
 #include "archive.h"
+#include "metadata.h"
 
 #ifdef _WIN32
 #include "common_win32.h"
 #endif
 
-#define ZSIGN_VERSION "0.7"
+#define ZSIGN_VERSION "0.9.1"
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -27,12 +29,15 @@ const struct option options[] = {
 	{"output", required_argument, NULL, 'o'},
 	{"zip_level", required_argument, NULL, 'z'},
 	{"dylib", required_argument, NULL, 'l'},
+	{"rm_dylib", required_argument, NULL, 'D'},
 	{"weak", no_argument, NULL, 'w'},
 	{"temp_folder", required_argument, NULL, 't'},
 	{"sha256_only", no_argument, NULL, '2'},
 	{"install", no_argument, NULL, 'i'},
 	{"check", no_argument, NULL, 'C'},
 	{"quiet", no_argument, NULL, 'q'},
+	{"metadata", required_argument, NULL, 'x'},
+	{"rm_provision", no_argument, NULL, 'R'},
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
@@ -56,12 +61,15 @@ int usage()
 	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
 	ZLog::Print("-z, --zip_level\t\tCompressed level when output the ipa file. (0-9)\n");
 	ZLog::Print("-l, --dylib\t\tPath to inject dylib file. Use -l multiple time to inject multiple dylib files at once.\n");
+	ZLog::Print("-D, --rm_dylib\t\tName of dylib to remove. Use -D multiple times to remove multiple dylibs at once.\n");
 	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-t, --temp_folder\tPath to temporary folder for intermediate files.\n");
 	ZLog::Print("-2, --sha256_only\tSerialize a single code directory that uses SHA256.\n");
 	ZLog::Print("-C, --check\t\tCheck if the file is signed.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
+	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
+	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
@@ -79,11 +87,13 @@ int main(int argc, char* argv[])
 	bool bAdhoc = false;
 	bool bSHA256Only = false;
 	bool bCheckSignature = false;
+	bool bRemoveProvision = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
 	string strPKeyFile;
 	string strProvFile;
+	vector<string> arrProvFiles;
 	string strPassword;
 	string strBundleId;
 	string strBundleVersion;
@@ -91,11 +101,13 @@ int main(int argc, char* argv[])
 	string strDisplayName;
 	string strEntitleFile;
 	vector<string> arrDylibFiles;
+	vector<string> arrRemoveDylibNames;
+	string strMetadataDir;
 	string strTempFolder = ZFile::GetTempFolder();
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCc:k:m:o:p:e:b:n:z:l:t:r:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -112,6 +124,7 @@ int main(int argc, char* argv[])
 			break;
 		case 'm':
 			strProvFile = ZFile::GetFullPath(optarg);
+			arrProvFiles.push_back(strProvFile);
 			break;
 		case 'a':
 			bAdhoc = true;
@@ -133,6 +146,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'l':
 			arrDylibFiles.push_back(ZFile::GetFullPath(optarg));
+			break;
+		case 'D':
+			arrRemoveDylibNames.push_back(optarg);
 			break;
 		case 'i':
 			bInstall = true;
@@ -157,6 +173,12 @@ int main(int argc, char* argv[])
 			break;
 		case 'q':
 			ZLog::SetLogLever(ZLog::E_NONE);
+			break;
+		case 'x':
+			strMetadataDir = ZFile::GetFullPath(optarg);
+			break;
+		case 'R':
+			bRemoveProvision = true;
 			break;
 		case 'v': {
 			printf("version: %s\n", ZSIGN_VERSION);
@@ -222,7 +244,7 @@ int main(int argc, char* argv[])
 		}
 
 		if (!arrDylibFiles.empty()) {
-			for (string dyLibFile : arrDylibFiles) {
+			for (const string& dyLibFile : arrDylibFiles) {
 				if (!macho->InjectDylib(bWeakInject, dyLibFile.c_str())) {
 					return -1;
 				}
@@ -276,7 +298,20 @@ int main(int argc, char* argv[])
 	//sign
 	atimer.Reset();
 	ZBundle bundle;
-	bool bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, bForce, bWeakInject, bEnableCache);
+	bool bRet;
+	if (arrProvFiles.size() > 1) {
+		list<ZSignAsset> zsaList;
+		for (const string& provFile : arrProvFiles) {
+			zsaList.push_back(ZSignAsset());
+			if (!zsaList.back().Init(strCertFile, strPKeyFile, provFile, strEntitleFile, strPassword, bAdhoc, bSHA256Only, false)) {
+				ZLog::ErrorV(">>> Failed to init provision: %s\n", provFile.c_str());
+				zsaList.pop_back();
+			}
+		}
+		bRet = bundle.SignFolder(&zsaList, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, arrRemoveDylibNames, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+	} else {
+		bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, arrRemoveDylibNames, bForce, bWeakInject, bEnableCache, bRemoveProvision);
+	}
 	atimer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
 	//archive
@@ -291,6 +326,10 @@ int main(int argc, char* argv[])
 				bRet = false;
 			} else {
 				atimer.PrintResult(true, ">>> Archive OK! (%s)", ZFile::GetFileSizeString(strOutputFile.c_str()).c_str());
+				if (bRet && !strMetadataDir.empty()) {
+					ZFile::CreateFolder(strMetadataDir.c_str());
+					GetMetadata(bundle.m_strAppFolder, strMetadataDir, strOutputFile);
+				}
 			}
 		} else {
 			ZLog::Error(">>> Can't find payload directory!\n");
