@@ -83,7 +83,7 @@ bool ZMachO::OpenFile(const char* szPath)
 				return false;
 			}
 		} else {
-			ZLog::ErrorV(">>> Invalid mach-o file (2)!\n");
+			ZLog::ErrorV(">>> Invalid mach-o file (magic: 0x%08x)!\n", magic);
 			return false;
 		}
 	}
