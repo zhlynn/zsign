@@ -86,6 +86,11 @@ options:
 -C, --check             Check if the file is signed.
 -x, --metadata          Extract metadata and icon to the specified directory.
 -R, --rm_provision      Remove mobileprovision file after signing.
+-U, --rm_uisd           Remove UISupportedDevices from Info.plist.
+-W, --rm_watch          Remove watch app from the bundle.
+-E, --rm_extensions     Remove all app extensions (PlugIns/Extensions).
+-M, --min_version       Set MinimumOSVersion in Info.plist.
+-S, --enable_docs       Enable UISupportsDocumentBrowser and UIFileSharingEnabled.
 -q, --quiet             Quiet operation.
 -v, --version           Shows version.
 -h, --help              Shows help (this message).
