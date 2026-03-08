@@ -11,7 +11,10 @@
 #include "common_win32.h"
 #endif
 
+
+#ifndef ZSIGN_VERSION
 #define ZSIGN_VERSION "0.7"
+#endif
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},

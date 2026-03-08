@@ -41,16 +41,22 @@ jobs:
 
       - name: build
         run: |
+          VERSION_FLAGS=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+          fi
           if [ "${{ matrix.cross }}" = "true" ]; then
             mkdir -p bin
-            aarch64-linux-gnu-g++ -std=c++11 -O3 -Wno-unused-result \
+            aarch64-linux-gnu-g++ -std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS \
               -I./src -I./src/common -I/usr/include -I/usr/include/minizip \
               $(find src -name "*.cpp") \
               -L/usr/lib/aarch64-linux-gnu \
               -lssl -lcrypto -lminizip \
               -o bin/zsign
           else
-            cd build/linux && make clean && make -j$(nproc)
+            cd build/linux && make clean && make CXXFLAGS="-std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS" -j$(nproc)
             strip ../../bin/zsign
           fi
 
@@ -80,7 +86,15 @@ jobs:
           fi
 
       - name: build
-        run: cd build/macos && make clean && make -j$(sysctl -n hw.ncpu)
+        run: |
+          VERSION_FLAGS=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+          fi
+          cd build/macos && make clean && make CXXFLAGS="-std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS" -j$(sysctl -n hw.ncpu)
+          chmod +x ../../bin/zsign
 
       - name: smoke test
         run: ./bin/zsign -v
@@ -178,11 +192,17 @@ jobs:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           set -e
+          VERSION_FLAGS=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+          fi
           TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
           CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang++
           DEPS=$PWD/android-deps
           mkdir -p bin
-          $CXX -std=c++11 -O3 \
+          $CXX -std=c++11 -O3 $VERSION_FLAGS \
             -I./src -I./src/common -I$DEPS/include \
             $(find src -name "*.cpp") \
             -L$DEPS/lib -lssl -lcrypto -lminizip -lz \
@@ -206,14 +226,21 @@ jobs:
 
       - name: build image
         run: |
-          docker build -t zsign:latest -f - . <<'EOF'
+          VERSION_FLAGS=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+          fi
+          docker build --build-arg VERSION_FLAGS="$VERSION_FLAGS" -t zsign:latest -f - . <<'EOF'
           FROM ubuntu:22.04 AS builder
+          ARG VERSION_FLAGS
           RUN apt-get update && \
               apt-get install -y g++ make pkg-config libssl-dev libminizip-dev zlib1g-dev && \
               rm -rf /var/lib/apt/lists/*
           COPY . /src
           WORKDIR /src/build/linux
-          RUN make clean && make -j$(nproc) && strip ../../bin/zsign
+          RUN make clean && make CXXFLAGS="-std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS" -j$(nproc) && strip ../../bin/zsign
 
           FROM ubuntu:22.04
           RUN apt-get update && \
@@ -242,8 +269,15 @@ jobs:
 
       - name: build static binary
         run: |
-          docker build -t zsign-musl -f - . <<'MUSL'
+          VERSION_FLAGS=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+          fi
+          docker build --build-arg VERSION_FLAGS="$VERSION_FLAGS" -t zsign-musl -f - . <<'MUSL'
           FROM alpine:3.19 AS builder
+          ARG VERSION_FLAGS
           RUN apk add --no-cache g++ make pkgconf openssl-dev openssl-libs-static zlib-dev zlib-static curl
           RUN curl -sL https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz | tar xz && \
               cd zlib-1.3.1/contrib/minizip && \
@@ -253,7 +287,7 @@ jobs:
               cp *.h /usr/local/include/
           COPY . /src
           WORKDIR /src
-          RUN mkdir -p bin && g++ -std=c++11 -O3 -static -Wno-unused-result \
+          RUN mkdir -p bin && g++ -std=c++11 -O3 -static -Wno-unused-result $VERSION_FLAGS \
             -include cstdint -include ctime \
             -I./src -I./src/common -I/usr/local/include \
             $(pkg-config --cflags openssl) \
@@ -296,8 +330,14 @@ jobs:
 
       - name: build
         run: |
+          VERSION_FLAGS=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+          fi
           mkdir -p bin
-          arm-linux-gnueabihf-g++ -std=c++11 -O3 -Wno-unused-result \
+          arm-linux-gnueabihf-g++ -std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS \
             -I./src -I./src/common -I/usr/include -I/usr/include/minizip \
             $(find src -name "*.cpp") \
             -L/usr/lib/arm-linux-gnueabihf \
@@ -320,14 +360,21 @@ jobs:
 
       - name: build on freebsd
         uses: vmactions/freebsd-vm@v1
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         with:
           usesh: true
+          envs: 'TAG_NAME'
           prepare: |
             pkg install -y openssl minizip pkgconf gmake
           run: |
+            VERSION_FLAGS=""
+            case "$TAG_NAME" in
+              v*) VER=$(echo "$TAG_NAME" | sed 's/^v//'); VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\"" ;;
+            esac
             cd build/linux
             gmake clean
-            gmake CXX=c++ -j$(sysctl -n hw.ncpu)
+            gmake CXX=c++ CXXFLAGS="-std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS" -j$(sysctl -n hw.ncpu)
             strip ../../bin/zsign
             ../../bin/zsign -v
 
@@ -351,10 +398,10 @@ jobs:
           mkdir -p releases
           cd artifacts
           for dir in zsign-linux-x86_64 zsign-linux-aarch64 zsign-linux-armv7 zsign-android-armeabi-v7a zsign-android-arm64-v8a zsign-freebsd-x86_64; do
-            [ -d "$dir" ] && tar -czf ../releases/${dir}.tar.gz -C $dir zsign
+            [ -d "$dir" ] && chmod +x $dir/zsign && tar -czf ../releases/${dir}.tar.gz -C $dir zsign
           done
-          [ -d zsign-linux-musl-static ] && tar -czf ../releases/zsign-linux-musl-static.tar.gz -C zsign-linux-musl-static zsign-musl
-          [ -d zsign-macos-arm64 ] && tar -czf ../releases/zsign-macos-arm64.tar.gz -C zsign-macos-arm64 zsign
+          [ -d zsign-linux-musl-static ] && chmod +x zsign-linux-musl-static/zsign-musl && tar -czf ../releases/zsign-linux-musl-static.tar.gz -C zsign-linux-musl-static zsign-musl
+          [ -d zsign-macos-arm64 ] && chmod +x zsign-macos-arm64/zsign && tar -czf ../releases/zsign-macos-arm64.tar.gz -C zsign-macos-arm64 zsign
           [ -d zsign-windows-x64 ] && (cd zsign-windows-x64 && zip ../../releases/zsign-windows-x64.zip zsign.exe)
           [ -f zsign-docker/zsign-docker.tar.gz ] && cp zsign-docker/zsign-docker.tar.gz ../releases/
           cd ..
