@@ -60,6 +60,10 @@ private:
 	vector<string>	m_arrInjectDylibs;
 	set<string>		m_setRemoveDylibs;
 
+private:
+	void ApplyAppModifications();
+
 public:
+	bool		m_bEnableDocuments;
 	string			m_strAppFolder;
 };

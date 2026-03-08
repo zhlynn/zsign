@@ -12,6 +12,7 @@ ZBundle::ZBundle()
 	m_bForceSign = false;
 	m_bWeakInject = false;
 	m_bRemoveProvision = false;
+	m_bEnableDocuments = false;
 }
 
 bool ZBundle::FindAppFolder(const string& strFolder, string& strAppFolder)
@@ -568,6 +569,20 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 	return true;
 }
 
+void ZBundle::ApplyAppModifications()
+{
+
+	if (m_bEnableDocuments) {
+		jvalue jvInfo;
+		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
+		jvInfo["UISupportsDocumentBrowser"] = true;
+		jvInfo["UIFileSharingEnabled"] = true;
+		jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
+		m_bForceSign = true;
+		ZLog::Print(">>> Enabled documents support\n");
+	}
+}
+
 bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 							const string& strFolder,
 							const string& strBundleId,
@@ -596,6 +611,8 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 		ZLog::ErrorV(">>> Can't find app folder! %s\n", strFolder.c_str());
 		return false;
 	}
+
+	ApplyAppModifications();
 
 	if (!strBundleId.empty() || !strDisplayName.empty() || !strBundleVersion.empty()) {
 		m_bForceSign = true;
