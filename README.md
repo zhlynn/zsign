@@ -147,6 +147,31 @@ options:
 # writes ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
+11. Remove UISupportedDevices to allow the app on any device.
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
+```
+
+12. Remove watch app from the bundle.
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
+```
+
+13. Remove all app extensions (PlugIns/Extensions).
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -E -o output.ipa demo.ipa
+```
+
+14. Set minimum OS version.
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
+```
+
+15. Enable documents support (Files app integration).
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -S -o output.ipa demo.ipa
+```
+
 ## How to sign quickly?
 
 First, unzip the IPA file, then use zsign to sign the folder containing assets. During the initial signing, zsign will perform a complete signature and cache the signing information into a .zsign_cache directory in the current path. When re-signing the folder with different assets, zsign will utilize the cached data to significantly speed up the process—making signing extremely fast! Give it a try!
