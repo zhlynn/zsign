@@ -60,6 +60,10 @@ private:
 	vector<string>	m_arrInjectDylibs;
 	set<string>		m_setRemoveDylibs;
 
+private:
+	void ApplyAppModifications();
+
 public:
+	string		m_strMinVersion;
 	string			m_strAppFolder;
 };

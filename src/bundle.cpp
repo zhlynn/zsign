@@ -568,6 +568,20 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 	return true;
 }
 
+void ZBundle::ApplyAppModifications()
+{
+
+	if (!m_strMinVersion.empty()) {
+		jvalue jvInfo;
+		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
+		string strOldVersion = jvInfo["MinimumOSVersion"];
+		jvInfo["MinimumOSVersion"] = m_strMinVersion;
+		jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
+		m_bForceSign = true;
+		ZLog::PrintV(">>> MinimumOSVersion: %s -> %s\n", strOldVersion.c_str(), m_strMinVersion.c_str());
+	}
+}
+
 bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 							const string& strFolder,
 							const string& strBundleId,
@@ -596,6 +610,8 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 		ZLog::ErrorV(">>> Can't find app folder! %s\n", strFolder.c_str());
 		return false;
 	}
+
+	ApplyAppModifications();
 
 	if (!strBundleId.empty() || !strDisplayName.empty() || !strBundleVersion.empty()) {
 		m_bForceSign = true;
