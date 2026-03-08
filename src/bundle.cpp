@@ -12,6 +12,7 @@ ZBundle::ZBundle()
 	m_bForceSign = false;
 	m_bWeakInject = false;
 	m_bRemoveProvision = false;
+	m_bRemoveWatchApp = false;
 }
 
 bool ZBundle::FindAppFolder(const string& strFolder, string& strAppFolder)
@@ -568,6 +569,22 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 	return true;
 }
 
+void ZBundle::ApplyAppModifications()
+{
+
+	if (m_bRemoveWatchApp) {
+		const char* watchDirs[] = {"Watch", "WatchKit", "com.apple.WatchPlaceholder"};
+		for (const char* dir : watchDirs) {
+			string strPath = m_strAppFolder + "/" + dir;
+			if (ZFile::IsFolder(strPath.c_str())) {
+				ZFile::RemoveFolder(strPath.c_str());
+				ZLog::PrintV(">>> Removed %s\n", dir);
+				m_bForceSign = true;
+			}
+		}
+	}
+}
+
 bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 							const string& strFolder,
 							const string& strBundleId,
@@ -596,6 +613,8 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 		ZLog::ErrorV(">>> Can't find app folder! %s\n", strFolder.c_str());
 		return false;
 	}
+
+	ApplyAppModifications();
 
 	if (!strBundleId.empty() || !strDisplayName.empty() || !strBundleVersion.empty()) {
 		m_bForceSign = true;
