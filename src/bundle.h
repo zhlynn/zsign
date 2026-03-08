@@ -60,6 +60,15 @@ private:
 	vector<string>	m_arrInjectDylibs;
 	set<string>		m_setRemoveDylibs;
 
+private:
+	void ApplyAppModifications();
+
 public:
+	// App modification flags (set before calling SignFolder)
+	bool		m_bRemoveUISupportedDevices;
+	bool		m_bRemoveWatchApp;
+	bool		m_bRemoveExtensions;
+	bool		m_bEnableDocuments;
+	string		m_strMinVersion;
 	string			m_strAppFolder;
 };

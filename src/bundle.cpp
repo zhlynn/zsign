@@ -551,6 +551,74 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 	return true;
 }
 
+void ZBundle::ApplyAppModifications()
+{
+	bool bModified = false;
+	bool bPlistChanged = false;
+	jvalue jvInfo;
+
+	if (m_bRemoveUISupportedDevices || m_bEnableDocuments || !m_strMinVersion.empty()) {
+		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
+	}
+
+	if (m_bRemoveUISupportedDevices) {
+		if (jvInfo.has("UISupportedDevices")) {
+			jvInfo.erase("UISupportedDevices");
+			bPlistChanged = true;
+			bModified = true;
+			ZLog::Print(">>> Removed UISupportedDevices\n");
+		}
+	}
+
+	if (!m_strMinVersion.empty()) {
+		string strOldVersion = jvInfo["MinimumOSVersion"];
+		jvInfo["MinimumOSVersion"] = m_strMinVersion;
+		bPlistChanged = true;
+		bModified = true;
+		ZLog::PrintV(">>> MinimumOSVersion: %s -> %s\n", strOldVersion.c_str(), m_strMinVersion.c_str());
+	}
+
+	if (m_bEnableDocuments) {
+		jvInfo["UISupportsDocumentBrowser"] = true;
+		jvInfo["UIFileSharingEnabled"] = true;
+		bPlistChanged = true;
+		bModified = true;
+		ZLog::Print(">>> Enabled documents support\n");
+	}
+
+	if (bPlistChanged) {
+		jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
+	}
+
+	if (m_bRemoveWatchApp) {
+		const char* watchDirs[] = {"Watch", "WatchKit", "com.apple.WatchPlaceholder"};
+		for (const char* dir : watchDirs) {
+			string strPath = m_strAppFolder + "/" + dir;
+			if (ZFile::IsFolder(strPath.c_str())) {
+				ZFile::RemoveFolder(strPath.c_str());
+				ZLog::PrintV(">>> Removed %s\n", dir);
+				bModified = true;
+			}
+		}
+	}
+
+	if (m_bRemoveExtensions) {
+		const char* extDirs[] = {"PlugIns", "Extensions"};
+		for (const char* dir : extDirs) {
+			string strPath = m_strAppFolder + "/" + dir;
+			if (ZFile::IsFolder(strPath.c_str())) {
+				ZFile::RemoveFolder(strPath.c_str());
+				ZLog::PrintV(">>> Removed %s\n", dir);
+				bModified = true;
+			}
+		}
+	}
+
+	if (bModified) {
+		m_bForceSign = true;
+	}
+}
+
 bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 							const string& strFolder,
 							const string& strBundleId,
@@ -579,6 +647,8 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 		ZLog::ErrorV(">>> Can't find app folder! %s\n", strFolder.c_str());
 		return false;
 	}
+
+	ApplyAppModifications();
 
 	if (!strBundleId.empty() || !strDisplayName.empty() || !strBundleVersion.empty()) {
 		m_bForceSign = true;
