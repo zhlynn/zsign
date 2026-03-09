@@ -581,9 +581,9 @@ int CheckCertificate(const string& strFilePath, const string& strPassword)
 	}
 
 	if (!cert) {
-		if (showSigned && isSigned) {
-			ZLog::Print(">>> Signed:\tYes (ad-hoc, no certificate)\n\n");
-			return 0;
+		if (showSigned) {
+			ZLog::Print(">>> Signed:\tNo\n\n");
+			return -2;
 		}
 		ZLog::ErrorV(">>> Failed to load certificate from %s\n", strFilePath.c_str());
 		return -1;
