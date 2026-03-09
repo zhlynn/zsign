@@ -83,7 +83,7 @@ options:
 -i, --install           Install ipa file using ideviceinstaller command for test.
 -t, --temp_folder       Path to temporary folder for intermediate files.
 -2, --sha256_only       Serialize a single code directory that uses SHA256.
--C, --check             Check if the file is signed.
+-C, --check             Check certificate validity and OCSP revocation status.
 -x, --metadata          Extract metadata and icon to the specified directory.
 -R, --rm_provision      Remove mobileprovision file after signing.
 -S, --enable_docs       Enable UISupportsDocumentBrowser and UIFileSharingEnabled.
@@ -162,6 +162,53 @@ options:
 15. Remove UISupportedDevices to allow the app on any device.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
+```
+
+## Certificate Check (-C)
+
+The `-C` flag checks the signing certificate of any supported file and performs an OCSP revocation check against Apple's servers. It reads the binary directly from inside IPA files without extracting to disk.
+
+**Supported file types:** `.ipa`, `.mobileprovision`, `.p12`/`.pfx`, `.cer`/`.pem`, Mach-O binaries.
+
+16. Check an IPA file (reads binary directly from zip, no extraction).
+```bash
+./zsign -C demo.ipa
+```
+
+17. Check a mobile provisioning profile.
+```bash
+./zsign -C dev.mobileprovision
+```
+
+18. Check a P12/PFX certificate file.
+```bash
+./zsign -C dev.p12 -p 123
+```
+
+19. Check a Mach-O binary directly.
+```bash
+./zsign -C demo.app/demo
+```
+
+20. Sign an IPA and verify the signed binary's certificate before archiving.
+```bash
+./zsign -C -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.ipa
+```
+
+**Example output:**
+```
+>>> Check:      demo.ipa (IPA)
+>>> Signed:     Yes
+>>> Name:       Apple Distribution: Company Name (TEAMID)
+>>> Type:       Apple Distribution
+>>> Org:        Company Name
+>>> Team:       TEAMID
+>>> Serial:     XX:XX:XX:XX:XX:XX:XX:XX
+>>> Issued:     2025-01-01T00:00:00Z
+>>> Expires:    2026-01-01T00:00:00Z (365 days remaining)
+>>> Algorithm:  RSA 2048-bit
+>>> Issuer:     Apple Worldwide Developer Relations Certification Authority
+>>> OCSP:       Valid (ocsp.apple.com)
 ```
 
 ## How to sign quickly?
