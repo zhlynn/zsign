@@ -583,6 +583,8 @@ void ZBundle::ApplyAppModifications()
 		jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
 		m_bForceSign = true;
 		ZLog::Print(">>> Enabled documents support\n");
+	}
+
 	if (!m_strMinVersion.empty()) {
 		jvalue jvInfo;
 		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
@@ -591,9 +593,20 @@ void ZBundle::ApplyAppModifications()
 		jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
 		m_bForceSign = true;
 		ZLog::PrintV(">>> MinimumOSVersion: %s -> %s\n", strOldVersion.c_str(), m_strMinVersion.c_str());
+	}
+
 	if (m_bRemoveExtensions) {
 		const char* extDirs[] = {"PlugIns", "Extensions"};
 		for (const char* dir : extDirs) {
+			string strPath = m_strAppFolder + "/" + dir;
+			if (ZFile::IsFolder(strPath.c_str())) {
+				ZFile::RemoveFolder(strPath.c_str());
+				ZLog::PrintV(">>> Removed %s\n", dir);
+				m_bForceSign = true;
+			}
+		}
+	}
+
 	if (m_bRemoveWatchApp) {
 		const char* watchDirs[] = {"Watch", "WatchKit", "com.apple.WatchPlaceholder"};
 		for (const char* dir : watchDirs) {
@@ -603,6 +616,9 @@ void ZBundle::ApplyAppModifications()
 				ZLog::PrintV(">>> Removed %s\n", dir);
 				m_bForceSign = true;
 			}
+		}
+	}
+
 	if (m_bRemoveUISupportedDevices) {
 		jvalue jvInfo;
 		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
