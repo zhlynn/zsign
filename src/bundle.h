@@ -64,6 +64,7 @@ private:
 	void ApplyAppModifications();
 
 public:
+	bool		m_bEnableDocuments;
 	string		m_strMinVersion;
 	bool		m_bRemoveExtensions;
 	bool		m_bRemoveWatchApp;

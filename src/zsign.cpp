@@ -12,7 +12,7 @@
 #endif
 
 #ifndef ZSIGN_VERSION
-#define ZSIGN_VERSION "0.9.1"
+#define ZSIGN_VERSION "0.9.5"
 #endif
 
 const struct option options[] = {
@@ -40,6 +40,7 @@ const struct option options[] = {
 	{"quiet", no_argument, NULL, 'q'},
 	{"metadata", required_argument, NULL, 'x'},
 	{"rm_provision", no_argument, NULL, 'R'},
+	{"enable_docs", no_argument, NULL, 'S'},
 	{"min_version", required_argument, NULL, 'M'},
 	{"rm_extensions", no_argument, NULL, 'E'},
 	{"rm_watch", no_argument, NULL, 'W'},
@@ -76,6 +77,7 @@ int usage()
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
 	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
+	ZLog::Print("-S, --enable_docs\tEnable UISupportsDocumentBrowser and UIFileSharingEnabled.\n");
 	ZLog::Print("-M, --min_version\tSet MinimumOSVersion in Info.plist.\n");
 	ZLog::Print("-E, --rm_extensions\tRemove all app extensions (PlugIns/Extensions).\n");
 	ZLog::Print("-W, --rm_watch\t\tRemove watch app from the bundle.\n");
@@ -98,6 +100,7 @@ int main(int argc, char* argv[])
 	bool bSHA256Only = false;
 	bool bCheckSignature = false;
 	bool bRemoveProvision = false;
+	bool bEnableDocuments = false;
 	string strMinVersion;
 	bool bRemoveExtensions = false;
 	bool bRemoveWatchApp = false;
@@ -121,7 +124,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRSc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:E:W:U",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -194,6 +197,8 @@ int main(int argc, char* argv[])
 		case 'R':
 			bRemoveProvision = true;
 			break;
+		case 'S':
+			bEnableDocuments = true;
 		case 'M':
 			strMinVersion = optarg;
 		case 'E':
@@ -321,6 +326,7 @@ int main(int argc, char* argv[])
 	//sign
 	atimer.Reset();
 	ZBundle bundle;
+	bundle.m_bEnableDocuments = bEnableDocuments;
 	bundle.m_strMinVersion = strMinVersion;
 	bundle.m_bRemoveExtensions = bRemoveExtensions;
 	bundle.m_bRemoveWatchApp = bRemoveWatchApp;

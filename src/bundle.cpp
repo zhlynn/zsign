@@ -12,6 +12,7 @@ ZBundle::ZBundle()
 	m_bForceSign = false;
 	m_bWeakInject = false;
 	m_bRemoveProvision = false;
+	m_bEnableDocuments = false;
 	m_bRemoveExtensions = false;
 	m_bRemoveWatchApp = false;
 	m_bRemoveUISupportedDevices = false;
@@ -574,6 +575,14 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 void ZBundle::ApplyAppModifications()
 {
 
+	if (m_bEnableDocuments) {
+		jvalue jvInfo;
+		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
+		jvInfo["UISupportsDocumentBrowser"] = true;
+		jvInfo["UIFileSharingEnabled"] = true;
+		jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
+		m_bForceSign = true;
+		ZLog::Print(">>> Enabled documents support\n");
 	if (!m_strMinVersion.empty()) {
 		jvalue jvInfo;
 		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());

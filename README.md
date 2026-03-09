@@ -86,6 +86,7 @@ options:
 -C, --check             Check if the file is signed.
 -x, --metadata          Extract metadata and icon to the specified directory.
 -R, --rm_provision      Remove mobileprovision file after signing.
+-S, --enable_docs       Enable UISupportsDocumentBrowser and UIFileSharingEnabled.
 -M, --min_version       Set MinimumOSVersion in Info.plist.
 -E, --rm_extensions     Remove all app extensions (PlugIns/Extensions).
 -W, --rm_watch          Remove watch app from the bundle.
@@ -146,16 +147,19 @@ options:
 # writes ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
-11. Set minimum OS version.
+11. Enable documents support (Files app integration).
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -S -o output.ipa demo.ipa
+12. Set minimum OS version.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
-11. Remove all app extensions (PlugIns/Extensions).
+13. Remove all app extensions (PlugIns/Extensions).
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -E -o output.ipa demo.ipa
-11. Remove watch app from the bundle.
+14. Remove watch app from the bundle.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
-11. Remove UISupportedDevices to allow the app on any device.
+15. Remove UISupportedDevices to allow the app on any device.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
 ```
