@@ -40,6 +40,7 @@ const struct option options[] = {
 	{"quiet", no_argument, NULL, 'q'},
 	{"metadata", required_argument, NULL, 'x'},
 	{"rm_provision", no_argument, NULL, 'R'},
+	{"min_version", required_argument, NULL, 'M'},
 	{"rm_extensions", no_argument, NULL, 'E'},
 	{"rm_watch", no_argument, NULL, 'W'},
 	{"rm_uisd", no_argument, NULL, 'U'},
@@ -75,6 +76,7 @@ int usage()
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
 	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
+	ZLog::Print("-M, --min_version\tSet MinimumOSVersion in Info.plist.\n");
 	ZLog::Print("-E, --rm_extensions\tRemove all app extensions (PlugIns/Extensions).\n");
 	ZLog::Print("-W, --rm_watch\t\tRemove watch app from the bundle.\n");
 	ZLog::Print("-U, --rm_uisd\t\tRemove UISupportedDevices from Info.plist.\n");
@@ -96,6 +98,7 @@ int main(int argc, char* argv[])
 	bool bSHA256Only = false;
 	bool bCheckSignature = false;
 	bool bRemoveProvision = false;
+	string strMinVersion;
 	bool bRemoveExtensions = false;
 	bool bRemoveWatchApp = false;
 	bool bRemoveUISupportedDevices = false;
@@ -118,9 +121,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCREc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRWc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRUc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -193,6 +194,8 @@ int main(int argc, char* argv[])
 		case 'R':
 			bRemoveProvision = true;
 			break;
+		case 'M':
+			strMinVersion = optarg;
 		case 'E':
 			bRemoveExtensions = true;
 		case 'W':
@@ -318,6 +321,7 @@ int main(int argc, char* argv[])
 	//sign
 	atimer.Reset();
 	ZBundle bundle;
+	bundle.m_strMinVersion = strMinVersion;
 	bundle.m_bRemoveExtensions = bRemoveExtensions;
 	bundle.m_bRemoveWatchApp = bRemoveWatchApp;
 	bundle.m_bRemoveUISupportedDevices = bRemoveUISupportedDevices;

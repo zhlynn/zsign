@@ -574,6 +574,14 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 void ZBundle::ApplyAppModifications()
 {
 
+	if (!m_strMinVersion.empty()) {
+		jvalue jvInfo;
+		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
+		string strOldVersion = jvInfo["MinimumOSVersion"];
+		jvInfo["MinimumOSVersion"] = m_strMinVersion;
+		jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
+		m_bForceSign = true;
+		ZLog::PrintV(">>> MinimumOSVersion: %s -> %s\n", strOldVersion.c_str(), m_strMinVersion.c_str());
 	if (m_bRemoveExtensions) {
 		const char* extDirs[] = {"PlugIns", "Extensions"};
 		for (const char* dir : extDirs) {

@@ -86,6 +86,7 @@ options:
 -C, --check             Check if the file is signed.
 -x, --metadata          Extract metadata and icon to the specified directory.
 -R, --rm_provision      Remove mobileprovision file after signing.
+-M, --min_version       Set MinimumOSVersion in Info.plist.
 -E, --rm_extensions     Remove all app extensions (PlugIns/Extensions).
 -W, --rm_watch          Remove watch app from the bundle.
 -U, --rm_uisd           Remove UISupportedDevices from Info.plist.
@@ -145,6 +146,9 @@ options:
 # writes ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
+11. Set minimum OS version.
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
 11. Remove all app extensions (PlugIns/Extensions).
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -E -o output.ipa demo.ipa

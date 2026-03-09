@@ -64,6 +64,7 @@ private:
 	void ApplyAppModifications();
 
 public:
+	string		m_strMinVersion;
 	bool		m_bRemoveExtensions;
 	bool		m_bRemoveWatchApp;
 	bool		m_bRemoveUISupportedDevices;
