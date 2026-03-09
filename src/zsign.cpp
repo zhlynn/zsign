@@ -11,7 +11,9 @@
 #include "common_win32.h"
 #endif
 
-#define ZSIGN_VERSION "0.9.1"
+#ifndef ZSIGN_VERSION
+#define ZSIGN_VERSION "0.9.5"
+#endif
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -39,6 +41,10 @@ const struct option options[] = {
 	{"metadata", required_argument, NULL, 'x'},
 	{"rm_provision", no_argument, NULL, 'R'},
 	{"enable_docs", no_argument, NULL, 'S'},
+	{"min_version", required_argument, NULL, 'M'},
+	{"rm_extensions", no_argument, NULL, 'E'},
+	{"rm_watch", no_argument, NULL, 'W'},
+	{"rm_uisd", no_argument, NULL, 'U'},
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
@@ -72,6 +78,10 @@ int usage()
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
 	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
 	ZLog::Print("-S, --enable_docs\tEnable UISupportsDocumentBrowser and UIFileSharingEnabled.\n");
+	ZLog::Print("-M, --min_version\tSet MinimumOSVersion in Info.plist.\n");
+	ZLog::Print("-E, --rm_extensions\tRemove all app extensions (PlugIns/Extensions).\n");
+	ZLog::Print("-W, --rm_watch\t\tRemove watch app from the bundle.\n");
+	ZLog::Print("-U, --rm_uisd\t\tRemove UISupportedDevices from Info.plist.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
@@ -91,6 +101,10 @@ int main(int argc, char* argv[])
 	bool bCheckSignature = false;
 	bool bRemoveProvision = false;
 	bool bEnableDocuments = false;
+	string strMinVersion;
+	bool bRemoveExtensions = false;
+	bool bRemoveWatchApp = false;
+	bool bRemoveUISupportedDevices = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -110,7 +124,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRSc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRSc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:E:W:U",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -185,6 +199,14 @@ int main(int argc, char* argv[])
 			break;
 		case 'S':
 			bEnableDocuments = true;
+		case 'M':
+			strMinVersion = optarg;
+		case 'E':
+			bRemoveExtensions = true;
+		case 'W':
+			bRemoveWatchApp = true;
+		case 'U':
+			bRemoveUISupportedDevices = true;
 			break;
 		case 'v': {
 			printf("version: %s\n", ZSIGN_VERSION);
@@ -305,6 +327,10 @@ int main(int argc, char* argv[])
 	atimer.Reset();
 	ZBundle bundle;
 	bundle.m_bEnableDocuments = bEnableDocuments;
+	bundle.m_strMinVersion = strMinVersion;
+	bundle.m_bRemoveExtensions = bRemoveExtensions;
+	bundle.m_bRemoveWatchApp = bRemoveWatchApp;
+	bundle.m_bRemoveUISupportedDevices = bRemoveUISupportedDevices;
 
 	bool bRet;
 	if (arrProvFiles.size() > 1) {
