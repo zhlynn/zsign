@@ -86,6 +86,7 @@ options:
 -C, --check             Check if the file is signed.
 -x, --metadata          Extract metadata and icon to the specified directory.
 -R, --rm_provision      Remove mobileprovision file after signing.
+-W, --rm_watch          Remove watch app from the bundle.
 -U, --rm_uisd           Remove UISupportedDevices from Info.plist.
 -q, --quiet             Quiet operation.
 -v, --version           Shows version.
@@ -143,6 +144,9 @@ options:
 # writes ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
+11. Remove watch app from the bundle.
+```bash
+./zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
 11. Remove UISupportedDevices to allow the app on any device.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
