@@ -13,6 +13,8 @@ ZBundle::ZBundle()
 	m_bWeakInject = false;
 	m_bRemoveProvision = false;
 	m_bRemoveExtensions = false;
+	m_bRemoveWatchApp = false;
+	m_bRemoveUISupportedDevices = false;
 }
 
 bool ZBundle::FindAppFolder(const string& strFolder, string& strAppFolder)
@@ -575,12 +577,23 @@ void ZBundle::ApplyAppModifications()
 	if (m_bRemoveExtensions) {
 		const char* extDirs[] = {"PlugIns", "Extensions"};
 		for (const char* dir : extDirs) {
+	if (m_bRemoveWatchApp) {
+		const char* watchDirs[] = {"Watch", "WatchKit", "com.apple.WatchPlaceholder"};
+		for (const char* dir : watchDirs) {
 			string strPath = m_strAppFolder + "/" + dir;
 			if (ZFile::IsFolder(strPath.c_str())) {
 				ZFile::RemoveFolder(strPath.c_str());
 				ZLog::PrintV(">>> Removed %s\n", dir);
 				m_bForceSign = true;
 			}
+	if (m_bRemoveUISupportedDevices) {
+		jvalue jvInfo;
+		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
+		if (jvInfo.has("UISupportedDevices")) {
+			jvInfo.erase("UISupportedDevices");
+			jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
+			m_bForceSign = true;
+			ZLog::Print(">>> Removed UISupportedDevices\n");
 		}
 	}
 }
