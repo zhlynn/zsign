@@ -12,6 +12,7 @@ ZBundle::ZBundle()
 	m_bForceSign = false;
 	m_bWeakInject = false;
 	m_bRemoveProvision = false;
+	m_bRemoveExtensions = false;
 	m_bRemoveWatchApp = false;
 	m_bRemoveUISupportedDevices = false;
 }
@@ -573,6 +574,9 @@ bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundl
 void ZBundle::ApplyAppModifications()
 {
 
+	if (m_bRemoveExtensions) {
+		const char* extDirs[] = {"PlugIns", "Extensions"};
+		for (const char* dir : extDirs) {
 	if (m_bRemoveWatchApp) {
 		const char* watchDirs[] = {"Watch", "WatchKit", "com.apple.WatchPlaceholder"};
 		for (const char* dir : watchDirs) {

@@ -64,6 +64,7 @@ private:
 	void ApplyAppModifications();
 
 public:
+	bool		m_bRemoveExtensions;
 	bool		m_bRemoveWatchApp;
 	bool		m_bRemoveUISupportedDevices;
 	string			m_strAppFolder;
