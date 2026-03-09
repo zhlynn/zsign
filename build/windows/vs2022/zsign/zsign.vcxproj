@@ -150,6 +150,7 @@
     <ClCompile Include="..\..\..\..\src\signing.cpp" />
     <ClCompile Include="..\..\..\..\src\zsign.cpp" />
     <ClCompile Include="..\..\..\..\src\metadata.cpp" />
+    <ClCompile Include="..\..\..\..\src\certcheck.cpp" />
     <ClCompile Include="src\getopt.cpp" />
     <ClCompile Include="src\iconv.cpp" />
   </ItemGroup>
@@ -168,6 +169,7 @@
     <ClInclude Include="..\..\..\..\src\macho.h" />
     <ClInclude Include="..\..\..\..\src\openssl.h" />
     <ClInclude Include="..\..\..\..\src\signing.h" />
+    <ClInclude Include="..\..\..\..\src\certcheck.h" />
     <ClInclude Include="src\common_win32.h" />
     <ClInclude Include="src\getopt.h" />
     <ClInclude Include="src\iconv.h" />
