@@ -11,9 +11,14 @@
 #include "common_win32.h"
 #endif
 
+#define _ZSIGN_STR(x) #x
+#define _ZSIGN_XSTR(x) _ZSIGN_STR(x)
+
 #ifndef ZSIGN_VERSION
-#define ZSIGN_VERSION "0.9.5"
+#define ZSIGN_VERSION 0.9.6
 #endif
+
+#define ZSIGN_VERSION_STR _ZSIGN_XSTR(ZSIGN_VERSION)
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -51,7 +56,7 @@ const struct option options[] = {
 
 int usage()
 {
-	ZLog::PrintV("zsign (v%s) is a codesign alternative for iOS12+ on macOS, Linux and Windows. \nVisit https://github.com/zhlynn/zsign for more information.\n\n", ZSIGN_VERSION);
+	ZLog::PrintV("zsign (v%s) is a codesign alternative for iOS12+ on macOS, Linux and Windows. \nVisit https://github.com/zhlynn/zsign for more information.\n\n", ZSIGN_VERSION_STR);
 	ZLog::Print("Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder\n");
 	ZLog::Print("options:\n");
 	ZLog::Print("-k, --pkey\t\tPath to private key or p12 file. (PEM or DER format)\n");
@@ -209,7 +214,7 @@ int main(int argc, char* argv[])
 			bRemoveUISupportedDevices = true;
 			break;
 		case 'v': {
-			printf("version: %s\n", ZSIGN_VERSION);
+			printf("version: %s\n", ZSIGN_VERSION_STR);
 			return 0;
 			}
 			break;

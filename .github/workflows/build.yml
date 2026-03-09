@@ -45,7 +45,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
           fi
           if [ "${{ matrix.cross }}" = "true" ]; then
             mkdir -p bin
@@ -91,7 +91,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
           fi
           cd build/macos && make clean && make CXXFLAGS="-std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS" -j$(sysctl -n hw.ncpu)
           chmod +x ../../bin/zsign
@@ -196,7 +196,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
           fi
           TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
           CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang++
@@ -230,7 +230,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
           fi
           docker build --build-arg VERSION_FLAGS="$VERSION_FLAGS" -t zsign:latest -f - . <<'EOF'
           FROM ubuntu:22.04 AS builder
@@ -273,7 +273,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
           fi
           docker build --build-arg VERSION_FLAGS="$VERSION_FLAGS" -t zsign-musl -f - . <<'MUSL'
           FROM alpine:3.19 AS builder
@@ -334,7 +334,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
+            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
           fi
           mkdir -p bin
           arm-linux-gnueabihf-g++ -std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS \
@@ -370,7 +370,7 @@ jobs:
           run: |
             VERSION_FLAGS=""
             case "$TAG_NAME" in
-              v*) VER=$(echo "$TAG_NAME" | sed 's/^v//'); VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\"" ;;
+              v*) VER=$(echo "$TAG_NAME" | sed 's/^v//'); VERSION_FLAGS="-DZSIGN_VERSION=${VER}" ;;
             esac
             cd build/linux
             gmake clean
