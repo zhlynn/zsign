@@ -40,6 +40,7 @@ const struct option options[] = {
 	{"quiet", no_argument, NULL, 'q'},
 	{"metadata", required_argument, NULL, 'x'},
 	{"rm_provision", no_argument, NULL, 'R'},
+	{"rm_uisd", no_argument, NULL, 'U'},
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
@@ -72,6 +73,7 @@ int usage()
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
 	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
+	ZLog::Print("-U, --rm_uisd\t\tRemove UISupportedDevices from Info.plist.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
@@ -90,6 +92,7 @@ int main(int argc, char* argv[])
 	bool bSHA256Only = false;
 	bool bCheckSignature = false;
 	bool bRemoveProvision = false;
+	bool bRemoveUISupportedDevices = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -109,7 +112,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRUc:k:m:o:p:e:b:n:z:l:D:t:r:x:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -181,6 +184,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'R':
 			bRemoveProvision = true;
+			break;
+		case 'U':
+			bRemoveUISupportedDevices = true;
 			break;
 		case 'v': {
 			printf("version: %s\n", ZSIGN_VERSION);
@@ -300,6 +306,8 @@ int main(int argc, char* argv[])
 	//sign
 	atimer.Reset();
 	ZBundle bundle;
+	bundle.m_bRemoveUISupportedDevices = bRemoveUISupportedDevices;
+
 	bool bRet;
 	if (arrProvFiles.size() > 1) {
 		list<ZSignAsset> zsaList;
