@@ -13,6 +13,7 @@ ZBundle::ZBundle()
 	m_bWeakInject = false;
 	m_bRemoveProvision = false;
 	m_bRemoveWatchApp = false;
+	m_bRemoveUISupportedDevices = false;
 }
 
 bool ZBundle::FindAppFolder(const string& strFolder, string& strAppFolder)
@@ -581,6 +582,14 @@ void ZBundle::ApplyAppModifications()
 				ZLog::PrintV(">>> Removed %s\n", dir);
 				m_bForceSign = true;
 			}
+	if (m_bRemoveUISupportedDevices) {
+		jvalue jvInfo;
+		jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str());
+		if (jvInfo.has("UISupportedDevices")) {
+			jvInfo.erase("UISupportedDevices");
+			jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str());
+			m_bForceSign = true;
+			ZLog::Print(">>> Removed UISupportedDevices\n");
 		}
 	}
 }

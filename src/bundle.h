@@ -65,5 +65,6 @@ private:
 
 public:
 	bool		m_bRemoveWatchApp;
+	bool		m_bRemoveUISupportedDevices;
 	string			m_strAppFolder;
 };
