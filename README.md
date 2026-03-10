@@ -150,15 +150,23 @@ options:
 11. Enable documents support (Files app integration).
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -S -o output.ipa demo.ipa
+```
+
 12. Set minimum OS version.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
+```
+
 13. Remove all app extensions (PlugIns/Extensions).
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -E -o output.ipa demo.ipa
+```
+
 14. Remove watch app from the bundle.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
+```
+
 15. Remove UISupportedDevices to allow the app on any device.
 ```bash
 ./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
