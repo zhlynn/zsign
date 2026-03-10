@@ -6,6 +6,7 @@
 #include "timer.h"
 #include "archive.h"
 #include "metadata.h"
+#include "certcheck.h"
 
 #ifdef _WIN32
 #include "common_win32.h"
@@ -78,7 +79,7 @@ int usage()
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-t, --temp_folder\tPath to temporary folder for intermediate files.\n");
 	ZLog::Print("-2, --sha256_only\tSerialize a single code directory that uses SHA256.\n");
-	ZLog::Print("-C, --check\t\tCheck if the file is signed.\n");
+	ZLog::Print("-C, --check\t\tCheck certificate validity and OCSP revocation status.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
 	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
@@ -254,6 +255,10 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	if (bCheckSignature && strPKeyFile.empty() && strProvFile.empty()) {
+		return CheckCertificate(strPath, strPassword);
+	}
+
 	bool bZipFile = ZFile::IsZipFile(strPath.c_str());
 	if (!bZipFile && !ZFile::IsFolder(strPath.c_str())) { // macho file
 		ZMachO* macho = new ZMachO();
@@ -263,12 +268,8 @@ int main(int argc, char* argv[])
 		}
 
 		if (!bAdhoc && arrDylibFiles.empty() && (strPKeyFile.empty() || strProvFile.empty())) {
-			if (bCheckSignature) {
-				return macho->CheckSignature() ? 0 : -2;
-			} else {
-				macho->PrintInfo();
-				return 0;
-			}
+			macho->PrintInfo();
+			return 0;
 		}
 
 		ZSignAsset zsa;
@@ -352,6 +353,11 @@ int main(int argc, char* argv[])
 		bRet = bundle.SignFolder(&zsa, strFolder, strBundleId, strBundleVersion, strDisplayName, arrDylibFiles, arrRemoveDylibNames, bForce, bWeakInject, bEnableCache, bRemoveProvision);
 	}
 	atimer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
+
+	// Post-sign certificate check
+	if (bRet && bCheckSignature && !bundle.m_strAppFolder.empty()) {
+		CheckSignedBinary(bundle.m_strAppFolder);
+	}
 
 	//archive
 	if (bRet && !strOutputFile.empty()) {
