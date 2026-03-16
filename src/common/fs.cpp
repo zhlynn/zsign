@@ -337,16 +337,16 @@ bool ZFile::CopyFile(const char* szSrcFile, const char* szDestFile)
 	return ::CopyFileA(szSrcFile, szDestFile, FALSE) ? true : false;
 #else 
 
-	int src_id = -1;
+	int src_fd = -1;
 	int dest_fd = -1;
 	ssize_t sum_readed = 0;
 	ssize_t sum_written = 0;
-	src_id = open(szSrcFile, O_RDONLY);
-	if (-1 != src_id) {
+	src_fd = open(szSrcFile, O_RDONLY);
+	if (-1 != src_fd) {
 		dest_fd = open(szDestFile, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 		if (-1 != dest_fd) {
 			char buffer[65536];
-			ssize_t bytes_read = read(src_id, buffer, sizeof(buffer));
+			ssize_t bytes_read = read(src_fd, buffer, sizeof(buffer));
 			while (bytes_read > 0) {
 				sum_readed += bytes_read;
 				ssize_t bytes_written = write(dest_fd, buffer, bytes_read);
@@ -354,14 +354,14 @@ bool ZFile::CopyFile(const char* szSrcFile, const char* szDestFile)
 					break;
 				}
 				sum_written += bytes_written;
-				bytes_read = read(src_id, buffer, sizeof(buffer));
+				bytes_read = read(src_fd, buffer, sizeof(buffer));
 			}
 			close(dest_fd);
 		}
-		close(src_id);
+		close(src_fd);
 	}
 
-	if (-1 == src_id || -1 == dest_fd || sum_readed != sum_written) {
+	if (-1 == src_fd || -1 == dest_fd || sum_readed != sum_written) {
 		return false;
 	}
 

