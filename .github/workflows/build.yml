@@ -408,7 +408,7 @@ jobs:
           ls -lh releases/
 
       - name: release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: releases/*
           draft: false
