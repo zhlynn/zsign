@@ -1,4 +1,4 @@
-It might be the quickest cross-platform codesign alternative for iOS 12+, supporting macOS, Linux, Windows, and more features.
+It might be the quickest cross-platform codesign alternative for iOS 12+, supporting macOS, Linux, Windows, FreeBSD, Android, and more platforms.
 If this tool helps you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [ME](https://github.com/zhlynn).
 
 ## Compile 
@@ -58,6 +58,15 @@ make clean && make
 ### Windows:
 
 Use `Visual Studio 2022` to open `build/windows/vs2022/zsign.sln`, then compile it on Windows 10/11.
+
+### FreeBSD:
+
+```bash
+pkg install openssl minizip pkgconf gmake
+git clone https://github.com/zhlynn/zsign.git
+cd zsign/build/linux
+gmake clean && gmake CXX=c++
+```
   
 ## Usage:
 
@@ -86,11 +95,11 @@ options:
 -C, --check             Check certificate validity and OCSP revocation status.
 -x, --metadata          Extract metadata and icon to the specified directory.
 -R, --rm_provision      Remove mobileprovision file after signing.
--S, --enable_docs       Enable UISupportsDocumentBrowser and UIFileSharingEnabled.
--M, --min_version       Set MinimumOSVersion in Info.plist.
--E, --rm_extensions     Remove all app extensions (PlugIns/Extensions).
--W, --rm_watch          Remove watch app from the bundle.
 -U, --rm_uisd           Remove UISupportedDevices from Info.plist.
+-W, --rm_watch          Remove watch app from the bundle.
+-E, --rm_extensions     Remove all app extensions (PlugIns/Extensions).
+-M, --min_version       Set MinimumOSVersion in Info.plist.
+-S, --enable_docs       Enable UISupportsDocumentBrowser and UIFileSharingEnabled.
 -q, --quiet             Quiet operation.
 -v, --version           Shows version.
 -h, --help              Shows help (this message).
@@ -147,14 +156,14 @@ options:
 # writes ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
-11. Enable documents support (Files app integration).
+11. Remove UISupportedDevices to allow the app on any device.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -S -o output.ipa demo.ipa
+./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
 ```
 
-12. Set minimum OS version.
+12. Remove watch app from the bundle.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
+./zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
 ```
 
 13. Remove all app extensions (PlugIns/Extensions).
@@ -162,14 +171,14 @@ options:
 ./zsign -k dev.p12 -p 123 -m dev.prov -E -o output.ipa demo.ipa
 ```
 
-14. Remove watch app from the bundle.
+14. Set minimum OS version.
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
+./zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
 ```
 
-15. Remove UISupportedDevices to allow the app on any device.
+15. Enable documents support (Files app integration).
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
+./zsign -k dev.p12 -p 123 -m dev.prov -S -o output.ipa demo.ipa
 ```
 
 ## Certificate Check (-C)
@@ -193,12 +202,18 @@ The `-C` flag checks the signing certificate of any supported file and performs 
 ./zsign -C dev.p12 -p 123
 ```
 
-19. Check a Mach-O binary directly.
+19. Check a raw certificate file (DER or PEM).
+```bash
+./zsign -C cert.cer
+./zsign -C cert.pem
+```
+
+20. Check a Mach-O binary directly.
 ```bash
 ./zsign -C demo.app/demo
 ```
 
-20. Sign an IPA and verify the signed binary's certificate before archiving.
+21. Sign an IPA and verify the signed binary's certificate before archiving.
 ```bash
 ./zsign -C -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.ipa
 ```

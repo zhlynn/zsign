@@ -12,14 +12,10 @@
 #include "common_win32.h"
 #endif
 
-#define _ZSIGN_STR(x) #x
-#define _ZSIGN_XSTR(x) _ZSIGN_STR(x)
 
 #ifndef ZSIGN_VERSION
-#define ZSIGN_VERSION 0.9.6
+#define ZSIGN_VERSION "0.7"
 #endif
-
-#define ZSIGN_VERSION_STR _ZSIGN_XSTR(ZSIGN_VERSION)
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -46,18 +42,19 @@ const struct option options[] = {
 	{"quiet", no_argument, NULL, 'q'},
 	{"metadata", required_argument, NULL, 'x'},
 	{"rm_provision", no_argument, NULL, 'R'},
-	{"enable_docs", no_argument, NULL, 'S'},
-	{"min_version", required_argument, NULL, 'M'},
-	{"rm_extensions", no_argument, NULL, 'E'},
-	{"rm_watch", no_argument, NULL, 'W'},
 	{"rm_uisd", no_argument, NULL, 'U'},
+	{"rm_watch", no_argument, NULL, 'W'},
+	{"rm_extensions", no_argument, NULL, 'E'},
+	{"min_version", required_argument, NULL, 'M'},
+	{"enable_docs", no_argument, NULL, 'S'},
+	{"version", no_argument, NULL, 'v'},
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
 
 int usage()
 {
-	ZLog::PrintV("zsign (v%s) is a codesign alternative for iOS12+ on macOS, Linux and Windows. \nVisit https://github.com/zhlynn/zsign for more information.\n\n", ZSIGN_VERSION_STR);
+	ZLog::PrintV("zsign (v%s) is a codesign alternative for iOS12+ on macOS, Linux and Windows. \nVisit https://github.com/zhlynn/zsign for more information.\n\n", ZSIGN_VERSION);
 	ZLog::Print("Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder\n");
 	ZLog::Print("options:\n");
 	ZLog::Print("-k, --pkey\t\tPath to private key or p12 file. (PEM or DER format)\n");
@@ -74,7 +71,7 @@ int usage()
 	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
 	ZLog::Print("-z, --zip_level\t\tCompressed level when output the ipa file. (0-9)\n");
 	ZLog::Print("-l, --dylib\t\tPath to inject dylib file. Use -l multiple time to inject multiple dylib files at once.\n");
-	ZLog::Print("-D, --rm_dylib\t\tName of dylib to remove. Use -D multiple times to remove multiple dylibs at once.\n");
+	ZLog::Print("-D, --rm_dylib\t\tName of dylib to remove. Use -D multiple times to remove multiple dylib files at once.\n");
 	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-t, --temp_folder\tPath to temporary folder for intermediate files.\n");
@@ -83,11 +80,11 @@ int usage()
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
 	ZLog::Print("-R, --rm_provision\tRemove mobileprovision file after signing.\n");
-	ZLog::Print("-S, --enable_docs\tEnable UISupportsDocumentBrowser and UIFileSharingEnabled.\n");
-	ZLog::Print("-M, --min_version\tSet MinimumOSVersion in Info.plist.\n");
-	ZLog::Print("-E, --rm_extensions\tRemove all app extensions (PlugIns/Extensions).\n");
-	ZLog::Print("-W, --rm_watch\t\tRemove watch app from the bundle.\n");
 	ZLog::Print("-U, --rm_uisd\t\tRemove UISupportedDevices from Info.plist.\n");
+	ZLog::Print("-W, --rm_watch\t\tRemove watch app from the bundle.\n");
+	ZLog::Print("-E, --rm_extensions\tRemove all app extensions (PlugIns/Extensions).\n");
+	ZLog::Print("-M, --min_version\tSet MinimumOSVersion in Info.plist.\n");
+	ZLog::Print("-S, --enable_docs\tEnable UISupportsDocumentBrowser and UIFileSharingEnabled.\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
@@ -106,11 +103,10 @@ int main(int argc, char* argv[])
 	bool bSHA256Only = false;
 	bool bCheckSignature = false;
 	bool bRemoveProvision = false;
-	bool bEnableDocuments = false;
-	string strMinVersion;
-	bool bRemoveExtensions = false;
-	bool bRemoveWatchApp = false;
 	bool bRemoveUISupportedDevices = false;
+	bool bRemoveWatchApp = false;
+	bool bRemoveExtensions = false;
+	bool bEnableDocuments = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -125,12 +121,13 @@ int main(int argc, char* argv[])
 	string strEntitleFile;
 	vector<string> arrDylibFiles;
 	vector<string> arrRemoveDylibNames;
+	string strMinVersion;
 	string strMetadataDir;
 	string strTempFolder = ZFile::GetTempFolder();
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRSc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:E:W:U",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRUWESc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -203,19 +200,23 @@ int main(int argc, char* argv[])
 		case 'R':
 			bRemoveProvision = true;
 			break;
-		case 'S':
-			bEnableDocuments = true;
-		case 'M':
-			strMinVersion = optarg;
-		case 'E':
-			bRemoveExtensions = true;
-		case 'W':
-			bRemoveWatchApp = true;
 		case 'U':
 			bRemoveUISupportedDevices = true;
 			break;
+		case 'W':
+			bRemoveWatchApp = true;
+			break;
+		case 'E':
+			bRemoveExtensions = true;
+			break;
+		case 'M':
+			strMinVersion = optarg;
+			break;
+		case 'S':
+			bEnableDocuments = true;
+			break;
 		case 'v': {
-			printf("version: %s\n", ZSIGN_VERSION_STR);
+			printf("version: %s\n", ZSIGN_VERSION);
 			return 0;
 			}
 			break;
@@ -243,6 +244,10 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	if (bCheckSignature && strPKeyFile.empty() && strProvFile.empty()) {
+		return CheckCertificate(strPath, strPassword);
+	}
+
 	if (uZipLevel < 0 || uZipLevel > 9) {
 		ZLog::ErrorV(">>> Invalid zip level! Please input 0 - 9.\n");
 		return -1;
@@ -253,10 +258,6 @@ int main(int argc, char* argv[])
 		for (int i = optind; i < argc; i++) {
 			ZLog::DebugV(">>> Argument:\t%s\n", argv[i]);
 		}
-	}
-
-	if (bCheckSignature && strPKeyFile.empty() && strProvFile.empty()) {
-		return CheckCertificate(strPath, strPassword);
 	}
 
 	bool bZipFile = ZFile::IsZipFile(strPath.c_str());
@@ -332,11 +333,11 @@ int main(int argc, char* argv[])
 	//sign
 	atimer.Reset();
 	ZBundle bundle;
+	bundle.m_bRemoveUISupportedDevices = bRemoveUISupportedDevices;
+	bundle.m_bRemoveWatchApp = bRemoveWatchApp;
+	bundle.m_bRemoveExtensions = bRemoveExtensions;
 	bundle.m_bEnableDocuments = bEnableDocuments;
 	bundle.m_strMinVersion = strMinVersion;
-	bundle.m_bRemoveExtensions = bRemoveExtensions;
-	bundle.m_bRemoveWatchApp = bRemoveWatchApp;
-	bundle.m_bRemoveUISupportedDevices = bRemoveUISupportedDevices;
 
 	bool bRet;
 	if (arrProvFiles.size() > 1) {
@@ -384,7 +385,7 @@ int main(int argc, char* argv[])
 
 	//install
 	if (bRet && bInstall) {
-		bRet = ZUtil::SystemExecV("ideviceinstaller install  \"%s\"", strOutputFile.c_str());
+		bRet = ZUtil::SystemExecV("ideviceinstaller install \"%s\"", strOutputFile.c_str());
 	}
 
 	//clean

@@ -2,12 +2,12 @@ name: Build Multi-Platform
 
 on:
   push:
+    branches: [main, master, develop]
     tags:
       - 'v*'
+  pull_request:
+    branches: [main, master, develop]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build-linux:
@@ -45,7 +45,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
           fi
           if [ "${{ matrix.cross }}" = "true" ]; then
             mkdir -p bin
@@ -91,7 +91,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
           fi
           cd build/macos && make clean && make CXXFLAGS="-std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS" -j$(sysctl -n hw.ncpu)
           chmod +x ../../bin/zsign
@@ -196,7 +196,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
           fi
           TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
           CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang++
@@ -230,7 +230,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
           fi
           docker build --build-arg VERSION_FLAGS="$VERSION_FLAGS" -t zsign:latest -f - . <<'EOF'
           FROM ubuntu:22.04 AS builder
@@ -273,7 +273,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
           fi
           docker build --build-arg VERSION_FLAGS="$VERSION_FLAGS" -t zsign-musl -f - . <<'MUSL'
           FROM alpine:3.19 AS builder
@@ -334,7 +334,7 @@ jobs:
           if [[ "${{ github.ref_name }}" == v* ]]; then
             VER="${{ github.ref_name }}"
             VER="${VER#v}"
-            VERSION_FLAGS="-DZSIGN_VERSION=${VER}"
+            VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\""
           fi
           mkdir -p bin
           arm-linux-gnueabihf-g++ -std=c++11 -O3 -Wno-unused-result $VERSION_FLAGS \
@@ -370,7 +370,7 @@ jobs:
           run: |
             VERSION_FLAGS=""
             case "$TAG_NAME" in
-              v*) VER=$(echo "$TAG_NAME" | sed 's/^v//'); VERSION_FLAGS="-DZSIGN_VERSION=${VER}" ;;
+              v*) VER=$(echo "$TAG_NAME" | sed 's/^v//'); VERSION_FLAGS="-DZSIGN_VERSION=\"${VER}\"" ;;
             esac
             cd build/linux
             gmake clean
@@ -407,18 +407,12 @@ jobs:
           cd ..
           ls -lh releases/
 
-      - name: generate checksums
-        run: |
-          cd releases
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
       - name: release
         uses: softprops/action-gh-release@v2
         with:
-          name: zsign ${{ github.ref_name }}
           files: releases/*
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          prerelease: false
           generate_release_notes: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

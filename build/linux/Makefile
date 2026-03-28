@@ -31,6 +31,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	@mkdir -p $(BINDIR)
 	$(CXX) $(OBJS) $(LIBS) -o $(TARGET)
+	@strip $(TARGET) 2>/dev/null || true
 
 $(OBJDIR)/%.o: ../../src/%.cpp
 	@mkdir -p $(dir $@)
@@ -40,4 +41,8 @@ clean:
 	rm -rf $(OBJDIR) $(TARGET)
 	@$(ECHO) "$(GREEN)>>> Clean OK!$(NC)"
 
-.PHONY: all clean
+install: $(TARGET)
+	cp $(TARGET) /usr/local/bin/zsign
+	@$(ECHO) "$(GREEN)>>> Install OK!$(NC)"
+
+.PHONY: all clean install

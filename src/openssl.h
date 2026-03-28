@@ -61,6 +61,7 @@ public:
 	static const char* s_szAppleDevCACert;
 	static const char* s_szAppleRootCACert;
 	static const char* s_szAppleDevCACertG3;
+	static const char* s_szAppleWWDRCACertG4;
 
 public:
 	class OpenSSLInit
