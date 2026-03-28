@@ -176,8 +176,9 @@ static void _wwdr_validate_g4_cache() {
 	if (!hdr || !ftr) return;
 	hdr = strchr(hdr, '\n');
 	if (!hdr) return;
+	++hdr;
 
-	string body(++hdr, ftr - hdr);
+	string body(hdr, ftr - hdr);
 	body.erase(remove(body.begin(), body.end(), '\n'), body.end());
 
 	jbase64 dec;

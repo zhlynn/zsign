@@ -14,7 +14,7 @@
 
 
 #ifndef ZSIGN_VERSION
-#define ZSIGN_VERSION "0.7"
+#define ZSIGN_VERSION "0.9.8"
 #endif
 
 const struct option options[] = {
