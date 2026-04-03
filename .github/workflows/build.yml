@@ -70,8 +70,16 @@ jobs:
           path: bin/zsign
 
   build-macos:
-    name: Build macOS (arm64)
-    runs-on: macos-14
+    name: Build macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x86_64
+            runner: macos-13
     steps:
       - uses: actions/checkout@v4
 
@@ -104,7 +112,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: zsign-macos-arm64
+          name: zsign-macos-${{ matrix.arch }}
           path: bin/zsign
 
   build-windows:
@@ -402,6 +410,7 @@ jobs:
           done
           [ -d zsign-linux-musl-static ] && chmod +x zsign-linux-musl-static/zsign-musl && tar -czf ../releases/zsign-linux-musl-static.tar.gz -C zsign-linux-musl-static zsign-musl
           [ -d zsign-macos-arm64 ] && chmod +x zsign-macos-arm64/zsign && tar -czf ../releases/zsign-macos-arm64.tar.gz -C zsign-macos-arm64 zsign
+          [ -d zsign-macos-x86_64 ] && chmod +x zsign-macos-x86_64/zsign && tar -czf ../releases/zsign-macos-x86_64.tar.gz -C zsign-macos-x86_64 zsign
           [ -d zsign-windows-x64 ] && (cd zsign-windows-x64 && zip ../../releases/zsign-windows-x64.zip zsign.exe)
           [ -f zsign-docker/zsign-docker.tar.gz ] && cp zsign-docker/zsign-docker.tar.gz ../releases/
           cd ..
