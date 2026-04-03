@@ -1,206 +1,195 @@
-It might be the quickest cross-platform codesign alternative for iOS 12+, supporting macOS, Linux, Windows, and more features.
-If this tool helps you, please don't forget to <font color=#FF0000 size=5>🌟**star**🌟</font> [ME](https://github.com/zhlynn).
+# zsign
 
-## Compile 
+A fast, cross-platform codesign alternative for iOS 12+. Re-sign iOS apps (.ipa, Mach-O, .app bundles) with custom certificates and provisioning profiles.
 
-### macOS:
+**Supported platforms:** macOS, Linux, Windows, Android, FreeBSD
+
+If this tool helps you, please give it a ⭐ **star** — [zhlynn](https://github.com/zhlynn)
+
+## Build
+
+### macOS
 
 ```bash
-brew install pkg-config openssl minizip
+brew install pkg-config openssl minizip-ng
 git clone https://github.com/zhlynn/zsign.git
 cd zsign/build/macos
 make clean && make
 ```
 
-Install `ideviceinstaller` for test:
-```bash
-brew install ideviceinstaller
-```
+### Linux
 
-### Linux:
-
-#### Ubuntu 22.04 / Debian 12 / Mint 21:
+#### Ubuntu / Debian
 
 ```bash
-sudo apt-get install -y git g++ pkg-config libssl-dev libminizip-dev
+sudo apt-get install -y git g++ pkg-config libssl-dev libminizip-ng-dev
 git clone https://github.com/zhlynn/zsign.git
 cd zsign/build/linux
 make clean && make
 ```
 
-Install `ideviceinstaller` for test:
+#### RHEL / CentOS / Alma / Rocky
+
+Install `epel-release` first:
+
 ```bash
-sudo apt-get install -y ideviceinstaller
-```
-
-#### RHEL / CentOS / Alma / Rocky / Other clones:
-
-You must install `epel-release` first, eg:
-
-RHEL / CentOS / Alma / Rocky 8:
-```bash
+# RHEL / CentOS / Alma / Rocky 8
 sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-```
 
-RHEL / CentOS / Alma / Rocky 9:
-```bash
+# RHEL / CentOS / Alma / Rocky 9
 sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 ```
 
-Then, install the dependencies and compile:
+Then build:
+
 ```bash
-sudo yum install -y git gcc-c++ pkg-config openssl-devel minizip1.2-devel
+sudo yum install -y git gcc-c++ pkg-config openssl-devel minizip-ng-devel
 git clone https://github.com/zhlynn/zsign.git
 cd zsign/build/linux
 make clean && make
 ```
 
-### Windows:
+### Windows
 
-Use `Visual Studio 2022` to open `build/windows/vs2022/zsign.sln`, then compile it on Windows 10/11.
-  
-## Usage:
+Open `build/windows/vs2022/zsign.sln` in Visual Studio 2022 and build.
 
-```bash
+## Usage
+
+```
 Usage: zsign [-options] [-k privkey.pem] [-m dev.prov] [-o output.ipa] file|folder
-options:
--k, --pkey              Path to private key or p12 file. (PEM or DER format)
--m, --prov              Path to mobile provisioning profile. Use -m multiple times for app extensions.
--c, --cert              Path to certificate file. (PEM or DER format)
--a, --adhoc             Perform ad-hoc signature only.
--d, --debug             Generate debug output files. (.zsign_debug folder)
--f, --force             Force sign without cache when signing folder.
--o, --output            Path to output ipa file.
--p, --password          Password for private key or p12 file.
--b, --bundle_id         New bundle id to change.
--n, --bundle_name       New bundle name to change.
--r, --bundle_version    New bundle version to change.
--e, --entitlements      New entitlements to change.
--z, --zip_level         Compressed level when output the ipa file. (0-9)
--l, --dylib             Path to inject dylib file. Use -l multiple time to inject multiple dylib files at once.
--D, --rm_dylib          Name of dylib to remove. Use -D multiple times to remove multiple dylibs at once.
--w, --weak              Inject dylib as LC_LOAD_WEAK_DYLIB.
--i, --install           Install ipa file using ideviceinstaller command for test.
--t, --temp_folder       Path to temporary folder for intermediate files.
--2, --sha256_only       Serialize a single code directory that uses SHA256.
--C, --check             Check certificate validity and OCSP revocation status.
--x, --metadata          Extract metadata and icon to the specified directory.
--R, --rm_provision      Remove mobileprovision file after signing.
--S, --enable_docs       Enable UISupportsDocumentBrowser and UIFileSharingEnabled.
--M, --min_version       Set MinimumOSVersion in Info.plist.
--E, --rm_extensions     Remove all app extensions (PlugIns/Extensions).
--W, --rm_watch          Remove watch app from the bundle.
--U, --rm_uisd           Remove UISupportedDevices from Info.plist.
--q, --quiet             Quiet operation.
--v, --version           Shows version.
--h, --help              Shows help (this message).
+
+Options:
+  -k, --pkey              Path to private key or p12 file (PEM or DER format)
+  -m, --prov              Path to provisioning profile (use multiple -m for extensions)
+  -c, --cert              Path to certificate file (PEM or DER format)
+  -a, --adhoc             Perform ad-hoc signature only
+  -d, --debug             Generate debug output (.zsign_debug folder)
+  -f, --force             Force sign without cache
+  -o, --output            Path to output ipa file
+  -p, --password          Password for private key or p12 file
+  -b, --bundle_id         New bundle identifier
+  -n, --bundle_name       New bundle display name
+  -r, --bundle_version    New bundle version
+  -e, --entitlements      New entitlements file
+  -z, --zip_level         Compression level for output ipa (0-9)
+  -l, --dylib             Dylib to inject (use multiple -l for multiple dylibs)
+  -D, --rm_dylib          Dylib to remove (use multiple -D for multiple)
+  -w, --weak              Inject dylib as LC_LOAD_WEAK_DYLIB
+  -i, --install           Install via ideviceinstaller after signing
+  -t, --temp_folder       Temporary folder for intermediate files
+  -2, --sha256_only       Use SHA256-only code directory
+  -C, --check             Check certificate validity and OCSP status
+  -x, --metadata          Extract metadata and icon to directory
+  -R, --rm_provision      Remove provisioning profile after signing
+  -S, --enable_docs       Enable UISupportsDocumentBrowser and UIFileSharingEnabled
+  -M, --min_version       Set MinimumOSVersion in Info.plist
+  -E, --rm_extensions     Remove all app extensions (PlugIns/Extensions)
+  -W, --rm_watch          Remove watch app from bundle
+  -U, --rm_uisd           Remove UISupportedDevices from Info.plist
+  -q, --quiet             Quiet operation
+  -v, --version           Show version
+  -h, --help              Show help
 ```
 
-1. Show mach-o and codesignature segment info.
+## Examples
+
+**Show Mach-O and codesignature info:**
 ```bash
-./zsign demo.app/demo
+zsign demo.app/demo
 ```
 
-2. Sign ipa with private key and mobileprovisioning file.
+**Sign an IPA:**
 ```bash
-./zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
+zsign -k privkey.pem -m dev.prov -o output.ipa -z 9 demo.ipa
 ```
 
-3. Sign folder with p12 and mobileprovisioning file (using cache).
+**Sign with p12 (cached):**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
+zsign -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
 ```
 
-4. Sign folder with p12 and mobileprovisioning file (without cache).
+**Sign with p12 (force, no cache):**
 ```bash
-./zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
+zsign -f -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.app
 ```
 
-5. Sign ipa with ad-hoc.
+**Ad-hoc sign:**
 ```bash
-./zsign -a -o output.ipa demo.ipa
+zsign -a -o output.ipa demo.ipa
 ```
 
-6. Inject dylib into ipa and re-sign.
+**Inject dylib and re-sign:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -l demo.dylib -o output.ipa demo.ipa
+zsign -k dev.p12 -p 123 -m dev.prov -l demo.dylib -o output.ipa demo.ipa
 ```
 
-7. Change bundle id and bundle name
+**Change bundle id and name:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -b 'com.new.bundle.id' -n 'NewName' -o output.ipa demo.ipa
+zsign -k dev.p12 -p 123 -m dev.prov -b 'com.new.bundle.id' -n 'NewName' -o output.ipa demo.ipa
 ```
 
-8. Inject dylib(LC_LOAD_DYLIB) into mach-o file.
+**Inject dylib (LC_LOAD_DYLIB) into Mach-O:**
 ```bash
-./zsign -a -l "@executable_path/demo1.dylib" -l "@executable_path/demo2.dylib" demo.app/execute
+zsign -a -l "@executable_path/demo1.dylib" -l "@executable_path/demo2.dylib" demo.app/execute
 ```
 
-9. Inject dylib(LC_LOAD_WEAK_DYLIB) into mach-o file.
+**Inject weak dylib (LC_LOAD_WEAK_DYLIB):**
 ```bash
-./zsign -w -l "@executable_path/demo.dylib" demo.app/execute
+zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```
 
-10. Sign ipa and extract metadata (app info + icon) to a directory.
+**Extract metadata and icon:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -x ./metadata -o output.ipa demo.ipa
-# writes ./metadata/metadata.json and ./metadata/<hash>.png
+zsign -k dev.p12 -p 123 -m dev.prov -x ./metadata -o output.ipa demo.ipa
+# outputs ./metadata/metadata.json and ./metadata/<hash>.png
 ```
 
-11. Enable documents support (Files app integration).
+**Enable Files app integration:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -S -o output.ipa demo.ipa
+zsign -k dev.p12 -p 123 -m dev.prov -S -o output.ipa demo.ipa
 ```
 
-12. Set minimum OS version.
+**Set minimum OS version:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
+zsign -k dev.p12 -p 123 -m dev.prov -M 14.0 -o output.ipa demo.ipa
 ```
 
-13. Remove all app extensions (PlugIns/Extensions).
+**Remove app extensions:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -E -o output.ipa demo.ipa
+zsign -k dev.p12 -p 123 -m dev.prov -E -o output.ipa demo.ipa
 ```
 
-14. Remove watch app from the bundle.
+**Remove watch app:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
+zsign -k dev.p12 -p 123 -m dev.prov -W -o output.ipa demo.ipa
 ```
 
-15. Remove UISupportedDevices to allow the app on any device.
+**Remove UISupportedDevices:**
 ```bash
-./zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
+zsign -k dev.p12 -p 123 -m dev.prov -U -o output.ipa demo.ipa
 ```
 
 ## Certificate Check (-C)
 
-The `-C` flag checks the signing certificate of any supported file and performs an OCSP revocation check against Apple's servers. It reads the binary directly from inside IPA files without extracting to disk.
+Check the signing certificate of any supported file and perform an OCSP revocation check against Apple's servers. Reads binaries directly from inside IPA files without extracting to disk.
 
-**Supported file types:** `.ipa`, `.mobileprovision`, `.p12`/`.pfx`, `.cer`/`.pem`, Mach-O binaries.
+**Supported file types:** `.ipa`, `.mobileprovision`, `.p12`/`.pfx`, `.cer`/`.pem`, Mach-O binaries
 
-16. Check an IPA file (reads binary directly from zip, no extraction).
 ```bash
-./zsign -C demo.ipa
-```
+# Check an IPA
+zsign -C demo.ipa
 
-17. Check a mobile provisioning profile.
-```bash
-./zsign -C dev.mobileprovision
-```
+# Check a provisioning profile
+zsign -C dev.mobileprovision
 
-18. Check a P12/PFX certificate file.
-```bash
-./zsign -C dev.p12 -p 123
-```
+# Check a P12/PFX certificate
+zsign -C dev.p12 -p 123
 
-19. Check a Mach-O binary directly.
-```bash
-./zsign -C demo.app/demo
-```
+# Check a Mach-O binary
+zsign -C demo.app/demo
 
-20. Sign an IPA and verify the signed binary's certificate before archiving.
-```bash
-./zsign -C -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.ipa
+# Sign and verify certificate before archiving
+zsign -C -k dev.p12 -p 123 -m dev.prov -o output.ipa demo.ipa
 ```
 
 **Example output:**
@@ -219,10 +208,10 @@ The `-C` flag checks the signing certificate of any supported file and performs 
 >>> OCSP:       Valid (ocsp.apple.com)
 ```
 
-## How to sign quickly?
+## Fast Re-signing
 
-First, unzip the IPA file, then use zsign to sign the folder containing assets. During the initial signing, zsign will perform a complete signature and cache the signing information into a .zsign_cache directory in the current path. When re-signing the folder with different assets, zsign will utilize the cached data to significantly speed up the process—making signing extremely fast! Give it a try!
+Unzip the IPA first, then sign the extracted folder. On the first sign, zsign caches signature data in `.zsign_cache`. Subsequent re-signs with different assets reuse the cache, making the process significantly faster.
 
 ## License
 
-zsign is licensed under the terms of MIT License. See the [LICENSE](LICENSE) file.
+zsign is licensed under the MIT License. See the [LICENSE](LICENSE) file.
