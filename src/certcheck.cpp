@@ -8,9 +8,6 @@
 #ifdef _WIN32
 #include <minizip/zip.h>
 #include <minizip/unzip.h>
-#elif defined(__APPLE__)
-#include <minizip-ng/zip.h>
-#include <minizip-ng/unzip.h>
 #else
 #include <zip.h>
 #include <unzip.h>
