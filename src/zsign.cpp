@@ -17,7 +17,7 @@
 #define _ZSIGN_XSTR(x) _ZSIGN_STR(x)
 
 #ifndef ZSIGN_VERSION
-#define ZSIGN_VERSION 1.0.0
+#define ZSIGN_VERSION 1.0.1
 #endif
 
 #define ZSIGN_VERSION_STR _ZSIGN_XSTR(ZSIGN_VERSION)
