@@ -1,5 +1,6 @@
 #include "common.h"
 #include <list>
+#include <set>
 #include "macho.h"
 #include "bundle.h"
 #include "openssl.h"
@@ -130,7 +131,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRSc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:E:W:U",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRSEWUc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -205,12 +206,16 @@ int main(int argc, char* argv[])
 			break;
 		case 'S':
 			bEnableDocuments = true;
+			break;
 		case 'M':
 			strMinVersion = optarg;
+			break;
 		case 'E':
 			bRemoveExtensions = true;
+			break;
 		case 'W':
 			bRemoveWatchApp = true;
+			break;
 		case 'U':
 			bRemoveUISupportedDevices = true;
 			break;
@@ -248,6 +253,18 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	for (const string& strDylibFile : arrDylibFiles) {
+		if (!ZFile::IsFileExists(strDylibFile.c_str())) {
+			ZLog::ErrorV(">>> Dylib file not found! %s\n", strDylibFile.c_str());
+			return -1;
+		}
+		ZMachO dylibMachO;
+		if (!dylibMachO.Init(strDylibFile.c_str())) {
+			ZLog::ErrorV(">>> Invalid dylib file! Not a valid Mach-O format. %s\n", strDylibFile.c_str());
+			return -1;
+		}
+	}
+
 	if (ZLog::IsDebug()) {
 		ZFile::CreateFolder("./.zsign_debug");
 		for (int i = optind; i < argc; i++) {
@@ -267,7 +284,7 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		if (!bAdhoc && arrDylibFiles.empty() && (strPKeyFile.empty() || strProvFile.empty())) {
+		if (!bAdhoc && arrDylibFiles.empty() && arrRemoveDylibNames.empty() && (strPKeyFile.empty() || strProvFile.empty())) {
 			macho->PrintInfo();
 			return 0;
 		}
@@ -283,6 +300,18 @@ int main(int argc, char* argv[])
 					return -1;
 				}
 			}
+		}
+
+		if (!arrRemoveDylibNames.empty()) {
+			set<string> setDylibs;
+			for (const string& name : arrRemoveDylibNames) {
+				if (name.find('/') != string::npos) {
+					setDylibs.insert(name);
+				} else {
+					setDylibs.insert("@executable_path/" + name);
+				}
+			}
+			macho->RemoveDylibs(setDylibs);
 		}
 
 		atimer.Reset();

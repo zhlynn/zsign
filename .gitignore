@@ -15,3 +15,5 @@ test/packages/*
 *.vcxproj.user
 .theos/
 packages/
+CLAUDE.md
+.claude/

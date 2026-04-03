@@ -733,8 +733,8 @@ void ZArchO::RemoveDylibs(const set<string>& setDylibs)
 	}
 	pLoadCommand -= m_pHeader->sizeofcmds;
 
-	m_pHeader->ncmds -= clear_num;
-	m_pHeader->sizeofcmds -= clear_data_size;
+	m_pHeader->ncmds = BO(BO(m_pHeader->ncmds) - clear_num);
+	m_pHeader->sizeofcmds = BO(BO(m_pHeader->sizeofcmds) - clear_data_size);
 	new_load_command_data -= new_load_command_size;
 	memset(pLoadCommand, 0, old_load_command_size);
 	memcpy(pLoadCommand, new_load_command_data, new_load_command_size);

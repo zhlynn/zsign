@@ -350,15 +350,35 @@ bool ZBundle::SignNode(jvalue& jvNode)
 		return false;
 	}
 
+	bool bForceSign = m_bForceSign;
+	if ("/" == strFolder) { // inject/remove dylib before CodeResources generation
+		for (const string& strDylibFile : m_arrInjectDylibs) {
+			if (macho.InjectDylib(m_bWeakInject, strDylibFile.c_str())) {
+				bForceSign = true;
+			}
+		}
+		if (!m_setRemoveDylibs.empty()) {
+			macho.RemoveDylibs(m_setRemoveDylibs);
+			for (const string& name : m_setRemoveDylibs) {
+				string baseName = name;
+				if (baseName.find("@executable_path/") == 0) {
+					baseName = baseName.substr(17);
+				}
+				ZFile::RemoveFileV("%s/%s", m_strAppFolder.c_str(), baseName.c_str());
+			}
+			bForceSign = true;
+		}
+	}
+
 	ZFile::CreateFolderV("%s/_CodeSignature", strBaseFolder.c_str());
 	string strCodeResFile = strBaseFolder + "/_CodeSignature/CodeResources";
 
 	jvalue jvCodeRes;
-	if (!m_bForceSign) {
+	if (!bForceSign) {
 		jvCodeRes.read_plist_from_file(strCodeResFile.c_str());
 	}
 
-	if (m_bForceSign || jvCodeRes.is_null()) { // create
+	if (bForceSign || jvCodeRes.is_null()) { // create
 		if (!GenerateCodeResources(strBaseFolder, jvCodeRes)) {
 			ZLog::ErrorV(">>> Create CodeResources failed! %s\n", strBaseFolder.c_str());
 			return false;
@@ -393,26 +413,6 @@ bool ZBundle::SignNode(jvalue& jvNode)
 	if (!ZFile::WriteFile(strCodeResFile.c_str(), strCodeResData)) {
 		ZLog::ErrorV("\tWriting CodeResources failed! %s\n", strCodeResFile.c_str());
 		return false;
-	}
-
-	bool bForceSign = m_bForceSign;
-	if ("/" == strFolder) { // inject dylib
-		for (const string& strDylibFile : m_arrInjectDylibs) {
-			if (macho.InjectDylib(m_bWeakInject, strDylibFile.c_str())) {
-				bForceSign = true;
-			}
-		}
-		if (!m_setRemoveDylibs.empty()) {
-			macho.RemoveDylibs(m_setRemoveDylibs);
-			for (const string& name : m_setRemoveDylibs) {
-				string baseName = name;
-				if (baseName.find("@executable_path/") == 0) {
-					baseName = baseName.substr(17);
-				}
-				ZFile::RemoveFileV("%s/%s", m_strAppFolder.c_str(), baseName.c_str());
-			}
-			bForceSign = true;
-		}
 	}
 
 	if (m_pSignAssets) {
@@ -649,7 +649,11 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 	m_bRemoveProvision = bRemoveProvision;
 	m_setRemoveDylibs.clear();
 	for (const string& name : arrRemoveDylibNames) {
-		m_setRemoveDylibs.insert("@executable_path/" + name);
+		if (name.find('/') != string::npos) {
+			m_setRemoveDylibs.insert(name);
+		} else {
+			m_setRemoveDylibs.insert("@executable_path/" + name);
+		}
 	}
 	if (NULL == m_pSignAsset) {
 		return false;
