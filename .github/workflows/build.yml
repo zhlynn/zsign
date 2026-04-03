@@ -36,7 +36,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y libssl-dev:arm64 libminizip-dev:arm64
           else
-            sudo apt-get install -y g++ pkg-config libssl-dev libminizip-ng-dev
+            sudo apt-get install -y g++ pkg-config libssl-dev libminizip-dev
           fi
 
       - name: build
@@ -237,7 +237,7 @@ jobs:
           FROM ubuntu:22.04 AS builder
           ARG VERSION_FLAGS
           RUN apt-get update && \
-              apt-get install -y g++ make pkg-config libssl-dev libminizip-ng-dev zlib1g-dev && \
+              apt-get install -y g++ make pkg-config libssl-dev libminizip-dev zlib1g-dev && \
               rm -rf /var/lib/apt/lists/*
           COPY . /src
           WORKDIR /src/build/linux
@@ -245,7 +245,7 @@ jobs:
 
           FROM ubuntu:22.04
           RUN apt-get update && \
-              apt-get install -y libssl3 libminizip-ng1 && \
+              apt-get install -y libssl3 libminizip1 && \
               rm -rf /var/lib/apt/lists/*
           COPY --from=builder /src/bin/zsign /usr/local/bin/zsign
           ENTRYPOINT ["zsign"]
@@ -367,7 +367,7 @@ jobs:
           usesh: true
           envs: 'TAG_NAME'
           prepare: |
-            pkg install -y openssl minizip-ng pkgconf gmake
+            pkg install -y openssl minizip pkgconf gmake
           run: |
             VERSION_FLAGS=""
             case "$TAG_NAME" in
