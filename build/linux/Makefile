@@ -6,9 +6,9 @@ GREEN = \033[0;32m
 NC = \033[0m
 
 OPENSSL_INCLUDE = $(shell pkg-config --cflags openssl)
-MINIZIP_INCLUDE = $(shell pkg-config --cflags minizip)
+MINIZIP_INCLUDE = $(shell pkg-config --cflags minizip-ng)
 OPENSSL_LIB = $(shell pkg-config --libs openssl)
-MINIZIP_LIB = $(shell pkg-config --libs minizip)
+MINIZIP_LIB = $(shell pkg-config --libs minizip-ng)
 
 INCLUDES = -I../../src -I../../src/common
 INCLUDES += $(OPENSSL_INCLUDE)
