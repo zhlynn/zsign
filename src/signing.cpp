@@ -662,20 +662,56 @@ bool ZSign::SlotBuildCMSSignature(ZSignAsset* pSignAsset,
 		return true;
 	}
 
+	// The CMS "cdhashes" plist (attr 1.2.840.113635.100.9.1) and the "CDHashes2"
+	// attribute (1.2.840.113635.100.9.2) must only contain hashes of CodeDirectory
+	// blobs that actually exist in the signature. When only one CodeDirectory is
+	// serialized (SHA256-only mode), emitting hashes for a non-existent alternate
+	// CD breaks Apple's code signature verification with errSecCSSignatureFailed
+	// (`codesign --verify` reports "code or signature have been modified"):
+	// verification computes hashes of the real CDs and finds the second entry
+	// doesn't match any actual CD.
+	//
+	// Format rules derived from Apple codesign output:
+	// - cdhashes plist: one entry per CD, value = first 20 bytes of the CD's
+	//   "best" hash. For dual-hash builds (SHA1+SHA256) the primary CD uses SHA1
+	//   directly (20 bytes) and the alternate uses SHA256 truncated to 20.
+	//   For SHA256-only builds the single entry uses SHA256 truncated to 20.
+	// - CDHashes2 attribute: full hash (32 bytes for SHA256) of each CD wrapped
+	//   in `SEQUENCE { OID sha256, OCTET STRING hash }`. The current
+	//   GenerateCMS() implementation consumes a single `strAltnateCodeDirectorySlot256`
+	//   string for this attribute — when there is no alternate CD we pass the
+	//   SHA256 of the primary CD instead of SHA256(empty).
+	const bool bHasAlternate = !strAltnateCodeDirectorySlot.empty();
+
 	jvalue jvHashes;
 	string strCDHashesPlist;
-	string strCodeDirectorySlotSHA1;
-	string strAltnateCodeDirectorySlot256;
+	string strCodeDirectorySlotSHA1;   // SHA1 of primary CD (used by CMS detached content & dual-hash plist[0])
+	string strPrimaryCD_SHA256;        // SHA256 of primary CD (used in SHA256-only mode)
+	string strAltnateCD_SHA256;        // SHA256 of alternate CD (dual-hash mode only)
 	ZSHA::SHA1(strCodeDirectorySlot, strCodeDirectorySlotSHA1);
-	ZSHA::SHA256(strAltnateCodeDirectorySlot, strAltnateCodeDirectorySlot256);
+	ZSHA::SHA256(strCodeDirectorySlot, strPrimaryCD_SHA256);
+	if (bHasAlternate) {
+		ZSHA::SHA256(strAltnateCodeDirectorySlot, strAltnateCD_SHA256);
+	}
 
-	size_t cdHashSize = strCodeDirectorySlotSHA1.size();
-	jvHashes["cdhashes"][0].assign_data(strCodeDirectorySlotSHA1.data(), cdHashSize);
-	jvHashes["cdhashes"][1].assign_data(strAltnateCodeDirectorySlot256.data(), cdHashSize);
+	// 20-byte (truncated) hashes for the CDHashes plist.
+	const size_t kPlistHashLen = 20;
+	if (bHasAlternate) {
+		jvHashes["cdhashes"][0].assign_data(strCodeDirectorySlotSHA1.data(), kPlistHashLen);
+		jvHashes["cdhashes"][1].assign_data(strAltnateCD_SHA256.data(), kPlistHashLen);
+	} else {
+		// SHA256-only: single CD, use its SHA256 truncated to 20 bytes.
+		jvHashes["cdhashes"][0].assign_data(strPrimaryCD_SHA256.data(), kPlistHashLen);
+	}
 	jvHashes.style_write_plist(strCDHashesPlist);
 
+	// Full SHA256 hash to embed in the CDHashes2 signed attribute. In SHA256-only
+	// mode this must be the SHA256 of the primary CD, not SHA256 of an empty
+	// alternate — the latter is rejected by Apple's verifier.
+	const string& strCDHashes2 = bHasAlternate ? strAltnateCD_SHA256 : strPrimaryCD_SHA256;
+
 	string strCMSData;
-	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCodeDirectorySlotSHA1, strAltnateCodeDirectorySlot256, strCMSData)) {
+	if (!pSignAsset->GenerateCMS(strCodeDirectorySlot, strCDHashesPlist, strCodeDirectorySlotSHA1, strCDHashes2, strCMSData)) {
 		return false;
 	}
 
