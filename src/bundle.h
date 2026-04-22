@@ -22,6 +22,7 @@ public:
 					bool bForce,
 					bool bWeakInject,
 					bool bEnableCache,
+					bool bRemoveProvision);
 
 	bool SignFolder(list<ZSignAsset>* pSignAssets,
 					const string& strFolder,

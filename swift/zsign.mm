@@ -94,7 +94,7 @@ bool UninstallDylibs(NSString *filePath, NSArray<NSString *> *dylibPathsArray) {
 			return false;
 		}
 		
-		machO.RemoveDylib(dylibsToRemove);
+		machO.RemoveDylibs(dylibsToRemove);
 		
 		machO.Free();
 		
