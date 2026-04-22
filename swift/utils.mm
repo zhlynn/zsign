@@ -5,7 +5,7 @@
 //  Created by HAHALOSAH on 8/6/24.
 //
 
-#include "openssl_tools.hpp"
+#include "utils.hpp"
 #include "common.h"
 
 #include <openssl/pem.h>
@@ -61,7 +61,7 @@ bool p12_password_check(NSString *file, NSString *pass) {
 // hours_wasted = 1.5
 //
 // TODO: FIX
-void password_check_fix_WHAT_THE_FUCK(NSString *path) {
+void password_check_fix(NSString *path) {
 	string strProvisionFile = [path cStringUsingEncoding:NSUTF8StringEncoding];
 	string strProvisionData;
 	ZFile::ReadFile(strProvisionFile.c_str(), strProvisionData);
@@ -71,7 +71,7 @@ void password_check_fix_WHAT_THE_FUCK(NSString *path) {
 	d2i_CMS_bio(in, NULL);
 }
 
-void password_check_fix_WHAT_THE_FUCK_free(NSString *path) {
+void password_check_fix_free(NSString *path) {
 	string strProvisionFile = [path cStringUsingEncoding:NSUTF8StringEncoding];
 	string strProvisionData;
 	ZFile::ReadFile(strProvisionFile.c_str(), strProvisionData);

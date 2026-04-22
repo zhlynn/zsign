@@ -14,12 +14,12 @@ let package = Package(
 	],
 	products: [
 		.library(
-			name: "zsign",
-			targets: ["Zsign"]
+			name: "zsignc",
+			targets: ["ZsignC"]
 		),
 		.library(
-			name: "ZsignSwift",
-			targets: ["ZsignSwift"]
+			name: "Zsign",
+			targets: ["Zsign"]
 		),
 	],
 	dependencies: [
@@ -27,7 +27,7 @@ let package = Package(
 	],
 	targets: [
 		.target(
-			name: "Zsign",
+			name: "ZsignC",
 			dependencies: [
 				.product(name: "OpenSSL", package: "OpenSSL")
 			],
@@ -41,9 +41,9 @@ let package = Package(
 				"bundle.cpp",
 				"macho.cpp",
 				"openssl.cpp",
-				"openssl_tools.mm",
+				"../swift/utils.mm",
 				"signing.cpp",
-				"zsign.mm",
+				"../swift/zsign.mm",
 				"common/base64.cpp",
 				"common/fs.cpp",
 				"common/json.cpp",
@@ -63,11 +63,11 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "ZsignSwift",
+			name: "Zsign",
 			dependencies: [
-				"Zsign"
+				"ZsignC"
 			],
-			path: "Sources",
+			path: "swift",
 			sources: [
 				"zsign.swift"
 			]

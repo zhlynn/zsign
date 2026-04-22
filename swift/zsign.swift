@@ -5,7 +5,7 @@
 //  Created by samara on 17.04.2025.
 //
 
-import Zsign
+import ZsignC
 
 public enum Zsign {
 	/// Checks if the MachO-file is properly signed

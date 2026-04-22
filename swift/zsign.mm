@@ -319,7 +319,7 @@ int checkCert(
 	
 	OCSP_REQUEST* req = OCSP_REQUEST_new();
 	OCSP_CERTID* cert_id = OCSP_cert_to_id(nullptr, (X509*)cert, issuer);
-	OCSP_request_add0_id(req, cert_id);  // Ownership transferred to request
+	OCSP_request_add0_id(req, cert_id);
 	cert_id = OCSP_cert_to_id(nullptr, (X509*)cert, issuer);
 	unsigned char* der = 0;
 	int len = i2d_OCSP_REQUEST(req, &der);
@@ -350,7 +350,6 @@ int checkCert(
 		
 		NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
 		if (httpResponse.statusCode == 200 && data) {
-			// You can save `data` or parse the response
 			const void *respBytes = [data bytes];
 			OCSP_RESPONSE *resp;
 			d2i_OCSP_RESPONSE(&resp, (const unsigned char**)&respBytes, data.length);

@@ -302,14 +302,9 @@ std::vector<std::string> ZMachO::ListDylibs() {
 	return dylibList;
 }
 
-bool ZMachO::RemoveDylib(const std::set<std::string> &dylibNames) {
-	ZLog::Warn(">>> Removing specified dylibs...\n");
-	
-	bool removalSuccessful = true;
+void ZMachO::RemoveDylib(const set<string>& setDylibs)
+{
 	for (size_t i = 0; i < m_arrArchOes.size(); i++) {
-		m_arrArchOes[i]->RemoveDylibs(dylibNames);
+		m_arrArchOes[i]->RemoveDylibs(setDylibs);
 	}
-	
-	ZLog::Warn(">>> Finished removing specified dylibs!\n");
-	return removalSuccessful;
 }
