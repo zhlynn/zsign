@@ -22,7 +22,8 @@ public:
 	bool InjectDylib(bool bWeakInject, const char* szDylibFile);
 	bool ChangeDylibPath(const char *oldPath, const char *newPath);
 	std::vector<std::string> ListDylibs();
-	void RemoveDylib(const set<string>& setDylibs);
+	void RemoveDylibs(const set<string>& setDylibs);
+
 private:
 	bool OpenFile(const char* szPath);
 	bool CloseFile();

@@ -3,6 +3,8 @@
 #include "json.h"
 #include "openssl.h"
 #include <vector>
+#include <list>
+#include <set>
 
 class ZBundle
 {
@@ -16,10 +18,22 @@ public:
 					const string& strBundleVersion,
 					const string& strDisplayName,
 					const vector<string>& arrDylibFiles,
+					const vector<string>& arrRemoveDylibNames,
 					bool bForce,
 					bool bWeakInject,
 					bool bEnableCache,
-					bool excludeProvisioning);
+
+	bool SignFolder(list<ZSignAsset>* pSignAssets,
+					const string& strFolder,
+					const string& strBundleId,
+					const string& strBundleVersion,
+					const string& strDisplayName,
+					const vector<string>& arrDylibFiles,
+					const vector<string>& arrRemoveDylibNames,
+					bool bForce,
+					bool bWeakInject,
+					bool bEnableCache,
+					bool bRemoveProvision = false);
 
 private:
 	bool SignNode(jvalue& jvNode);
@@ -39,10 +53,21 @@ private:
 private:
 	bool			m_bForceSign;
 	bool			m_bWeakInject;
+	bool			m_bRemoveProvision;
 	ZSignAsset*		m_pSignAsset;
+	list<ZSignAsset>*	m_pSignAssets;
 	vector<string>	m_arrInjectDylibs;
+	set<string>		m_setRemoveDylibs;
+
+private:
+	void ApplyAppModifications();
 
 public:
+	bool		m_bEnableDocuments;
+	string		m_strMinVersion;
+	bool		m_bRemoveExtensions;
+	bool		m_bRemoveWatchApp;
+	bool		m_bRemoveUISupportedDevices;
 	string			m_strAppFolder;
 	string signFailedFiles;
 };

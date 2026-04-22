@@ -505,6 +505,36 @@ enum eCSFLAGS
 	CS_SEC_CODESIGNATURE_ADHOC = 0x0002,				/* kSecCodeSignatureAdhoc */
 };
 
+/* Requirement expression opcodes (from libsecurity_codesigning/lib/requirement.h) */
+enum eReqExprOp
+{
+	kReqOpFalse = 0,			/* unconditionally false */
+	kReqOpTrue = 1,				/* unconditionally true */
+	kReqOpIdent = 2,			/* match canonical code identity */
+	kReqOpAppleAnchor = 3,		/* signed by Apple as anchor */
+	kReqOpAnchorHash = 4,		/* match anchor certificate hash */
+	kReqOpAnd = 6,				/* logical AND */
+	kReqOpCertField = 11,		/* certificate field match */
+	kReqOpCertGeneric = 14,		/* certificate generic OID match */
+	kReqOpAppleGenericAnchor = 15,	/* signed by Apple or WWDR intermediate */
+};
+
+/* Requirement match operations */
+enum eReqMatchOp
+{
+	kReqMatchExists = 0,		/* certificate field/OID exists */
+	kReqMatchEqual = 1,			/* exact string match */
+};
+
+/* SecRequirementType (from CSCommon.h) */
+enum eSecRequirementType
+{
+	kSecHostRequirementType = 1,
+	kSecGuestRequirementType = 2,
+	kSecDesignatedRequirementType = 3,
+	kSecLibraryRequirementType = 4,
+};
+
 #pragma pack(push, 1)
 
 /*

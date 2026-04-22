@@ -198,9 +198,8 @@ bool ZFile::IsFolder(const char* szFolder)
 #ifdef _WIN32
 	return ::PathIsDirectoryA(szFolder);
 #else
-	struct stat st;
-	stat(szFolder, &st);
-	return S_ISDIR(st.st_mode);
+	struct stat st = { 0 };
+	return 0 == stat(szFolder, &st) && S_ISDIR(st.st_mode);
 #endif
 }
 
@@ -346,7 +345,7 @@ bool ZFile::CopyFile(const char* szSrcFile, const char* szDestFile)
 	if (-1 != src_id) {
 		dest_fd = open(szDestFile, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 		if (-1 != dest_fd) {
-			char buffer[4096];
+			char buffer[65536];
 			ssize_t bytes_read = read(src_id, buffer, sizeof(buffer));
 			while (bytes_read > 0) {
 				sum_readed += bytes_read;
@@ -534,8 +533,7 @@ bool ZFile::EnumFolder(const char* szFolder, bool bRecursive, enum_folder_callba
 			bFolder = true;
 		} else if (DT_UNKNOWN == ptr->d_type) {
 			struct stat st = { 0 };
-			stat(strPath.c_str(), &st);
-			if (S_ISDIR(st.st_mode)) {
+			if (0 == stat(strPath.c_str(), &st) && S_ISDIR(st.st_mode)) {
 				bFolder = true;
 			}
 		}

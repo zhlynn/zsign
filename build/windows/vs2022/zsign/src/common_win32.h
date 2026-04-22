@@ -32,8 +32,6 @@
 #elif _M_X64
 #pragma comment(lib, "../lib/openssl/x64/mt/libssl.lib")
 #pragma comment(lib, "../lib/openssl/x64/mt/libcrypto.lib")
-#pragma comment(lib, "../lib/zlib/x64/mt/zlib.lib")
-#pragma comment(lib, "../lib/minizip/x64/mt/minizip.lib")
 #else
 #pragma comment(lib, "../lib/openssl/x86/mt/libssl.lib")
 #pragma comment(lib, "../lib/openssl/x86/mt/libcrypto.lib")

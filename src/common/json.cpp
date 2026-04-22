@@ -4,6 +4,8 @@
 #include <math.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <limits>
 using namespace std;
 
@@ -35,53 +37,69 @@ const string jvalue::null_data;
 jvalue::jvalue(jtype type)
 {
 	m_type = type;
-	m_value.v_double = 0;
+	::memset(&m_value, 0, sizeof(m_value));
 }
 
 jvalue::jvalue(int val)
 {
 	m_type = E_INT;
+	::memset(&m_value, 0, sizeof(m_value));
 	m_value.v_int64 = val;
 }
 
 jvalue::jvalue(int64_t val)
 {
 	m_type = E_INT;
+	::memset(&m_value, 0, sizeof(m_value));
 	m_value.v_int64 = val;
 }
 
 jvalue::jvalue(bool val)
 {
 	m_type = E_BOOL;
+	::memset(&m_value, 0, sizeof(m_value));
 	m_value.v_bool = val;
 }
 
 jvalue::jvalue(double val)
 {
 	m_type = E_FLOAT;
+	::memset(&m_value, 0, sizeof(m_value));
 	m_value.v_double = val;
 }
 
 jvalue::jvalue(const char* val)
 {
 	m_type = E_STRING;
+	::memset(&m_value, 0, sizeof(m_value));
 	m_value.p_string = _new_string(val);
 }
 
 jvalue::jvalue(const string& val)
 {
 	m_type = E_STRING;
+	::memset(&m_value, 0, sizeof(m_value));
 	m_value.p_string = _new_string(val.c_str());
 }
 
 jvalue::jvalue(const jvalue& other)
 {
+	::memset(&m_value, 0, sizeof(m_value));
 	_copy_value(other);
+}
+
+jvalue::jvalue(jvalue&& other) noexcept
+{
+	m_type = other.m_type;
+	m_value = other.m_value;
+	other.m_type = E_NULL;
+	::memset(&other.m_value, 0, sizeof(other.m_value));
 }
 
 jvalue::jvalue(const char* val, size_t len)
 {
 	m_type = E_DATA;
+	::memset(&m_value, 0, sizeof(m_value));
 	m_value.p_data = new string();
 	m_value.p_data->append(val, len);
 }
@@ -242,63 +260,25 @@ void jvalue::_copy_value(const jvalue& src)
 void jvalue::_free()
 {
 	switch (m_type) {
-	case E_INT:
-	{
-		m_value.v_int64 = 0;
-	}
-	break;
-	case E_BOOL:
-	{
-		m_value.v_bool = false;
-	}
-	break;
-	case E_FLOAT:
-	{
-		m_value.v_double = 0.0;
-	}
-	break;
 	case E_STRING:
-	{
 		if (NULL != m_value.p_string) {
 			::free(m_value.p_string);
-			m_value.p_string = NULL;
 		}
-	}
-	break;
+		break;
 	case E_ARRAY:
-	{
-		if (NULL != m_value.p_array) {
-			delete m_value.p_array;
-			m_value.p_array = NULL;
-		}
-	}
-	break;
+		delete m_value.p_array;
+		break;
 	case E_OBJECT:
-	{
-		if (NULL != m_value.p_object) {
-			delete m_value.p_object;
-			m_value.p_object = NULL;
-		}
-
-	}
-	break;
-	case E_DATE:
-	{
-		m_value.v_date = 0;
-	}
-	break;
+		delete m_value.p_object;
+		break;
 	case E_DATA:
-	{
-		if (NULL != m_value.p_data) {
-			delete m_value.p_data;
-			m_value.p_data = NULL;
-		}
-	}
-	break;
+		delete m_value.p_data;
+		break;
 	default:
 		break;
 	}
 	m_type = E_NULL;
+	::memset(&m_value, 0, sizeof(m_value));
 }
 
 jvalue::jtype jvalue::type() const
@@ -470,6 +450,18 @@ jvalue& jvalue::operator=(const jvalue& other)
 	return (*this);
 }
 
+jvalue& jvalue::operator=(jvalue&& other) noexcept
+{
+	if (this != &other) {
+		_free();
+		m_type = other.m_type;
+		m_value = other.m_value;
+		other.m_type = E_NULL;
+		::memset(&other.m_value, 0, sizeof(other.m_value));
+	}
+	return (*this);
+}
+
 jvalue& jvalue::operator[](int index)
 {
 	return (*this)[(size_t)(index < 0 ? 0 : index)];
@@ -498,15 +490,21 @@ jvalue& jvalue::operator[](size_t index)
 		m_value.p_array = new array();
 	}
 
-	size_t sum = m_value.p_array->size();
-	if (sum <= index) {
-		size_t fill = index - sum;
-		for (size_t i = 0; i <= fill; i++) {
-			m_value.p_array->push_back(null);
-		}
+	// Cap to a sane upper bound to avoid DoS from attacker-controlled indices
+	// (e.g. index == SIZE_MAX would grow to 2^64 elements and never terminate).
+	static const size_t MAX_ARRAY_INDEX = (size_t)1 << 24; // 16M
+	if (index > MAX_ARRAY_INDEX) {
+		static jvalue sink;
+		sink = jvalue();
+		return sink;
 	}
 
-	return m_value.p_array->at(index);
+	size_t sum = m_value.p_array->size();
+	if (sum <= index) {
+		m_value.p_array->resize(index + 1);
+	}
+
+	return (*m_value.p_array)[index];
 }
 
 const jvalue& jvalue::operator[](size_t index) const
@@ -535,20 +533,14 @@ jvalue& jvalue::operator[](const char* key)
 		_free();
 		m_type = E_OBJECT;
 		m_value.p_object = new object();
-	} else {
-		auto it = m_value.p_object->find(key);
-		if (it != m_value.p_object->end()) {
-			return it->second;
-		}
 	}
-	auto it = m_value.p_object->insert(m_value.p_object->end(), make_pair(key, null));
-	return it->second;
+	return (*m_value.p_object)[key];
 }
 
 const jvalue& jvalue::operator[](const char* key) const
 {
 	if (E_OBJECT == m_type && NULL != m_value.p_object) {
-		auto it = m_value.p_object->find(key);
+		jvalue::flat_map::const_iterator it = m_value.p_object->find(key);
 		if (it != m_value.p_object->end()) {
 			return it->second;
 		}
@@ -646,8 +638,8 @@ bool jvalue::_map_keys(vector<string>& keys) const
 {
 	if (E_OBJECT == m_type && NULL != m_value.p_object) {
 		keys.reserve(m_value.p_object->size());
-		auto itbeg = m_value.p_object->begin();
-		auto itend = m_value.p_object->end();
+		jvalue::flat_map::const_iterator itbeg = m_value.p_object->begin();
+		jvalue::flat_map::const_iterator itend = m_value.p_object->end();
 		for (; itbeg != itend; itbeg++) {
 			keys.push_back((itbeg->first).c_str());
 		}
@@ -658,11 +650,13 @@ bool jvalue::_map_keys(vector<string>& keys) const
 
 int jvalue::index(const char* elem) const
 {
-	if (E_ARRAY == m_type && NULL != m_value.p_array) {
-		for (size_t i = 0; i < m_value.p_array->size(); i++) {
-			if (elem == (*m_value.p_array)[i].as_string()) {
-				return (int)i;
-			}
+	if (NULL == elem || E_ARRAY != m_type || NULL == m_value.p_array) {
+		return -1;
+	}
+	for (size_t i = 0; i < m_value.p_array->size(); i++) {
+		const jvalue& v = (*m_value.p_array)[i];
+		if (v.is_string() && 0 == strcmp(v.as_cstr(), elem)) {
+			return (int)i;
 		}
 	}
 	return -1;
@@ -720,7 +714,8 @@ jvalue& jvalue::back()
 		}
 	} else if (E_OBJECT == m_type) {
 		if (size() > 0) {
-			return prev(m_value.p_object->end())->second;
+			jvalue::flat_map::iterator it = m_value.p_object->begin();
+			return it->second;
 		}
 	}
 	return (*this);
@@ -729,21 +724,22 @@ jvalue& jvalue::back()
 bool jvalue::append(jvalue& jv)
 {
 	if ((E_OBJECT == m_type || E_NULL == m_type) && E_OBJECT == jv.type()) {
-		vector<string> keys;
-		jv.get_keys(keys);
-		for (size_t i = 0; i < keys.size(); i++) {
-			(*this)[keys[i]] = jv[keys[i]];
+		if (NULL != jv.m_value.p_object) {
+			jvalue::flat_map::const_iterator it = jv.m_value.p_object->begin();
+			for (; it != jv.m_value.p_object->end(); ++it) {
+				(*this)[it->first.c_str()] = it->second;
+			}
 		}
 		return true;
 	} else if ((E_ARRAY == m_type || E_NULL == m_type) && E_ARRAY == jv.type()) {
-		size_t count = this->size();
-		for (size_t i = 0; i < jv.size(); i++) {
-			(*this)[count] = jv[i];
-			count++;
+		if (NULL != jv.m_value.p_array) {
+			size_t count = this->size();
+			for (size_t i = 0; i < jv.m_value.p_array->size(); i++) {
+				(*this)[count++] = (*jv.m_value.p_array)[i];
+			}
 		}
 		return true;
 	}
-
 	return false;
 }
 
@@ -779,11 +775,16 @@ bool jvalue::push_back(const string& val)
 
 bool jvalue::push_back(const jvalue& jval)
 {
-	if (E_ARRAY == m_type || E_NULL == m_type) {
-		(*this)[size()] = jval;
-		return true;
+	if (E_ARRAY != m_type && E_NULL != m_type) {
+		return false;
 	}
-	return false;
+	if (E_ARRAY != m_type || NULL == m_value.p_array) {
+		_free();
+		m_type = E_ARRAY;
+		m_value.p_array = new array();
+	}
+	m_value.p_array->push_back(jval);
+	return true;
 }
 
 bool jvalue::push_back(const char* val, size_t len)
@@ -1005,26 +1006,33 @@ bool jvalue::_read_data_from_file(const char* path, string& data)
 	data.clear();
 	FILE* fp = NULL;
 	_fopen64(fp, path, "rb");
-	if (NULL != fp) {
-		_fseeki64(fp, 0, SEEK_END);
-		int64_t to_read = _ftelli64(fp);
-		_fseeki64(fp, 0, SEEK_SET);
-		to_read = (to_read > 0 ? to_read : 0);
-		data.resize(to_read);
-		if (data.capacity() >= (size_t)to_read) {
-			int64_t readed = 0;
-			while (readed < to_read) {
-				size_t ret = fread(&(data[readed]), 1, to_read - readed, fp);
-				if (ret <= 0) {
-					break;
-				}
-				readed += ret;
-			}
-		}
-		fclose(fp);
-		return (data.size() == to_read);
+	if (NULL == fp) {
+		return false;
 	}
-	return false;
+	_fseeki64(fp, 0, SEEK_END);
+	int64_t to_read = _ftelli64(fp);
+	_fseeki64(fp, 0, SEEK_SET);
+	if (to_read <= 0) {
+		fclose(fp);
+		return false;
+	}
+	// Cap at 256 MB - plist/JSON files processed by zsign are always far smaller.
+	static const int64_t MAX_READ = (int64_t)256 * 1024 * 1024;
+	if (to_read > MAX_READ) {
+		fclose(fp);
+		return false;
+	}
+	data.resize((size_t)to_read);
+	int64_t readed = 0;
+	while (readed < to_read) {
+		size_t ret = fread(&(data[readed]), 1, (size_t)(to_read - readed), fp);
+		if (ret == 0) {
+			break;
+		}
+		readed += (int64_t)ret;
+	}
+	fclose(fp);
+	return (readed == to_read);
 }
 
 bool jvalue::read_from_file(const char* path, ...)
@@ -1194,6 +1202,7 @@ jreader::jreader()
 	m_pend = NULL;
 	m_pcursor = NULL;
 	m_perror = NULL;
+	m_depth = 0;
 }
 
 bool jreader::parse(const char* pdoc, jvalue& root)
@@ -1204,6 +1213,7 @@ bool jreader::parse(const char* pdoc, jvalue& root)
 		m_pcursor = m_pbegin;
 		m_perror = m_pbegin;
 		m_strerr = "null";
+		m_depth = 0;
 
 		root.clear();
 		return _read_value(root);
@@ -1213,6 +1223,12 @@ bool jreader::parse(const char* pdoc, jvalue& root)
 
 bool jreader::_read_value(jvalue& jval)
 {
+	if (m_depth >= MAX_DEPTH) {
+		return _add_error("nested too deep", m_pcursor);
+	}
+	++m_depth;
+	struct DepthGuard { int* d; DepthGuard(int* p) : d(p) {} ~DepthGuard() { --(*d); } } guard(&m_depth);
+
 	jtoken token;
 	_read_token(token);
 	switch (token.type) {
@@ -1323,13 +1339,13 @@ bool jreader::_read_token(jtoken& token)
 
 void jreader::_skip_spaces()
 {
-	while (m_pcursor != m_pend) {
-		char c = *m_pcursor;
-		if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
-			m_pcursor++;
-		} else {
-			break;
-		}
+	static const uint8_t ws[256] = {
+		0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	};
+	while (m_pcursor != m_pend && ws[(uint8_t)*m_pcursor]) {
+		m_pcursor++;
 	}
 }
 
@@ -1353,15 +1369,16 @@ void jreader::_skip_comment()
 	char c = _get_next_char();
 	if (c == '*') {
 		while (m_pcursor != m_pend) {
-			char c = _get_next_char();
-			if (c == '*' && *m_pcursor == '/') {
+			char ch = _get_next_char();
+			if (ch == '*' && m_pcursor != m_pend && *m_pcursor == '/') {
+				++m_pcursor; // consume the closing '/'
 				break;
 			}
 		}
 	} else if (c == '/') {
 		while (m_pcursor != m_pend) {
-			char c = _get_next_char();
-			if (c == '\r' || c == '\n') {
+			char ch = _get_next_char();
+			if (ch == '\r' || ch == '\n') {
 				break;
 			}
 		}
@@ -1442,7 +1459,7 @@ bool jreader::_read_array(jvalue& jval)
 {
 	jval = jvalue(jvalue::E_ARRAY);
 	_skip_spaces();
-	if (']' == *m_pcursor) // empty array
+	if (m_pcursor != m_pend && ']' == *m_pcursor) // empty array
 	{
 		jtoken endArray;
 		_read_token(endArray);
@@ -1469,24 +1486,39 @@ bool jreader::_read_array(jvalue& jval)
 
 bool jreader::_decode_number(jtoken& token, jvalue& jval)
 {
-	int64_t val = 0;
-	bool isNeg = false;
-	const char* pcur = token.pbegin;
-	if ('-' == *pcur) {
-		pcur++;
-		isNeg = true;
-	}
-	for (const char* p = pcur; p != token.pend; p++) {
+	// Scan for float-indicator characters; on hit, fall through to double parse.
+	for (const char* p = token.pbegin; p != token.pend; p++) {
 		char c = *p;
 		if ('.' == c || 'e' == c || 'E' == c) {
 			return _decode_double(token, jval);
-		} else if (c < '0' || c > '9') {
+		}
+		if (p != token.pbegin && (c < '0' || c > '9')) {
 			return _add_error("'" + string(token.pbegin, token.pend) + "' is not a number.", token.pbegin);
-		} else {
-			val = val * 10 + (c - '0');
+		}
+		if (p == token.pbegin && c != '-' && (c < '0' || c > '9')) {
+			return _add_error("'" + string(token.pbegin, token.pend) + "' is not a number.", token.pbegin);
 		}
 	}
-	jval = isNeg ? -val : val;
+
+	// Use strtoll with overflow detection (fall through to double on overflow).
+	const size_t buf_len = 64;
+	size_t len = (size_t)(token.pend - token.pbegin);
+	if (len >= buf_len) {
+		return _decode_double(token, jval);
+	}
+	char buf[buf_len] = { 0 };
+	::memcpy(buf, token.pbegin, len);
+	buf[len] = 0;
+	errno = 0;
+	char* endp = NULL;
+	long long parsed = strtoll(buf, &endp, 10);
+	if (endp != buf + len) {
+		return _add_error("'" + string(token.pbegin, token.pend) + "' is not a number.", token.pbegin);
+	}
+	if (errno == ERANGE) {
+		return _decode_double(token, jval);
+	}
+	jval = (int64_t)parsed;
 	return true;
 }
 
@@ -1509,89 +1541,99 @@ bool jreader::_decode_double(jtoken& token, jvalue& jval)
 
 bool jreader::_decode_string(jtoken& token, string& strdec)
 {
-	strdec = "";
+	strdec.clear();
 	const char* pcur = token.pbegin + 1;
 	const char* pend = token.pend - 1;
-	strdec.reserve(size_t(token.pend - token.pbegin));
+	strdec.reserve(size_t(pend - pcur));
+
 	while (pcur != pend) {
-		char c = *pcur++;
-		if ('\\' == c) {
-			if (pcur != pend) {
-				char escape = *pcur++;
-				switch (escape) {
-				case '"':
-					strdec += '"';
-					break;
-				case '\\':
-					strdec += '\\';
-					break;
-				case 'b':
-					strdec += '\b';
-					break;
-				case 'f':
-					strdec += '\f';
-					break;
-				case 'n':
-					strdec += '\n';
-					break;
-				case 'r':
-					strdec += '\r';
-					break;
-				case 't':
-					strdec += '\t';
-					break;
-				case '/':
-					strdec += '/';
-					break;
-				case 'u':
-				{// based on description from http://en.wikipedia.org/wiki/UTF-8
+		// Bulk copy: scan for next backslash or end
+		const char* chunk_start = pcur;
+		while (pcur != pend && *pcur != '\\') {
+			++pcur;
+		}
+		if (pcur != chunk_start) {
+			strdec.append(chunk_start, (size_t)(pcur - chunk_start));
+		}
+		if (pcur == pend) break;
 
-					string strUnic;
-					strUnic.append(pcur, 4);
-
-					pcur += 4;
-
-					unsigned int cp = 0;
-					if (1 != sscanf_s(strUnic.c_str(), "%x", &cp)) {
-						return _add_error("Bad escape sequence in string", pcur);
-					}
-
-					string strUTF8;
-
-					if (cp <= 0x7f) {
-						strUTF8.resize(1);
-						strUTF8[0] = static_cast<char>(cp);
-					} else if (cp <= 0x7FF) {
-						strUTF8.resize(2);
-						strUTF8[1] = static_cast<char>(0x80 | (0x3f & cp));
-						strUTF8[0] = static_cast<char>(0xC0 | (0x1f & (cp >> 6)));
-					} else if (cp <= 0xFFFF) {
-						strUTF8.resize(3);
-						strUTF8[2] = static_cast<char>(0x80 | (0x3f & cp));
-						strUTF8[1] = 0x80 | static_cast<char>((0x3f & (cp >> 6)));
-						strUTF8[0] = 0xE0 | static_cast<char>((0xf & (cp >> 12)));
-					} else if (cp <= 0x10FFFF) {
-						strUTF8.resize(4);
-						strUTF8[3] = static_cast<char>(0x80 | (0x3f & cp));
-						strUTF8[2] = static_cast<char>(0x80 | (0x3f & (cp >> 6)));
-						strUTF8[1] = static_cast<char>(0x80 | (0x3f & (cp >> 12)));
-						strUTF8[0] = static_cast<char>(0xF0 | (0x7 & (cp >> 18)));
-					}
-
-					strdec += strUTF8;
-				}
-				break;
-				default:
-					return _add_error("Bad escape sequence in string", pcur);
-					break;
-				}
-			} else {
-				return _add_error("Empty escape sequence in string", pcur);
+		// Handle escape sequence
+		++pcur; // skip backslash
+		if (pcur == pend) {
+			return _add_error("Empty escape sequence in string", pcur);
+		}
+		char escape = *pcur++;
+		switch (escape) {
+		case '"':  strdec += '"'; break;
+		case '\\': strdec += '\\'; break;
+		case 'b':  strdec += '\b'; break;
+		case 'f':  strdec += '\f'; break;
+		case 'n':  strdec += '\n'; break;
+		case 'r':  strdec += '\r'; break;
+		case 't':  strdec += '\t'; break;
+		case '/':  strdec += '/'; break;
+		case 'u':
+		{
+			if (pend - pcur < 4) {
+				return _add_error("Bad \\u escape: truncated", pcur);
 			}
-		} else if ('"' == c) {
-			break;
-		} else {
-			strdec += c;
+			struct hex4_helper {
+				static bool run(const char* p, unsigned int& out) {
+					unsigned int v = 0;
+					for (int k = 0; k < 4; ++k) {
+						char ch = p[k];
+						unsigned int d;
+						if (ch >= '0' && ch <= '9') d = (unsigned int)(ch - '0');
+						else if (ch >= 'a' && ch <= 'f') d = (unsigned int)(ch - 'a' + 10);
+						else if (ch >= 'A' && ch <= 'F') d = (unsigned int)(ch - 'A' + 10);
+						else return false;
+						v = (v << 4) | d;
+					}
+					out = v;
+					return true;
+				}
+			};
+			unsigned int cp = 0;
+			if (!hex4_helper::run(pcur, cp)) {
+				return _add_error("Bad \\u escape: not hex", pcur);
+			}
+			pcur += 4;
+
+			if (cp >= 0xD800 && cp <= 0xDBFF) {
+				if (pend - pcur < 6 || pcur[0] != '\\' || pcur[1] != 'u') {
+					return _add_error("Unpaired high surrogate", pcur);
+				}
+				unsigned int low = 0;
+				if (!hex4_helper::run(pcur + 2, low) || low < 0xDC00 || low > 0xDFFF) {
+					return _add_error("Invalid low surrogate", pcur);
+				}
+				cp = 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00);
+				pcur += 6;
+			} else if (cp >= 0xDC00 && cp <= 0xDFFF) {
+				return _add_error("Unexpected low surrogate", pcur);
+			}
+
+			if (cp <= 0x7F) {
+				strdec += (char)cp;
+			} else if (cp <= 0x7FF) {
+				strdec += (char)(0xC0 | ((cp >> 6) & 0x1F));
+				strdec += (char)(0x80 | (cp & 0x3F));
+			} else if (cp <= 0xFFFF) {
+				strdec += (char)(0xE0 | ((cp >> 12) & 0x0F));
+				strdec += (char)(0x80 | ((cp >> 6) & 0x3F));
+				strdec += (char)(0x80 | (cp & 0x3F));
+			} else if (cp <= 0x10FFFF) {
+				strdec += (char)(0xF0 | ((cp >> 18) & 0x07));
+				strdec += (char)(0x80 | ((cp >> 12) & 0x3F));
+				strdec += (char)(0x80 | ((cp >> 6) & 0x3F));
+				strdec += (char)(0x80 | (cp & 0x3F));
+			} else {
+				return _add_error("Codepoint out of range", pcur);
+			}
+		}
+		break;
+		default:
+			return _add_error("Bad escape sequence in string", pcur);
 		}
 	}
 	return true;
@@ -1640,7 +1682,8 @@ jwriter::jwriter()
 // //////////////////////////////////////////////////////////////////
 void jwriter::write(const jvalue& jval, string& strdoc)
 {
-	strdoc = "";
+	strdoc.clear();
+	strdoc.reserve(4096);
 	_write_value(jval, strdoc);
 }
 
@@ -1651,14 +1694,22 @@ void jwriter::_write_value(const jvalue& jval, string& strdoc)
 		strdoc += "null";
 		break;
 	case jvalue::E_INT:
-		strdoc += v2s(jval.as_int64());
-		break;
+	{
+		char buf[32];
+		snprintf(buf, 32, "%" PRId64, jval.as_int64());
+		strdoc += buf;
+	}
+	break;
 	case jvalue::E_BOOL:
 		strdoc += jval.as_bool() ? "true" : "false";
 		break;
 	case jvalue::E_FLOAT:
-		strdoc += v2s(jval.as_double());
-		break;
+	{
+		char buf[128];
+		snprintf(buf, 128, "%g", jval.as_double());
+		strdoc += buf;
+	}
+	break;
 	case jvalue::E_STRING:
 		strdoc += v2s(jval.as_cstr());
 		break;
@@ -1667,7 +1718,7 @@ void jwriter::_write_value(const jvalue& jval, string& strdoc)
 		strdoc += "[";
 		size_t usize = jval.size();
 		for (size_t i = 0; i < usize; i++) {
-			strdoc += (i > 0) ? "," : "";
+			if (i > 0) strdoc += ",";
 			_write_value(jval[i], strdoc);
 		}
 		strdoc += "]";
@@ -1680,10 +1731,10 @@ void jwriter::_write_value(const jvalue& jval, string& strdoc)
 		jval.get_keys(keys);
 		size_t num_key = keys.size();
 		for (size_t i = 0; i < num_key; i++) {
-			const string& key_name = keys[i];
-			strdoc += (i > 0) ? "," : "";
-			strdoc += v2s(key_name.c_str()) + ":";
-			_write_value(jval[key_name.c_str()], strdoc);
+			if (i > 0) strdoc += ",";
+			strdoc += v2s(keys[i].c_str());
+			strdoc += ":";
+			_write_value(jval[keys[i]], strdoc);
 		}
 		strdoc += "}";
 	}
@@ -1952,7 +2003,8 @@ string jwriter::v2s(const char* pstr)
 
 void jwriter::write_to_html(const jvalue& jval, string& strdoc)
 {
-	strdoc = "";
+	strdoc.clear();
+	strdoc.reserve(4096);
 	_write_value_to_html(jval, strdoc);
 	strdoc += "\n";
 }
@@ -2067,6 +2119,7 @@ jpreader::jpreader()
 	m_pend = NULL;
 	m_pcursor = NULL;
 	m_perror = NULL;
+	m_depth = 0;
 
 	//binary
 	m_ptrailer = NULL;
@@ -2084,7 +2137,7 @@ bool jpreader::parse(const char* pdoc, size_t len, jvalue& root, bool* is_binary
 		return false;
 	}
 
-	if (len < 30) {
+	if (len < 8) {
 		return false;
 	}
 
@@ -2102,6 +2155,7 @@ bool jpreader::parse(const char* pdoc, size_t len, jvalue& root, bool* is_binary
 		m_pcursor = m_pbegin;
 		m_perror = m_pbegin;
 		m_strerr = "null";
+		m_depth = 0;
 
 		ptoken token;
 		_read_token(token);
@@ -2111,6 +2165,12 @@ bool jpreader::parse(const char* pdoc, size_t len, jvalue& root, bool* is_binary
 
 bool jpreader::_read_value(jvalue& pval, ptoken& token)
 {
+	if (m_depth >= MAX_DEPTH) {
+		return _add_error("nested too deep", m_pcursor);
+	}
+	++m_depth;
+	struct DepthGuard { int* d; DepthGuard(int* p) : d(p) {} ~DepthGuard() { --(*d); } } guard(&m_depth);
+
 	switch (token.type) {
 	case ptoken::E_PTOKEN_TRUE:
 		pval = true;
@@ -2188,6 +2248,9 @@ bool jpreader::_read_label(string& label)
 {
 	_skip_spaces();
 
+	if (m_pcursor == m_pend) {
+		return false;
+	}
 	char c = *m_pcursor++;
 	if ('<' != c) {
 		return false;
@@ -2201,10 +2264,6 @@ bool jpreader::_read_label(string& label)
 	while (m_pcursor != m_pend) {
 		c = *m_pcursor++;
 		if ('>' == c) {
-			if ('/' == *(m_pcursor - 1) || '?' == *(m_pcursor - 1)) {
-				label += *(m_pcursor - 1);
-			}
-
 			label += c;
 			break;
 		} else if (' ' == c) {
@@ -2312,13 +2371,13 @@ bool jpreader::_read_token(ptoken& token)
 
 void jpreader::_skip_spaces()
 {
-	while (m_pcursor != m_pend) {
-		char c = *m_pcursor;
-		if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
-			m_pcursor++;
-		} else {
-			break;
-		}
+	static const uint8_t ws[256] = {
+		0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	};
+	while (m_pcursor != m_pend && ws[(uint8_t)*m_pcursor]) {
+		m_pcursor++;
 	}
 }
 
@@ -2339,11 +2398,11 @@ bool jpreader::_read_string()
 {
 	while (m_pcursor != m_pend) {
 		if ('<' == *m_pcursor) {
-			break;
+			return true;
 		}
 		m_pcursor++;
 	}
-	return ('<' == *m_pcursor);
+	return false;
 }
 
 bool jpreader::_read_dictionary(jvalue& pval)
@@ -2408,24 +2467,32 @@ bool jpreader::_read_array(jvalue& pval)
 
 bool jpreader::_decode_number(ptoken& token, jvalue& pval)
 {
-	int64_t val = 0;
-	bool is_negative = false;
-	const char* pcursor = token.pbegin;
-	if ('-' == *pcursor) {
-		pcursor++;
-		is_negative = true;
-	}
-	for (const char* p = pcursor; p != token.pend; p++) {
+	// Scan for float indicators; fall through to double parser on hit.
+	for (const char* p = token.pbegin; p != token.pend; p++) {
 		char c = *p;
 		if ('.' == c || 'e' == c || 'E' == c) {
 			return _decode_double(token, pval);
-		} else if (c < '0' || c > '9') {
-			return _add_error("'" + string(token.pbegin, token.pend) + "' is not a number.", token.pbegin);
-		} else {
-			val = val * 10 + (c - '0');
 		}
 	}
-	pval = is_negative ? -val : val;
+
+	const size_t buf_len = 64;
+	size_t len = (size_t)(token.pend - token.pbegin);
+	if (len == 0 || len >= buf_len) {
+		return _decode_double(token, pval);
+	}
+	char buf[buf_len] = { 0 };
+	::memcpy(buf, token.pbegin, len);
+	buf[len] = 0;
+	errno = 0;
+	char* endp = NULL;
+	long long parsed = strtoll(buf, &endp, 10);
+	if (endp != buf + len) {
+		return _add_error("'" + string(token.pbegin, token.pend) + "' is not a number.", token.pbegin);
+	}
+	if (errno == ERANGE) {
+		return _decode_double(token, pval);
+	}
+	pval = (int64_t)parsed;
 	return true;
 }
 
@@ -2450,11 +2517,19 @@ bool jpreader::_decode_string(ptoken& token, string& strdec)
 {
 	const char* pcursor = token.pbegin;
 	const char* pend = token.pend;
-	strdec.reserve(size_t(token.pend - token.pbegin) + 6);
+	strdec.clear();
+	strdec.reserve(size_t(pend - pcursor));
+
 	while (pcursor != pend) {
-		char c = *pcursor++;
-		if ('\n' != c && '\r' != c && '\t' != c) {
-			strdec += c;
+		const char* chunk_start = pcursor;
+		while (pcursor != pend && *pcursor != '\n' && *pcursor != '\r' && *pcursor != '\t') {
+			++pcursor;
+		}
+		if (pcursor != chunk_start) {
+			strdec.append(chunk_start, (size_t)(pcursor - chunk_start));
+		}
+		if (pcursor != pend) {
+			++pcursor;
 		}
 	}
 	return true;
@@ -2497,84 +2572,108 @@ uint32_t jpreader::_get_uint24_from_be(const char* v)
 	return ret;
 }
 
-uint64_t jpreader::_get_uint_val(const char* v, size_t size)
+bool jpreader::_bp_in_bounds(const char* p, size_t n) const
 {
-	if (8 == size)
-		return jpwriter::_swap(*((uint64_t*)v));
-	else if (4 == size)
-		return jpwriter::_swap(*((uint32_t*)v));
-	else if (3 == size)
-		return _get_uint24_from_be(v);
-	else if (2 == size)
-		return jpwriter::_swap(*((uint16_t*)v));
-	else
-		return *((uint8_t*)v);
+	if (NULL == p || p < m_pbegin || p > m_pend) {
+		return false;
+	}
+	return (size_t)(m_pend - p) >= n;
+}
+
+bool jpreader::_get_uint_val_safe(const char* v, size_t size, uint64_t& out)
+{
+	if (size == 0 || size > 8) {
+		return false;
+	}
+	if (!_bp_in_bounds(v, size)) {
+		return false;
+	}
+	uint64_t result = 0;
+	const uint8_t* p = (const uint8_t*)v;
+	for (size_t i = 0; i < size; ++i) {
+		result = (result << 8) | p[i];
+	}
+	out = result;
+	return true;
 }
 
 bool jpreader::_read_uint_size(const char*& pcur, size_t& size)
 {
 	jvalue temp;
-	_read_binary_value(pcur, temp);
-	if (temp.is_int()) {
-		size = (size_t)temp.as_int64();
-		return true;
+	if (!_read_binary_value(pcur, temp)) {
+		return false;
 	}
-	assert(0);
-	return false;
+	if (!temp.is_int()) {
+		return false;
+	}
+	int64_t raw = temp.as_int64();
+	if (raw < 0) {
+		return false;
+	}
+	uint64_t uraw = (uint64_t)raw;
+	if (uraw > (uint64_t)(m_pend - m_pbegin)) {
+		return false;
+	}
+	size = (size_t)uraw;
+	return true;
 }
 
 bool jpreader::_read_unicode(const char* pcursor, size_t size, jvalue& pv)
 {
 	if (0 == size) {
 		pv = "";
+		return true;
+	}
+	// Overflow check: 2 * size must fit in size_t and within buffer.
+	if (size > (SIZE_MAX / 2)) {
+		return false;
+	}
+	size_t byte_len = 2 * size;
+	if (!_bp_in_bounds(pcursor, byte_len)) {
+		return false;
+	}
+	// UTF-16 -> UTF-8: worst case 3 bytes per code unit (we don't combine surrogates here).
+	if (size > (SIZE_MAX / 3 - 1)) {
 		return false;
 	}
 
-	uint16_t* unistr = (uint16_t*)::malloc(2 * size);
-	if (NULL == unistr) {
-		return false;
-	}
-
-	::memcpy(unistr, pcursor, 2 * size);
-	for (size_t i = 0; i < size; i++) {
-		jpwriter::_byte_convert((uint8_t*)(unistr + i), 2);
-	}
-
-	char* outbuf = (char*)::malloc(3 * (size + 1));
-	if (NULL == outbuf) {
-		return false;
-	}
-
-	size_t p = 0;
-	size_t i = 0;
-	uint16_t wc = 0;
-	while (i < size) {
-		wc = unistr[i++];
+	string out;
+	out.reserve(3 * size + 1);
+	const uint8_t* src = (const uint8_t*)pcursor;
+	for (size_t i = 0; i < size; ++i) {
+		uint16_t wc = (uint16_t)((src[2 * i] << 8) | src[2 * i + 1]);
 		if (wc >= 0x800) {
-			outbuf[p++] = (char)(0xE0 + ((wc >> 12) & 0xF));
-			outbuf[p++] = (char)(0x80 + ((wc >> 6) & 0x3F));
-			outbuf[p++] = (char)(0x80 + (wc & 0x3F));
+			out += (char)(0xE0 | ((wc >> 12) & 0x0F));
+			out += (char)(0x80 | ((wc >> 6) & 0x3F));
+			out += (char)(0x80 | (wc & 0x3F));
 		} else if (wc >= 0x80) {
-			outbuf[p++] = (char)(0xC0 + ((wc >> 6) & 0x1F));
-			outbuf[p++] = (char)(0x80 + (wc & 0x3F));
+			out += (char)(0xC0 | ((wc >> 6) & 0x1F));
+			out += (char)(0x80 | (wc & 0x3F));
 		} else {
-			outbuf[p++] = (char)(wc & 0x7F);
+			out += (char)(wc & 0x7F);
 		}
 	}
-
-	outbuf[p] = 0;
-	pv = outbuf;
-	::free(outbuf);
-	outbuf = NULL;
-
-	::free(unistr);
-	unistr = NULL;
+	pv = out.c_str();
 	return true;
 }
 
 bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 {
-	uint8_t c = *pcursor++;
+	if (m_depth >= MAX_DEPTH) {
+		return false;
+	}
+	++m_depth;
+	struct DepthGuard {
+		int* d;
+		DepthGuard(int* p) : d(p) {}
+		~DepthGuard() { --(*d); }
+	} guard(&m_depth);
+
+	if (!_bp_in_bounds(pcursor, 1)) {
+		return false;
+	}
+	uint8_t c = *(const uint8_t*)pcursor;
+	pcursor += 1;
 	uint8_t type = c & 0xF0;
 	uint8_t	value = c & 0x0F;
 
@@ -2591,11 +2690,6 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 		case NS_NUMBER_TRUE:
 			pv = true;
 			break;
-		case NS_URL_BASE_STRING:
-		case NS_URL_STRING:
-		case NS_UUID:
-			pv = jvalue(jvalue::E_NULL);
-			break;
 		default:
 			pv = jvalue(jvalue::E_NULL);
 			break;
@@ -2604,31 +2698,36 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 	break;
 	case NS_NUMBER_INT:
 	{
-		uint8_t size = 1 << value;
-		switch (size) {
-			case sizeof(uint8_t) :
-				case sizeof(uint16_t) :
-				case sizeof(uint32_t) :
-				case sizeof(uint64_t) :
-				pv = (int64_t)_get_uint_val(pcursor, size);
-				break;
-				default:
-					pv = 0;
-					break;
-		};
+		if (value > 4) {
+			return false;
+		}
+		uint8_t size = (uint8_t)(1u << value);
+		uint64_t raw = 0;
+		if (!_get_uint_val_safe(pcursor, size, raw)) {
+			return false;
+		}
+		pv = (int64_t)raw;
 		pcursor += size;
 	}
 	break;
 	case NS_NUMBER_REAL:
 	{
 		if (2 == value) {
+			if (!_bp_in_bounds(pcursor, sizeof(float))) {
+				return false;
+			}
 			float real = 0;
 			::memcpy(&real, pcursor, sizeof(float));
 			pv = (double)jpwriter::_swap(real);
+			pcursor += sizeof(float);
 		} else if (3 == value) {
+			if (!_bp_in_bounds(pcursor, sizeof(double))) {
+				return false;
+			}
 			double real = 0;
 			::memcpy(&real, pcursor, sizeof(double));
 			pv = jpwriter::_swap(real);
+			pcursor += sizeof(double);
 		} else {
 			return false;
 		}
@@ -2636,12 +2735,14 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 	break;
 	case NS_DATE:
 	{
-		if (3 == value) {
-			double date = 0;
-			::memcpy(&date, pcursor, sizeof(double));
-			date = jpwriter::_swap(date);
-			pv.assign_date(((time_t)date) + 978278400);
+		if (3 != value || !_bp_in_bounds(pcursor, sizeof(double))) {
+			return false;
 		}
+		double date = 0;
+		::memcpy(&date, pcursor, sizeof(double));
+		date = jpwriter::_swap(date);
+		pv.assign_date(((time_t)date) + 978278400);
+		pcursor += sizeof(double);
 	}
 	break;
 	case NS_DATA:
@@ -2652,7 +2753,11 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 				return false;
 			}
 		}
+		if (!_bp_in_bounds(pcursor, size)) {
+			return false;
+		}
 		pv.assign_data((const uint8_t*)pcursor, size);
+		pcursor += size;
 	}
 	break;
 	case NS_STRING_ASCII:
@@ -2664,11 +2769,12 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 				return false;
 			}
 		}
-
-		string strval;
-		strval.append(pcursor, size);
-		strval.append(1, 0);
+		if (!_bp_in_bounds(pcursor, size)) {
+			return false;
+		}
+		string strval(pcursor, size);
 		pv = strval.c_str();
+		pcursor += size;
 	}
 	break;
 	case NS_STRING_UNICODE:
@@ -2679,12 +2785,15 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 				return false;
 			}
 		}
-
-		_read_unicode(pcursor, size, pv);
+		if (!_read_unicode(pcursor, size, pv)) {
+			return false;
+		}
+		// pcursor doesn't need to advance: caller resolves via offset table.
 	}
 	break;
 	case NS_ARRAY:
 	case NS_SET:
+	case NS_ORDEREDSET:
 	{
 		size_t size = value;
 		if (0x0F == value) {
@@ -2693,14 +2802,42 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 			}
 		}
 
+		// Check total element table fits: size * m_object_ref_size bytes.
+		if (m_object_ref_size == 0 || m_object_ref_size > 8) {
+			return false;
+		}
+		if (size > (SIZE_MAX / m_object_ref_size)) {
+			return false;
+		}
+		if (!_bp_in_bounds(pcursor, size * m_object_ref_size)) {
+			return false;
+		}
+
 		pv = jvalue(jvalue::E_ARRAY);
 		for (size_t i = 0; i < size; i++) {
-			uint64_t index = _get_uint_val((const char*)pcursor + i * m_object_ref_size, m_object_ref_size);
-			if (index < m_num_objects) {
-				const char* paddr = (m_pbegin + _get_uint_val(m_poffset_table + index * m_offset_table_offset_size, m_offset_table_offset_size));
-				_read_binary_value(paddr, pv[i]);
-			} else {
-				assert(0);
+			uint64_t index = 0;
+			if (!_get_uint_val_safe(pcursor + i * m_object_ref_size, m_object_ref_size, index)) {
+				return false;
+			}
+			if (index >= m_num_objects) {
+				return false;
+			}
+			if (m_offset_table_offset_size == 0 || m_offset_table_offset_size > 8) {
+				return false;
+			}
+			if (index > (uint64_t)(SIZE_MAX / m_offset_table_offset_size)) {
+				return false;
+			}
+			uint64_t off = 0;
+			if (!_get_uint_val_safe(m_poffset_table + index * m_offset_table_offset_size,
+			                       m_offset_table_offset_size, off)) {
+				return false;
+			}
+			if (off > (uint64_t)(m_pend - m_pbegin)) {
+				return false;
+			}
+			const char* paddr = m_pbegin + off;
+			if (!_read_binary_value(paddr, pv[i])) {
 				return false;
 			}
 		}
@@ -2715,6 +2852,20 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 			}
 		}
 
+		if (m_object_ref_size == 0 || m_object_ref_size > 8) {
+			return false;
+		}
+		// key table + value table = 2 * size * ref_size, check for overflow.
+		if (size > (SIZE_MAX / (2 * m_object_ref_size))) {
+			return false;
+		}
+		if (!_bp_in_bounds(pcursor, 2 * size * m_object_ref_size)) {
+			return false;
+		}
+		if (m_offset_table_offset_size == 0 || m_offset_table_offset_size > 8) {
+			return false;
+		}
+
 		if (jvalue::E_OBJECT != pv.type()) {
 			pv = jvalue(jvalue::E_OBJECT);
 		}
@@ -2723,17 +2874,37 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 			jvalue jkey;
 			jvalue jval;
 
-			uint64_t key_index = _get_uint_val((const char*)pcursor + i * m_object_ref_size, m_object_ref_size);
-			uint64_t value_index = _get_uint_val((const char*)pcursor + (i + size) * m_object_ref_size, m_object_ref_size);
-
-			if (key_index < m_num_objects) {
-				const char* paddr = (m_pbegin + _get_uint_val(m_poffset_table + key_index * m_offset_table_offset_size, m_offset_table_offset_size));
-				_read_binary_value(paddr, jkey);
+			uint64_t key_index = 0, value_index = 0;
+			if (!_get_uint_val_safe(pcursor + i * m_object_ref_size, m_object_ref_size, key_index)) {
+				return false;
+			}
+			if (!_get_uint_val_safe(pcursor + (size + i) * m_object_ref_size, m_object_ref_size, value_index)) {
+				return false;
+			}
+			if (key_index >= m_num_objects || value_index >= m_num_objects) {
+				return false;
 			}
 
-			if (value_index < m_num_objects) {
-				const char* paddr = (m_pbegin + _get_uint_val(m_poffset_table + value_index * m_offset_table_offset_size, m_offset_table_offset_size));
-				_read_binary_value(paddr, jval);
+			uint64_t koff = 0, voff = 0;
+			if (!_get_uint_val_safe(m_poffset_table + key_index * m_offset_table_offset_size,
+			                       m_offset_table_offset_size, koff)) {
+				return false;
+			}
+			if (!_get_uint_val_safe(m_poffset_table + value_index * m_offset_table_offset_size,
+			                       m_offset_table_offset_size, voff)) {
+				return false;
+			}
+			if (koff > (uint64_t)(m_pend - m_pbegin) || voff > (uint64_t)(m_pend - m_pbegin)) {
+				return false;
+			}
+
+			const char* pkey = m_pbegin + koff;
+			if (!_read_binary_value(pkey, jkey)) {
+				return false;
+			}
+			const char* pval_addr = m_pbegin + voff;
+			if (!_read_binary_value(pval_addr, jval)) {
+				return false;
 			}
 
 			if (jkey.is_string() && !jval.is_null()) {
@@ -2744,29 +2915,25 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 	break;
 	case BPLIST_UID:
 	{
-		uint8_t size = value + 1;
-		switch (size) {
-			case sizeof(uint8_t) :
-				case sizeof(uint16_t) :
-				case sizeof(uint32_t) :
-				case sizeof(uint64_t) :
-				pv = (int64_t)_get_uint_val(pcursor, size);
-				break;
-				default:
-					pv = 0;
-					break;
-		};
+		size_t size = (size_t)value + 1;
+		if (size > 8) {
+			return false;
+		}
+		uint64_t raw = 0;
+		if (!_get_uint_val_safe(pcursor, size, raw)) {
+			return false;
+		}
+		pv = (int64_t)raw;
 		pcursor += size;
 	}
 	break;
 	case BPLIST_FILL:
 	{
-
+		// No-op marker.
 	}
 	break;
 	default:
 	{
-		assert(0);
 		return false;
 	}
 	break;
@@ -2778,20 +2945,66 @@ bool jpreader::_read_binary_value(const char*& pcursor, jvalue& pv)
 bool jpreader::parse_binary(const char* pbdoc, size_t len, jvalue& pv)
 {
 	m_pbegin = pbdoc;
+	m_pend = pbdoc + len;
+	m_depth = 0;
+
+	// bplist trailer is 32 bytes: 6 padding + 1 offset_table_offset_size + 1 object_ref_size +
+	// 8 num_objects + 8 top_object_offset + 8 offset_table_offset. The "26" layout below reads
+	// from byte 6 of the trailer (skipping padding). Require 8-byte magic + 32-byte trailer.
+	if (len < 8 + 32) {
+		return false;
+	}
 
 	m_ptrailer = m_pbegin + len - 26;
 
-	m_offset_table_offset_size = m_ptrailer[0];
-	m_object_ref_size = m_ptrailer[1];
-	m_num_objects = _get_uint_val(m_ptrailer + 2, 8);
-	m_top_object_offset = _get_uint_val(m_ptrailer + 10, 8);
+	m_offset_table_offset_size = (uint8_t)m_ptrailer[0];
+	m_object_ref_size = (uint8_t)m_ptrailer[1];
+
+	if (m_offset_table_offset_size == 0 || m_offset_table_offset_size > 8 ||
+	    m_object_ref_size == 0 || m_object_ref_size > 8) {
+		return false;
+	}
+
+	uint64_t raw = 0;
+	if (!_get_uint_val_safe(m_ptrailer + 2, 8, raw)) return false;
+	m_num_objects = raw;
+	if (!_get_uint_val_safe(m_ptrailer + 10, 8, raw)) return false;
+	m_top_object_offset = raw;
+	if (!_get_uint_val_safe(m_ptrailer + 18, 8, raw)) return false;
+	uint64_t offset_table_start = raw;
 
 	if (0 == m_num_objects) {
 		return false;
 	}
 
-	m_poffset_table = m_pbegin + _get_uint_val(m_ptrailer + 18, 8);
-	const char* pval = (m_pbegin + _get_uint_val(m_poffset_table + m_offset_table_offset_size * m_top_object_offset, m_offset_table_offset_size));
+	// Validate offset table sits in buffer and is fully addressable.
+	if (offset_table_start > (uint64_t)(m_pend - m_pbegin)) {
+		return false;
+	}
+	// num_objects * offset_table_offset_size must not overflow and must fit in buffer.
+	if (m_num_objects > (uint64_t)(SIZE_MAX / m_offset_table_offset_size)) {
+		return false;
+	}
+	uint64_t table_bytes = m_num_objects * m_offset_table_offset_size;
+	if (offset_table_start + table_bytes > (uint64_t)(m_pend - m_pbegin)) {
+		return false;
+	}
+	m_poffset_table = m_pbegin + offset_table_start;
+
+	// Validate top_object_offset index and resolve root offset.
+	if (m_top_object_offset >= m_num_objects) {
+		return false;
+	}
+	uint64_t root_off = 0;
+	if (!_get_uint_val_safe(m_poffset_table + m_top_object_offset * m_offset_table_offset_size,
+	                       m_offset_table_offset_size, root_off)) {
+		return false;
+	}
+	if (root_off > (uint64_t)(m_pend - m_pbegin)) {
+		return false;
+	}
+
+	const char* pval = m_pbegin + root_off;
 	return _read_binary_value(pval, pv);
 }
 
@@ -2811,11 +3024,16 @@ void jpwriter::write(const jvalue& pval, string& strdoc)
 
 uint8_t jpwriter::_get_integer_length(int64_t value)
 {
-	if (value > 0 && value < (1 << 8)) {
+	// Returns the log2 encoding used in bplist NS_NUMBER_INT: 0->1B, 1->2B, 2->4B, 3->8B.
+	// Negative values must be stored as 8 bytes to preserve sign.
+	if (value < 0) {
+		return 3;
+	}
+	if (value < (1LL << 8)) {
 		return 0;
-	} else if (value > 0 && value < (1 << 16)) {
+	} else if (value < (1LL << 16)) {
 		return 1;
-	} else if (value > 0 && value < ((int64_t)1 << 32)) {
+	} else if (value < (1LL << 32)) {
 		return 2;
 	} else {
 		return 3;
@@ -2872,11 +3090,14 @@ double jpwriter::_swap(double value)
 
 uint8_t jpwriter::_get_integer_bytes(int64_t value)
 {
-	if (value > 0 && value < (1 << 8)) {
+	if (value < 0) {
+		return 8;
+	}
+	if (value < (1LL << 8)) {
 		return 1;
-	} else if (value > 0 && value < (1 << 16)) {
+	} else if (value < (1LL << 16)) {
 		return 2;
-	} else if (value > 0 && value < ((int64_t)1 << 32)) {
+	} else if (value < (1LL << 32)) {
 		return 4;
 	} else {
 		return 8;
