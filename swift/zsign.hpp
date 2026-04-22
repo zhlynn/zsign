@@ -32,7 +32,7 @@ int zsign(
 	NSString *bundleversion,
 	bool adhoc,
 	bool dontGenerateEmbeddedMobileProvision,
-	void(^completionHandler)(BOOL success, NSError *error)
+	void(^completionHandler)(BOOL success)
 );
 
 int checkCert(

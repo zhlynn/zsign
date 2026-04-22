@@ -302,11 +302,7 @@ bool ZBundle::SignNode(jvalue& jvNode)
 			ZLog::PrintV(">>> SignFile: \t%s\n", strFile.c_str());
 			ZMachO macho;
 			if (macho.InitV("%s/%s", m_strAppFolder.c_str(), strFile.c_str())) {
-				if (!macho.Sign(m_pSignAsset, m_bForceSign, "", "", "", "")) {
-					signFailedFiles += strFile;
-					signFailedFiles += "\n";
-//					return false;
-				}
+				macho.Sign(m_pSignAsset, m_bForceSign, "", "", "", "");
 			} else {
 				ZLog::WarnV(">>> Warning: Skipping non-Mach-O file: \t%s\n", strFile.c_str());
 			}
@@ -352,10 +348,11 @@ bool ZBundle::SignNode(jvalue& jvNode)
 	ZMachO macho;
 	if (!macho.Init(strExePath.c_str())) {
 		ZLog::ErrorV(">>> Can't parse BundleExecute file! %s\n", strExePath.c_str());
-		signFailedFiles += strExePath;
-		signFailedFiles += "\n";
-//		return false;
+#if !TARGET_OS_IOS
+		return false;
+#else
 		return true;
+#endif
 	}
 
 	bool bForceSign = m_bForceSign;

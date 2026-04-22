@@ -224,15 +224,7 @@ int zsign(
 	ZLog::PrintV(">>> Signing:\t%s %s\n", strPath.c_str(), (bAdhoc ? " (Ad-hoc)" : ""));
 	atimer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 	
-	NSError* signError = nil;
-	if(!bundle.signFailedFiles.empty()) {
-		NSDictionary* userInfo = @{
-			NSLocalizedDescriptionKey : [NSString stringWithUTF8String:bundle.signFailedFiles.c_str()]
-		};
-		signError = [NSError errorWithDomain:@"Failed to Sign" code:-1 userInfo:userInfo];
-	}
-	
-	completionHandler(bRet, signError);
+	completionHandler(bRet);
 	
 	gtimer.Print(">>> Done.");
 	return bRet ? 0 : -1;

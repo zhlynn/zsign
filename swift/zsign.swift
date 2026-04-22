@@ -70,7 +70,7 @@ public enum Zsign {
 		customVersion: String = "",
 		adhoc: Bool = false,
 		removeProvision: Bool = false,
-		completion: ((Bool, Error?) -> Void)? = nil
+		completion: ((Bool) -> Void)? = nil
 	) -> Bool {
 		if zsign(
 			appPath,
@@ -84,8 +84,8 @@ public enum Zsign {
 			adhoc,
 			removeProvision,
 			completion.map { callback in
-				{ success, error in
-					callback(success, error)
+				{ success in
+					callback(success)
 				}
 			}
 		) != 0 {
