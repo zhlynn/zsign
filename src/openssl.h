@@ -51,6 +51,7 @@ public:
 	string	m_strSubjectCN;
 	string	m_strProvData;
 	string	m_strEntitleData;
+	string	m_strApplicationId;
 
 public:
 	void*	m_evpPKey;

@@ -83,7 +83,7 @@ bool ZMachO::OpenFile(const char* szPath)
 				return false;
 			}
 		} else {
-			ZLog::ErrorV(">>> Invalid mach-o file (2)!\n");
+			ZLog::ErrorV(">>> Invalid mach-o file (magic: 0x%08x)!\n", magic);
 			return false;
 		}
 	}
@@ -232,7 +232,7 @@ bool ZMachO::ReallocCodeSignSpace()
 
 		for (size_t i = 0; i < arrArches.size(); i++) {
 			size_t sSize = 0;
-			string strNewArchOFile = m_strFile + ".archo." + jvalue((int)i).as_string();
+			string strNewArchOFile = m_strFile + ".archo." + std::to_string(i);
 			uint8_t* pData = (uint8_t*)ZFile::MapFile(strNewArchOFile.c_str(), 0, 0, &sSize, true);
 			if (NULL == pData) {
 				ZFile::RemoveFile(strNewFatMachOFile.c_str());
@@ -302,14 +302,9 @@ std::vector<std::string> ZMachO::ListDylibs() {
 	return dylibList;
 }
 
-bool ZMachO::RemoveDylib(const std::set<std::string> &dylibNames) {
-	ZLog::Warn(">>> Removing specified dylibs...\n");
-	
-	bool removalSuccessful = true;
+void ZMachO::RemoveDylibs(const set<string>& setDylibs)
+{
 	for (size_t i = 0; i < m_arrArchOes.size(); i++) {
-		m_arrArchOes[i]->RemoveDylibs(dylibNames);
+		m_arrArchOes[i]->RemoveDylibs(setDylibs);
 	}
-	
-	ZLog::Warn(">>> Finished removing specified dylibs!\n");
-	return removalSuccessful;
 }

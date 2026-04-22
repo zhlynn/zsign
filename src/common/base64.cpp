@@ -1,5 +1,6 @@
 #include "base64.h"
 #include <string.h>
+#include <stdint.h>
 
 #define B0(a) (a & 0xFF)
 #define B1(a) (a >> 8 & 0xFF)
@@ -70,12 +71,12 @@ const char* jbase64::encode(const char* src, int src_len)
 	char* p64 = enc;
 	unsigned char* pcursor = (unsigned char*)src;
 	for (i = 0; i < src_len - 3; i += 3) {
-		unsigned long temp = *(unsigned long*)pcursor;
-		int b0 = get_b64_char((B0(temp) >> 2) & 0x3F);
-		int b1 = get_b64_char((B0(temp) << 6 >> 2 | B1(temp) >> 4) & 0x3F);
-		int b2 = get_b64_char((B1(temp) << 4 >> 2 | B2(temp) >> 6) & 0x3F);
-		int b3 = get_b64_char((B2(temp) << 2 >> 2) & 0x3F);
-		*((unsigned long*)p64) = b0 | b1 << 8 | b2 << 16 | b3 << 24;
+		uint32_t temp = 0;
+		memcpy(&temp, pcursor, 3);
+		p64[0] = get_b64_char((B0(temp) >> 2) & 0x3F);
+		p64[1] = get_b64_char((B0(temp) << 6 >> 2 | B1(temp) >> 4) & 0x3F);
+		p64[2] = get_b64_char((B1(temp) << 4 >> 2 | B2(temp) >> 6) & 0x3F);
+		p64[3] = get_b64_char((B2(temp) << 2 >> 2) & 0x3F);
 		p64 += 4;
 		pcursor += 3;
 	}
@@ -108,45 +109,45 @@ const char* jbase64::decode(const char* src, int src_len, int* pdecode_len)
 	}
 
 	if (src_len <= 0) {
+		if (NULL != pdecode_len) {
+			*pdecode_len = 0;
+		}
 		return "";
 	}
 
-	char* dec = new char[src_len];
+	// Max decoded size is ceil(src_len/4)*3; +1 for NUL terminator.
+	char* dec = new char[((src_len + 3) / 4) * 3 + 1];
 	m_array_decodes.push_back(dec);
 
-	int i = 0;
 	char* pbuf = dec;
-	unsigned char* psrc = (unsigned char*)src;
-	for (i = 0; i < src_len - 4; i += 4) {
-		unsigned long temp = *(unsigned long*)psrc;
-		int b0 = (get_b64_index((char)B0(temp)) << 2 | get_b64_index((char)B1(temp)) << 2 >> 6) & 0xFF;
-		int b1 = (get_b64_index((char)B1(temp)) << 4 | get_b64_index((char)B2(temp)) << 2 >> 4) & 0xFF;
-		int b2 = (get_b64_index((char)B2(temp)) << 6 | get_b64_index((char)B3(temp)) << 2 >> 2) & 0xFF;
-		*((unsigned long*)pbuf) = b0 | b1 << 8 | b2 << 16;
-		psrc += 4;
-		pbuf += 3;
-	}
+	int quartet[4];
+	int q = 0;
 
-	if (i < src_len) {
-		int rest = src_len - i;
-		unsigned long temp = 0;
-		for (int j = 0; j < rest; ++j) {
-			*(((unsigned char*)&temp) + j) = *psrc++;
+	for (int i = 0; i < src_len; ++i) {
+		char ch = src[i];
+		if ('=' == ch) {
+			break;
 		}
-
-		int b0 = (get_b64_index((char)B0(temp)) << 2 | get_b64_index((char)B1(temp)) << 2 >> 6) & 0xFF;
-		*pbuf++ = b0;
-
-		if ('=' != B1(temp) && '=' != B2(temp)) {
-			int b1 = (get_b64_index((char)B1(temp)) << 4 | get_b64_index((char)B2(temp)) << 2 >> 4) & 0xFF;
-			*pbuf++ = b1;
+		int idx = get_b64_index(ch);
+		if (idx < 0) {
+			continue;
 		}
-
-		if ('=' != B2(temp) && '=' != B3(temp)) {
-			int b2 = (get_b64_index((char)B2(temp)) << 6 | get_b64_index((char)B3(temp)) << 2 >> 2) & 0xFF;
-			*pbuf++ = b2;
+		quartet[q++] = idx;
+		if (4 == q) {
+			*pbuf++ = (char)((quartet[0] << 2) | (quartet[1] >> 4));
+			*pbuf++ = (char)((quartet[1] << 4) | (quartet[2] >> 2));
+			*pbuf++ = (char)((quartet[2] << 6) | quartet[3]);
+			q = 0;
 		}
 	}
+
+	if (q >= 2) {
+		*pbuf++ = (char)((quartet[0] << 2) | (quartet[1] >> 4));
+		if (q >= 3) {
+			*pbuf++ = (char)((quartet[1] << 4) | (quartet[2] >> 2));
+		}
+	}
+
 	*pbuf = '\0';
 
 	if (NULL != pdecode_len) {

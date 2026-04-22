@@ -1,0 +1,428 @@
+name: Build Multi-Platform
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            cross: false
+          - arch: aarch64
+            cross: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install deps
+        run: |
+          sudo apt-get update
+          if [ "${{ matrix.cross }}" = "true" ]; then
+            sudo apt-get install -y g++-aarch64-linux-gnu
+            sudo dpkg --add-architecture arm64
+            sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ jammy main restricted universe" | sudo tee -a /etc/apt/sources.list
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ jammy-updates main restricted universe" | sudo tee -a /etc/apt/sources.list
+            sudo apt-get update
+            sudo apt-get install -y libssl-dev:arm64
+          else
+            sudo apt-get install -y g++ pkg-config libssl-dev
+          fi
+
+      - name: build
+        run: |
+          VER=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          fi
+          VF=""
+          [ -n "$VER" ] && VF="-DZSIGN_VERSION=$VER"
+          if [ "${{ matrix.cross }}" = "true" ]; then
+            mkdir -p bin
+            for f in src/third-party/zlib/*.c; do aarch64-linux-gnu-gcc -O3 -Wno-unused-result -I./src/third-party/zlib -c "$f" -o "$(basename "$f" .c).o"; done
+            aarch64-linux-gnu-gcc -O3 -Wno-unused-result -I./src -I./src/third-party/zlib -c src/third-party/minizip/ioapi.c -o ioapi.o
+            aarch64-linux-gnu-gcc -O3 -Wno-unused-result -I./src -I./src/third-party/zlib -c src/third-party/minizip/zip.c -o zip.o
+            aarch64-linux-gnu-gcc -O3 -Wno-unused-result -I./src -I./src/third-party/zlib -c src/third-party/minizip/unzip.c -o unzip.o
+            aarch64-linux-gnu-g++ -std=c++11 -O3 -Wno-unused-result $VF \
+              -I./src -I./src/common -I./src/third-party/zlib \
+              $(find src -name "*.cpp") \
+              *.o \
+              -L/usr/lib/aarch64-linux-gnu \
+              -lssl -lcrypto \
+              -o bin/zsign
+          else
+            cd build/linux && make clean && make VERSION="$VER" -j$(nproc)
+            strip ../../bin/zsign
+          fi
+
+      - name: smoke test
+        if: matrix.cross == false
+        run: ./bin/zsign -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-linux-${{ matrix.arch }}
+          path: bin/zsign
+
+  build-macos:
+    name: Build macOS (arm64)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install deps
+        run: brew install pkg-config openssl
+
+      - name: build
+        run: |
+          VER=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          fi
+          cd build/macos && make clean && make VERSION="$VER" -j$(sysctl -n hw.ncpu)
+          chmod +x ../../bin/zsign
+
+      - name: smoke test
+        run: ./bin/zsign -v
+
+      - name: verify arch
+        run: file bin/zsign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-macos-arm64
+          path: bin/zsign
+
+  build-windows:
+    name: Build Windows (x64)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup msbuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: build
+        shell: pwsh
+        run: |
+          $defs = ""
+          if ("${{ github.ref_name }}" -like "v*") {
+            $ver = "${{ github.ref_name }}".Substring(1)
+            $defs = "ZSIGN_VERSION=$ver"
+          }
+          msbuild build\windows\vs2022\zsign.sln /p:Configuration=Release /p:Platform=x64 /p:ExtraDefines="$defs" /m
+
+      - name: smoke test
+        run: .\build\windows\vs2022\x64\Release\zsign.exe -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-windows-x64
+          path: build/windows/vs2022/x64/Release/zsign.exe
+
+  build-android:
+    name: Build Android (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: armeabi-v7a
+            ndk_target: armv7a-linux-androideabi
+            openssl_target: android-arm
+          - arch: arm64-v8a
+            ndk_target: aarch64-linux-android
+            openssl_target: android-arm64
+    env:
+      API: "21"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup ndk
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26d
+
+      - name: build deps
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          set -e
+          TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
+          CC=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang
+          CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang++
+          AR=$TOOLCHAIN/bin/llvm-ar
+          DEPS=$PWD/android-deps
+          mkdir -p $DEPS
+
+          echo "=== building openssl ==="
+          curl -sL https://github.com/openssl/openssl/releases/download/openssl-3.2.1/openssl-3.2.1.tar.gz | tar xz
+          cd openssl-3.2.1
+          export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME
+          export PATH=$TOOLCHAIN/bin:$PATH
+          ./Configure ${{ matrix.openssl_target }} -D__ANDROID_API__=$API --prefix=$DEPS no-shared no-tests
+          make -j$(nproc)
+          make install_sw
+          cd ..
+
+          echo "=== zlib is bundled in src/third-party/zlib ==="
+
+      - name: build zsign
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          set -e
+          VER=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          fi
+          VF=""
+          [ -n "$VER" ] && VF="-DZSIGN_VERSION=$VER"
+          TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
+          CXX=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang++
+          DEPS=$PWD/android-deps
+          CC=$TOOLCHAIN/bin/${{ matrix.ndk_target }}${API}-clang
+          mkdir -p bin
+          for f in src/third-party/zlib/*.c; do $CC -O3 -I./src/third-party/zlib -c "$f" -o "$(basename "$f" .c).o"; done
+          $CC -O3 -I./src -I./src/third-party/zlib -c src/third-party/minizip/ioapi.c -o ioapi.o
+          $CC -O3 -I./src -I./src/third-party/zlib -c src/third-party/minizip/zip.c -o zip.o
+          $CC -O3 -I./src -I./src/third-party/zlib -c src/third-party/minizip/unzip.c -o unzip.o
+          $CXX -std=c++11 -O3 $VF \
+            -I./src -I./src/common -I./src/third-party/zlib -I$DEPS/include \
+            $(find src -name "*.cpp") \
+            *.o \
+            -L$DEPS/lib -lssl -lcrypto \
+            -static-libstdc++ \
+            -o bin/zsign
+          file bin/zsign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-android-${{ matrix.arch }}
+          path: bin/zsign
+
+  build-docker:
+    name: Build Docker
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: build image
+        run: |
+          VER=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          fi
+          docker build --build-arg VERSION="$VER" -t zsign:latest -f - . <<'EOF'
+          FROM ubuntu:22.04 AS builder
+          ARG VERSION
+          RUN apt-get update && \
+              apt-get install -y g++ make pkg-config libssl-dev && \
+              rm -rf /var/lib/apt/lists/*
+          COPY . /src
+          WORKDIR /src/build/linux
+          RUN make clean && make VERSION="$VERSION" -j$(nproc) && strip ../../bin/zsign
+
+          FROM ubuntu:22.04
+          RUN apt-get update && \
+              apt-get install -y libssl3 && \
+              rm -rf /var/lib/apt/lists/*
+          COPY --from=builder /src/bin/zsign /usr/local/bin/zsign
+          ENTRYPOINT ["zsign"]
+          EOF
+
+      - name: smoke test
+        run: docker run --rm zsign:latest -v
+
+      - name: save image
+        run: docker save zsign:latest | gzip > zsign-docker.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-docker
+          path: zsign-docker.tar.gz
+
+  build-linux-musl:
+    name: Build Linux (musl-static)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build static binary
+        run: |
+          VER=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          fi
+          docker build --build-arg VERSION="$VER" -t zsign-musl -f - . <<'MUSL'
+          FROM alpine:3.19 AS builder
+          ARG VERSION
+          RUN apk add --no-cache g++ make pkgconf openssl-dev openssl-libs-static
+          COPY . /src
+          WORKDIR /src
+          RUN VF=""; [ -n "$VERSION" ] && VF="-DZSIGN_VERSION=$VERSION"; \
+              for f in src/third-party/zlib/*.c; do cc -O3 -I./src/third-party/zlib -c "$f"; done && \
+              cc -O3 -I./src -I./src/third-party/zlib -c src/third-party/minizip/ioapi.c && \
+              cc -O3 -I./src -I./src/third-party/zlib -c src/third-party/minizip/zip.c && \
+              cc -O3 -I./src -I./src/third-party/zlib -c src/third-party/minizip/unzip.c && \
+              mkdir -p bin && g++ -std=c++11 -O3 -static -Wno-unused-result $VF \
+            -include cstdint -include ctime \
+            -I./src -I./src/common -I./src/third-party/zlib \
+            $(pkg-config --cflags openssl) \
+            $(find src -name "*.cpp") \
+            *.o \
+            $(pkg-config --libs --static openssl) \
+            -o bin/zsign && strip bin/zsign
+          MUSL
+          mkdir -p bin
+          docker create --name musl-extract zsign-musl
+          docker cp musl-extract:/src/bin/zsign bin/zsign-musl
+          docker rm musl-extract
+
+      - name: smoke test
+        run: |
+          chmod +x bin/zsign-musl
+          file bin/zsign-musl
+          bin/zsign-musl -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-linux-musl-static
+          path: bin/zsign-musl
+
+  build-linux-armv7:
+    name: Build Linux (armv7)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install cross-compiler and deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-arm-linux-gnueabihf
+          sudo dpkg --add-architecture armhf
+          sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
+          echo "deb [arch=armhf] http://ports.ubuntu.com/ jammy main restricted universe" | sudo tee -a /etc/apt/sources.list
+          echo "deb [arch=armhf] http://ports.ubuntu.com/ jammy-updates main restricted universe" | sudo tee -a /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev:armhf
+
+      - name: build
+        run: |
+          VER=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          fi
+          VF=""
+          [ -n "$VER" ] && VF="-DZSIGN_VERSION=$VER"
+          mkdir -p bin
+          for f in src/third-party/zlib/*.c; do arm-linux-gnueabihf-gcc -O3 -Wno-unused-result -I./src/third-party/zlib -c "$f" -o "$(basename "$f" .c).o"; done
+          arm-linux-gnueabihf-gcc -O3 -Wno-unused-result -I./src -I./src/third-party/zlib -c src/third-party/minizip/ioapi.c -o ioapi.o
+          arm-linux-gnueabihf-gcc -O3 -Wno-unused-result -I./src -I./src/third-party/zlib -c src/third-party/minizip/zip.c -o zip.o
+          arm-linux-gnueabihf-gcc -O3 -Wno-unused-result -I./src -I./src/third-party/zlib -c src/third-party/minizip/unzip.c -o unzip.o
+          arm-linux-gnueabihf-g++ -std=c++11 -O3 -Wno-unused-result $VF \
+            -I./src -I./src/common -I./src/third-party/zlib \
+            $(find src -name "*.cpp") \
+            *.o \
+            -L/usr/lib/arm-linux-gnueabihf \
+            -lssl -lcrypto \
+            -o bin/zsign
+
+      - name: verify arch
+        run: file bin/zsign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-linux-armv7
+          path: bin/zsign
+
+  build-freebsd:
+    name: Build FreeBSD (x86_64)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build on freebsd
+        uses: vmactions/freebsd-vm@v1
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        with:
+          usesh: true
+          envs: 'TAG_NAME'
+          prepare: |
+            pkg install -y openssl pkgconf gmake
+          run: |
+            VER=""
+            case "$TAG_NAME" in
+              v*) VER=$(echo "$TAG_NAME" | sed 's/^v//') ;;
+            esac
+            cd build/linux
+            gmake clean
+            gmake CXX=c++ VERSION="$VER" -j$(sysctl -n hw.ncpu)
+            strip ../../bin/zsign
+            ../../bin/zsign -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-freebsd-x86_64
+          path: bin/zsign
+
+  create-release:
+    name: Create Release
+    needs: [build-linux, build-macos, build-windows, build-android, build-docker, build-linux-musl, build-linux-armv7, build-freebsd]
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: package
+        run: |
+          mkdir -p releases
+          cd artifacts
+          for dir in zsign-linux-x86_64 zsign-linux-aarch64 zsign-linux-armv7 zsign-android-armeabi-v7a zsign-android-arm64-v8a zsign-freebsd-x86_64; do
+            [ -d "$dir" ] && chmod +x $dir/zsign && tar -czf ../releases/${dir}.tar.gz -C $dir zsign
+          done
+          [ -d zsign-linux-musl-static ] && chmod +x zsign-linux-musl-static/zsign-musl && tar -czf ../releases/zsign-linux-musl-static.tar.gz -C zsign-linux-musl-static zsign-musl
+          [ -d zsign-macos-arm64 ] && chmod +x zsign-macos-arm64/zsign && tar -czf ../releases/zsign-macos-arm64.tar.gz -C zsign-macos-arm64 zsign
+          [ -d zsign-windows-x64 ] && (cd zsign-windows-x64 && zip ../../releases/zsign-windows-x64.zip zsign.exe)
+          [ -f zsign-docker/zsign-docker.tar.gz ] && cp zsign-docker/zsign-docker.tar.gz ../releases/
+          cd ..
+          ls -lh releases/
+
+      - name: generate checksums
+        run: |
+          cd releases
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: zsign ${{ github.ref_name }}
+          files: releases/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}

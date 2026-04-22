@@ -3,6 +3,7 @@
 #include "mach-o.h"
 #include "openssl.h"
 #include "signing.h"
+#include <openssl/sha.h>
 
 void ZSign::_DERLength(string& strBlob, uint64_t uLength)
 {
@@ -136,60 +137,119 @@ bool ZSign::SlotParseRequirements(uint8_t* pSlotBase, CS_BlobIndex* pbi)
 bool ZSign::SlotBuildRequirements(const string& strBundleID, const string& strSubjectCN, string& strOutput)
 {
 	strOutput.clear();
-	if (strBundleID.empty() || strSubjectCN.empty()) { //ldid
-		uint8_t ldid[] = { 0xfa, 0xde, 0x0c, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00 };
-		strOutput.append((const char*)ldid, sizeof(ldid));
+
+	// Empty requirement set (ldid-style: magic + length=12 + count=0)
+	if (strBundleID.empty() || strSubjectCN.empty()) {
+		uint32_t magic = BE((uint32_t)CSMAGIC_REQUIREMENTS);
+		uint32_t length = BE((uint32_t)12);
+		uint32_t count = 0;
+		strOutput.append((const char*)&magic, 4);
+		strOutput.append((const char*)&length, 4);
+		strOutput.append((const char*)&count, 4);
 		return true;
 	}
 
-	string strPaddedBundleID = strBundleID;
-	strPaddedBundleID.append(((strBundleID.size() % 4) ? (4 - (strBundleID.size() % 4)) : 0), 0);
+	// Helper: append a uint32 in big-endian
+	auto appendBE32 = [&strOutput](uint32_t val) {
+		uint32_t be = BE(val);
+		strOutput.append((const char*)&be, 4);
+	};
 
-	string strPaddedSubjectID = strSubjectCN;
-	strPaddedSubjectID.append(((strSubjectCN.size() % 4) ? (4 - (strSubjectCN.size() % 4)) : 0), 0);
+	// Helper: append a padded string (uint32 BE length + data + zero-pad to 4-byte alignment)
+	auto appendPaddedString = [&strOutput, &appendBE32](const string& str) {
+		appendBE32((uint32_t)str.size());
+		strOutput.append(str.data(), str.size());
+		size_t pad = (4 - (str.size() % 4)) % 4;
+		if (pad > 0) strOutput.append(pad, '\0');
+	};
 
-	uint8_t magic1[] = { 0xfa, 0xde, 0x0c, 0x01 };
-	uint32_t uLength1 = 0;
-	uint8_t pack1[] = { 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x14 };
-	uint8_t magic2[] = { 0xfa, 0xde, 0x0c, 0x00 };
-	uint32_t uLength2 = 0;
-	uint8_t pack2[] = { 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x02 };
-	uint32_t uBundldIDLength = (uint32_t)strBundleID.size();
-	//string strPaddedBundleID
-	uint8_t pack3[] = { 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x0b,
-						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x2e,
-						0x43, 0x4e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
-	uint32_t uSubjectCNLength = (uint32_t)strSubjectCN.size();
-	//string strPaddedSubjectID
-	uint8_t pack4[] = { 0x00, 0x00, 0x00, 0x0e, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0a, 0x2a, 0x86, 0x48, 0x86,
-						0xf7, 0x63, 0x64, 0x06, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	// Apple WWDR intermediate marker OID: 1.2.840.113635.100.6.2.1
+	static const uint8_t kAppleWWDROID[] = { 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x63, 0x64, 0x06, 0x02, 0x01 };
 
-	uLength2 += sizeof(magic2) + sizeof(uLength2) + sizeof(pack2);
-	uLength2 += sizeof(uBundldIDLength) + (uint32_t)strPaddedBundleID.size();
-	uLength2 += sizeof(pack3);
-	uLength2 += sizeof(uSubjectCNLength) + (uint32_t)strPaddedSubjectID.size();
-	uLength2 += sizeof(pack4);
+	// ── Build the inner requirement expression blob (CSMAGIC_REQUIREMENT) ──
+	// Generates the designated requirement equivalent to:
+	//   identifier "<bundleID>" and anchor apple generic
+	//     and certificate leaf[subject.CN] = "<subjectCN>"
+	//     and certificate 1[field.1.2.840.113635.100.6.2.1] /* exists */
+	string strExpr;
+	auto appendExprBE32 = [&strExpr](uint32_t val) {
+		uint32_t be = BE(val);
+		strExpr.append((const char*)&be, 4);
+	};
 
-	uLength1 += sizeof(magic1) + sizeof(uLength1) + sizeof(pack1);
-	uLength1 += uLength2;
+	// exprForm = 1 (expression follows)
+	appendExprBE32(kReqOpTrue);
 
-	uLength1 = BE(uLength1);
-	uLength2 = BE(uLength2);
-	uBundldIDLength = BE(uBundldIDLength);
-	uSubjectCNLength = BE(uSubjectCNLength);
+	// opAnd( opIdent(bundleID), opAnd( opAppleGenericAnchor, opAnd( opCertField(leaf, "subject.CN", matchEqual, subjectCN), opCertGeneric(1, wwdrOID, matchExists) ) ) )
 
-	strOutput.append((const char*)magic1, sizeof(magic1));
-	strOutput.append((const char*)&uLength1, sizeof(uLength1));
-	strOutput.append((const char*)pack1, sizeof(pack1));
-	strOutput.append((const char*)magic2, sizeof(magic2));
-	strOutput.append((const char*)&uLength2, sizeof(uLength2));
-	strOutput.append((const char*)pack2, sizeof(pack2));
-	strOutput.append((const char*)&uBundldIDLength, sizeof(uBundldIDLength));
-	strOutput.append(strPaddedBundleID.data(), strPaddedBundleID.size());
-	strOutput.append((const char*)pack3, sizeof(pack3));
-	strOutput.append((const char*)&uSubjectCNLength, sizeof(uSubjectCNLength));
-	strOutput.append(strPaddedSubjectID.data(), strPaddedSubjectID.size());
-	strOutput.append((const char*)pack4, sizeof(pack4));
+	// opAnd #1
+	appendExprBE32(kReqOpAnd);
+	// opIdent + bundleID
+	appendExprBE32(kReqOpIdent);
+	{ // padded bundleID
+		uint32_t len = BE((uint32_t)strBundleID.size());
+		strExpr.append((const char*)&len, 4);
+		strExpr.append(strBundleID.data(), strBundleID.size());
+		size_t pad = (4 - (strBundleID.size() % 4)) % 4;
+		if (pad > 0) strExpr.append(pad, '\0');
+	}
+
+	// opAnd #2
+	appendExprBE32(kReqOpAnd);
+	// opAppleGenericAnchor
+	appendExprBE32(kReqOpAppleGenericAnchor);
+
+	// opAnd #3
+	appendExprBE32(kReqOpAnd);
+	// opCertField: certificate leaf[subject.CN] = "<subjectCN>"
+	appendExprBE32(kReqOpCertField);
+	appendExprBE32(0); // slot 0 = leaf certificate
+	{ // "subject.CN" padded
+		const char kSubjectCN[] = "subject.CN";
+		uint32_t len = BE((uint32_t)(sizeof(kSubjectCN) - 1));
+		strExpr.append((const char*)&len, 4);
+		strExpr.append(kSubjectCN, sizeof(kSubjectCN) - 1);
+		size_t pad = (4 - ((sizeof(kSubjectCN) - 1) % 4)) % 4;
+		if (pad > 0) strExpr.append(pad, '\0');
+	}
+	appendExprBE32(kReqMatchEqual);
+	{ // padded subjectCN
+		uint32_t len = BE((uint32_t)strSubjectCN.size());
+		strExpr.append((const char*)&len, 4);
+		strExpr.append(strSubjectCN.data(), strSubjectCN.size());
+		size_t pad = (4 - (strSubjectCN.size() % 4)) % 4;
+		if (pad > 0) strExpr.append(pad, '\0');
+	}
+
+	// opCertGeneric: certificate 1[field.1.2.840.113635.100.6.2.1] /* exists */
+	appendExprBE32(kReqOpCertGeneric);
+	appendExprBE32(1); // slot 1 = intermediate certificate
+	{ // WWDR OID padded
+		uint32_t len = BE((uint32_t)sizeof(kAppleWWDROID));
+		strExpr.append((const char*)&len, 4);
+		strExpr.append((const char*)kAppleWWDROID, sizeof(kAppleWWDROID));
+		size_t pad = (4 - (sizeof(kAppleWWDROID) % 4)) % 4;
+		if (pad > 0) strExpr.append(pad, '\0');
+	}
+	appendExprBE32(kReqMatchExists);
+
+	// ── Build the outer requirements vector (CSMAGIC_REQUIREMENTS) ──
+	// Outer header: magic(4) + length(4) + count(4) + BlobIndex[type(4) + offset(4)] = 20 bytes
+	uint32_t reqBlobLen = 8 + (uint32_t)strExpr.size(); // inner magic + inner length + expr
+	uint32_t outerHeaderLen = 20;
+	uint32_t totalLen = outerHeaderLen + reqBlobLen;
+
+	// Outer: CSMAGIC_REQUIREMENTS header
+	appendBE32(CSMAGIC_REQUIREMENTS);
+	appendBE32(totalLen);
+	appendBE32(1); // count = 1
+	appendBE32(kSecDesignatedRequirementType); // type = 3
+	appendBE32(outerHeaderLen); // offset to inner blob
+
+	// Inner: CSMAGIC_REQUIREMENT blob
+	appendBE32(CSMAGIC_REQUIREMENT);
+	appendBE32(reqBlobLen);
+	strOutput.append(strExpr.data(), strExpr.size());
 
 	return true;
 }
@@ -440,7 +500,7 @@ bool ZSign::SlotBuildCodeDirectory(bool bAlternate,
 		arrSpecialSlots.erase(arrSpecialSlots.begin(), itLastUsedSpecialSlot);
 	}
 
-	uint32_t uPageSize = (uint32_t)pow(2, cdHeader.pageSize);
+	uint32_t uPageSize = 1u << cdHeader.pageSize;
 	uint32_t uPages = uCodeLength / uPageSize;
 	uint32_t uRemain = uCodeLength % uPageSize;
 	uint32_t uCodeSlots = uPages + (uRemain > 0 ? 1 : 0);
@@ -468,6 +528,7 @@ bool ZSign::SlotBuildCodeDirectory(bool bAlternate,
 	uint32_t uCodeSlotsLength = uCodeSlots * cdHeader.hashSize;
 
 	uint32_t uSlotLength = uHeaderLength + uBundleIDLength + uSpecialSlotsLength + uCodeSlotsLength;
+	strOutput.reserve(uSlotLength + uTeamIDLength); // pre-allocate to avoid reallocations
 	if (uVersion >= 0x20100) {
 		//todo
 	}
@@ -508,23 +569,24 @@ bool ZSign::SlotBuildCodeDirectory(bool bAlternate,
 	if (NULL != pCodeSlotsData && (uCodeSlotsDataLength == uCodeSlots * cdHeader.hashSize)) { //use exists
 		strOutput.append((const char*)pCodeSlotsData, uCodeSlotsDataLength);
 	} else {
+		uint8_t hash[32]; // large enough for both SHA1 (20) and SHA256 (32)
 		for (uint32_t i = 0; i < uPages; i++) {
-			string strSHASum;
 			if (1 == cdHeader.hashType) {
-				ZSHA::SHA1(pCodeBase + uPageSize * i, uPageSize, strSHASum);
-			} else  {
-				ZSHA::SHA256(pCodeBase + uPageSize * i, uPageSize, strSHASum);
-			} 
-			strOutput.append(strSHASum.data(), strSHASum.size());
+				::SHA1(pCodeBase + uPageSize * i, uPageSize, hash);
+				strOutput.append((const char*)hash, 20);
+			} else {
+				::SHA256(pCodeBase + uPageSize * i, uPageSize, hash);
+				strOutput.append((const char*)hash, 32);
+			}
 		}
 		if (uRemain > 0) {
-			string strSHASum;
 			if (1 == cdHeader.hashType) {
-				ZSHA::SHA1(pCodeBase + uPageSize * uPages, uRemain, strSHASum);
+				::SHA1(pCodeBase + uPageSize * uPages, uRemain, hash);
+				strOutput.append((const char*)hash, 20);
 			} else {
-				ZSHA::SHA256(pCodeBase + uPageSize * uPages, uRemain, strSHASum);
+				::SHA256(pCodeBase + uPageSize * uPages, uRemain, hash);
+				strOutput.append((const char*)hash, 32);
 			}
-			strOutput.append(strSHASum.data(), strSHASum.size());
 		}
 	}
 
