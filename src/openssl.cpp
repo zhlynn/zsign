@@ -851,6 +851,9 @@ bool ZSignAsset::Init(
 			m_strTeamId = jvProv["TeamIdentifier"][0].as_cstr();
 			if (m_strEntitleData.empty()) {
 				jvProv["Entitlements"].style_write_plist(m_strEntitleData);
+				ZLog::PrintV(">>> Using entitlements from provisioning profile.\n");
+			} else {
+				ZLog::PrintV(">>> Using entitlements file: %s\n", strEntitleFile.c_str());
 			}
 		}
 	}
