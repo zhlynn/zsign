@@ -40,6 +40,7 @@ const struct option options[] = {
 	{"weak", no_argument, NULL, 'w'},
 	{"temp_folder", required_argument, NULL, 't'},
 	{"sha256_only", no_argument, NULL, '2'},
+	{"legacy_sha1", no_argument, NULL, 'L'},
 	{"install", no_argument, NULL, 'i'},
 	{"check", no_argument, NULL, 'C'},
 	{"quiet", no_argument, NULL, 'q'},
@@ -77,7 +78,8 @@ int usage()
 	ZLog::Print("-w, --weak\t\tInject dylib as LC_LOAD_WEAK_DYLIB.\n");
 	ZLog::Print("-i, --install\t\tInstall ipa file using ideviceinstaller command for test.\n");
 	ZLog::Print("-t, --temp_folder\tPath to temporary folder for intermediate files.\n");
-	ZLog::Print("-2, --sha256_only\tSerialize a single code directory that uses SHA256.\n");
+	ZLog::Print("-2, --sha256_only\t(Deprecated, now the default.) Kept for backward compatibility.\n");
+	ZLog::Print("-L, --legacy_sha1\tEmit a dual SHA1+SHA256 CodeDirectory for iOS <= 10 compatibility.\n");
 	ZLog::Print("-C, --check\t\tCheck certificate validity and OCSP revocation status.\n");
 	ZLog::Print("-q, --quiet\t\tQuiet operation.\n");
 	ZLog::Print("-x, --metadata\t\tExtract metadata and icon to the specified directory.\n");
@@ -102,7 +104,7 @@ int main(int argc, char* argv[])
 	bool bInstall = false;
 	bool bWeakInject = false;
 	bool bAdhoc = false;
-	bool bSHA256Only = false;
+	bool bSHA256Only = true;
 	bool bCheckSignature = false;
 	bool bRemoveProvision = false;
 	bool bEnableDocuments = false;
@@ -129,7 +131,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2hiqwCRSEWUc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2LhiqwCRSEWUc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -188,7 +190,11 @@ int main(int argc, char* argv[])
 			strTempFolder = ZFile::GetFullPath(optarg);
 			break;
 		case '2':
+			// Kept for backward compatibility; SHA256-only is the default now.
 			bSHA256Only = true;
+			break;
+		case 'L':
+			bSHA256Only = false;
 			break;
 		case 'C':
 			bCheckSignature = true;

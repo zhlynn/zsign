@@ -379,14 +379,27 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 
 	uint64_t uExecSegFlags = 0;
 	if (MH_EXECUTE == m_uFileType) {
-		if (pSignAsset->m_bAdhoc || pSignAsset->m_bSingleBinary) {
-			uExecSegFlags = CS_EXECSEG_MAIN_BINARY;
-		}
+		// MAIN_BINARY must be set on the main executable for any signature flavour
+		// (ad-hoc, single-binary, or full CMS). Without it, codesign --verify on
+		// macOS rejects the signature as "invalid".
+		uExecSegFlags = CS_EXECSEG_MAIN_BINARY;
 	}
 
-	if (NULL != strstr(strEntitlementsSlot.data() + 8, "<key>get-task-allow</key>")) {
-		// TODO: Check if get-task-allow is actually set to true
-		uExecSegFlags |= CS_EXECSEG_MAIN_BINARY | CS_EXECSEG_ALLOW_UNSIGNED;
+	// ALLOW_UNSIGNED is a development-only flag. It must be set *only* when
+	// get-task-allow is actually true (debug build), not merely present in
+	// the entitlements plist. Distribution profiles include
+	// <key>get-task-allow</key><false/> and must keep this flag cleared — Apple
+	// codesign never sets ALLOW_UNSIGNED for such signatures.
+	if (!strEntitlementsSlot.empty()) {
+		const char* pEnt = strEntitlementsSlot.data() + 8; // skip blob header
+		const char* pKey = strstr(pEnt, "<key>get-task-allow</key>");
+		if (NULL != pKey) {
+			const char* pTrue  = strstr(pKey, "<true/>");
+			const char* pFalse = strstr(pKey, "<false/>");
+			if (NULL != pTrue && (NULL == pFalse || pTrue < pFalse)) {
+				uExecSegFlags |= CS_EXECSEG_ALLOW_UNSIGNED;
+			}
+		}
 	}
 
 	string strCodeDirectorySlot;
