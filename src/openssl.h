@@ -56,11 +56,18 @@ public:
 private:
 	void*	m_evpPKey;
 	void*	m_x509Cert;
+	void*	m_caCerts; // STACK_OF(X509)* CA chain recovered from the input p12, if any
 
 public:
 	static const char* s_szAppleDevCACert;
 	static const char* s_szAppleRootCACert;
 	static const char* s_szAppleDevCACertG3;
+	static const char* s_szAppleDevCACertG2;
+	static const char* s_szAppleDevCACertG4;
+	static const char* s_szAppleDevCACertG5;
+	static const char* s_szAppleDevCACertG6;
+	static const char* s_szAppleDevCACertG7;
+	static const char* s_szAppleDevCACertG8;
 
 public:
 	class OpenSSLInit
