@@ -216,7 +216,6 @@ const char* ZSignAsset::s_szAppleDevCACertG8 = ""
 "j8OGsPVMH2gQ\n"
 "-----END CERTIFICATE-----\n";
 
-
 const char* ZSignAsset::s_szAppleRootCACert = ""
 "-----BEGIN CERTIFICATE-----\n"
 "MIIEuzCCA6OgAwIBAgIBAjANBgkqhkiG9w0BAQUFADBiMQswCQYDVQQGEwJVUzET\n"
@@ -245,6 +244,23 @@ const char* ZSignAsset::s_szAppleRootCACert = ""
 "xhtbCS+SsvhESPBgOJ4V9T0mZyCKM2r3DYLP3uujL/lTaltkwGMzd/c6ByxW69oP\n"
 "IQ7aunMZT7XZNn/Bh1XZp5m5MkL72NVxnn6hUrcbvZNCJBIqxw8dtk2cXmPIS4AX\n"
 "UKqK1drk/NAJBzewdXUh\n"
+"-----END CERTIFICATE-----\n";
+
+const char* ZSignAsset::s_szAppleRootCACertG3 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIICQzCCAcmgAwIBAgIILcX8iNLFS5UwCgYIKoZIzj0EAwMwZzEbMBkGA1UEAwwS\n"
+"QXBwbGUgUm9vdCBDQSAtIEczMSYwJAYDVQQLDB1BcHBsZSBDZXJ0aWZpY2F0aW9u\n"
+"IEF1dGhvcml0eTETMBEGA1UECgwKQXBwbGUgSW5jLjELMAkGA1UEBhMCVVMwHhcN\n"
+"MTQwNDMwMTgxOTA2WhcNMzkwNDMwMTgxOTA2WjBnMRswGQYDVQQDDBJBcHBsZSBS\n"
+"b290IENBIC0gRzMxJjAkBgNVBAsMHUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9y\n"
+"aXR5MRMwEQYDVQQKDApBcHBsZSBJbmMuMQswCQYDVQQGEwJVUzB2MBAGByqGSM49\n"
+"AgEGBSuBBAAiA2IABJjpLz1AcqTtkyJygRMc3RCV8cWjTnHcFBbZDuWmBSp3ZHtf\n"
+"TjjTuxxEtX/1H7YyYl3J6YRbTzBPEVoA/VhYDKX1DyxNB0cTddqXl5dvMVztK517\n"
+"IDvYuVTZXpmkOlEKMaNCMEAwHQYDVR0OBBYEFLuw3qFYM4iapIqZ3r6966/ayySr\n"
+"MA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMDA2gA\n"
+"MGUCMQCD6cHEFl4aXTQY2e3v9GwOAEZLuN+yRhHFD/3meoyhpmvOwgPUnPWTxnS4\n"
+"at+qIxUCMG1mihDK1A3UT82NQz60imOlM27jbdoXt2QfyFMm+YhidDkLF1vLUagM\n"
+"6BgD56KyKA==\n"
 "-----END CERTIFICATE-----\n";
 
 ZSignAsset::OpenSSLInit::OpenSSLInit()
@@ -291,6 +307,50 @@ void* ZSignAsset::GenerateASN1Type(const string& value)
 	return ret;
 }
 
+const char* ZSignAsset::WWDRIntermediatePEM(unsigned long uIssuerHash)
+{
+	switch (uIssuerHash) {
+		case 0x817d2f7a: return s_szAppleDevCACert; //G1
+		case 0x975904ef: return s_szAppleDevCACertG2;
+		case 0x9b16b75c: return s_szAppleDevCACertG3;
+		case 0x1eaac8b7: return s_szAppleDevCACertG4;
+		case 0x12dfbd5d: return s_szAppleDevCACertG5;
+		case 0xf8ecc621: return s_szAppleDevCACertG6;
+		case 0xdbc90301: return s_szAppleDevCACertG7; //expired 2023-11; leaves it issued are expired too
+		case 0x3da0a3ad: return s_szAppleDevCACertG8; //expired 2025-01; leaves it issued are expired too
+	}
+	return NULL;
+}
+
+// Parses a PEM certificate and appends it to certs, which takes ownership.
+static bool AppendPEMCert(STACK_OF(X509)* certs, const char* szPEM)
+{
+	BIO* bio = BIO_new_mem_buf(szPEM, (int)strlen(szPEM));
+	if (!bio) {
+		return false;
+	}
+	X509* cert = PEM_read_bio_X509(bio, NULL, 0, NULL);
+	BIO_free(bio);
+	if (!cert) {
+		return false;
+	}
+	if (!sk_X509_push(certs, cert)) {
+		X509_free(cert);
+		return false;
+	}
+	return true;
+}
+
+static bool StackContainsIssuerOf(STACK_OF(X509)* certs, X509* cert)
+{
+	for (int i = 0; i < sk_X509_num(certs); i++) {
+		if (X509_V_OK == X509_check_issued(sk_X509_value(certs, i), cert)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHashData, const string& strCDHashesPlist, const string& strCodeDirectorySlotSHA1, const string& strAltnateCodeDirectorySlot256, string& strCMSOutput)
 {
 	if (!pscert || !pspkey) {
@@ -305,74 +365,64 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 		return CMSError();
 	}
 
+	// Prefer the CA chain shipped inside the input p12, but only when it actually
+	// contains the leaf's issuer; a p12 can carry an incomplete or unrelated chain
+	// (e.g. a root-only export), which must not shadow the embedded intermediates.
 	STACK_OF(X509)* caCerts = (STACK_OF(X509)*)m_caCerts;
-	if (NULL != caCerts && sk_X509_num(caCerts) > 0) {
-		// The input p12 carried its own CA chain; embed that instead of guessing
-		// the intermediate from the issuer hash.
+	if (NULL != caCerts && StackContainsIssuerOf(caCerts, scert)) {
 		for (int i = 0; i < sk_X509_num(caCerts); i++) {
-			if (!sk_X509_push(otherCerts, sk_X509_value(caCerts, i))) {
+			X509* cert = sk_X509_value(caCerts, i);
+			if (!X509_up_ref(cert)) {
+				return CMSError();
+			}
+			if (!sk_X509_push(otherCerts, cert)) {
+				X509_free(cert);
 				return CMSError();
 			}
 		}
 	} else {
-		// No chain in the input; fall back to the embedded WWDR intermediates,
-		// selected by X509_issuer_name_hash of the signing certificate.
-		static const struct {
-			unsigned long uIssuerHash;
-			const char* szCertPEM;
-		} arrWWDRCerts[] = {
-			{ 0x817d2f7a, s_szAppleDevCACert },   //G1
-			{ 0x975904ef, s_szAppleDevCACertG2 },
-			{ 0x9b16b75c, s_szAppleDevCACertG3 },
-			{ 0x1eaac8b7, s_szAppleDevCACertG4 },
-			{ 0x12dfbd5d, s_szAppleDevCACertG5 },
-			{ 0xf8ecc621, s_szAppleDevCACertG6 },
-			{ 0xdbc90301, s_szAppleDevCACertG7 },
-			{ 0x3da0a3ad, s_szAppleDevCACertG8 },
-		};
-
-		const char* szIssuerCert = NULL;
+		// Fall back to the embedded WWDR intermediate matching the leaf's issuer.
 		unsigned long issuerHash = X509_issuer_name_hash(scert);
-		for (size_t i = 0; i < sizeof(arrWWDRCerts) / sizeof(arrWWDRCerts[0]); i++) {
-			if (arrWWDRCerts[i].uIssuerHash == issuerHash) {
-				szIssuerCert = arrWWDRCerts[i].szCertPEM;
-				break;
-			}
-		}
+		const char* szIssuerCert = WWDRIntermediatePEM(issuerHash);
 		if (NULL == szIssuerCert) {
-			ZLog::ErrorV(">>> Unknown issuer hash 0x%08lx! No embedded WWDR intermediate matches and the p12 carries no CA chain.\n", issuerHash);
+			ZLog::ErrorV(">>> Unknown issuer hash 0x%08lx! No embedded WWDR intermediate matches and the p12 carries no usable CA chain.\n", issuerHash);
 			return false;
 		}
-
-		BIO* bother1 = BIO_new_mem_buf(szIssuerCert, (int)strlen(szIssuerCert));
-		if (!bother1) {
-			return CMSError();
-		}
-
-		X509* ocert1 = PEM_read_bio_X509(bother1, NULL, 0, NULL);
-		if (!ocert1) {
-			return CMSError();
-		}
-
-		if (!sk_X509_push(otherCerts, ocert1)) {
+		if (!AppendPEMCert(otherCerts, szIssuerCert)) {
 			return CMSError();
 		}
 	}
 
-	// Apple Root CA is the trust anchor for every WWDR generation; append it so the
-	// embedded chain terminates at the root, matching Apple codesign output.
-	BIO* bother2 = BIO_new_mem_buf(s_szAppleRootCACert, (int)strlen(s_szAppleRootCACert));
-	if (!bother2) {
-		return CMSError();
-	}
+	// Terminate the chain with the Apple root that actually issued one of its
+	// members (WWDR G2/G6 chain to Apple Root CA - G3, the others to Apple Root
+	// CA), skipping roots already present, to match Apple codesign output.
+	static const char* arrRootPEMs[] = { s_szAppleRootCACert, s_szAppleRootCACertG3 };
+	for (size_t r = 0; r < sizeof(arrRootPEMs) / sizeof(arrRootPEMs[0]); r++) {
+		BIO* bio = BIO_new_mem_buf(arrRootPEMs[r], (int)strlen(arrRootPEMs[r]));
+		X509* root = (NULL != bio) ? PEM_read_bio_X509(bio, NULL, 0, NULL) : NULL;
+		BIO_free(bio);
+		if (!root) {
+			return CMSError();
+		}
 
-	X509* ocert2 = PEM_read_bio_X509(bother2, NULL, 0, NULL);
-	if (!ocert2) {
-		return CMSError();
-	}
-
-	if (!sk_X509_push(otherCerts, ocert2)) {
-		return CMSError();
+		bool bIssuedChain = false;
+		bool bPresent = false;
+		for (int i = 0; i < sk_X509_num(otherCerts); i++) {
+			X509* cert = sk_X509_value(otherCerts, i);
+			if (0 == X509_cmp(root, cert)) {
+				bPresent = true;
+			} else if (X509_V_OK == X509_check_issued(root, cert)) {
+				bIssuedChain = true;
+			}
+		}
+		if (bIssuedChain && !bPresent) {
+			if (!sk_X509_push(otherCerts, root)) {
+				X509_free(root);
+				return CMSError();
+			}
+		} else {
+			X509_free(root);
+		}
 	}
 
 	BIO* in = BIO_new_mem_buf(strCDHashData.c_str(), (int)strCDHashData.size());
@@ -453,6 +503,7 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 	strCMSOutput.clear();
 	strCMSOutput.append(bptr->data, bptr->length);
 	ASN1_TYPE_free(type_256);
+	sk_X509_pop_free(otherCerts, X509_free); // CMS_sign holds its own references
 	return (!strCMSOutput.empty());
 }
 
