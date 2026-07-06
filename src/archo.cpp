@@ -405,7 +405,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 	string strCodeDirectorySlot;
 	string strAltnateCodeDirectorySlot;
 	if (!pSignAsset->m_bSHA256Only) {
-		ZSign::SlotBuildCodeDirectory(false,
+		if (!ZSign::SlotBuildCodeDirectory(false,
 			m_pBase,
 			m_uCodeLength,
 			pCodeSlots1Data,
@@ -421,10 +421,13 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 			strDerEntitlementsSlotSHA1,
 			IsExecute(),
 			pSignAsset->m_bAdhoc,
-			strCodeDirectorySlot);
+			strCodeDirectorySlot)) {
+			ZLog::Error(">>> Build SHA1 CodeDirectory failed!\n");
+			return false;
+		}
 	}
 
-	ZSign::SlotBuildCodeDirectory(true,
+	if (!ZSign::SlotBuildCodeDirectory(true,
 		m_pBase,
 		m_uCodeLength,
 		pCodeSlots256Data,
@@ -440,7 +443,10 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 		strDerEntitlementsSlotSHA256,
 		IsExecute(),
 		pSignAsset->m_bAdhoc,
-		strAltnateCodeDirectorySlot);
+		strAltnateCodeDirectorySlot)) {
+		ZLog::Error(">>> Build SHA256 CodeDirectory failed!\n");
+		return false;
+	}
 	if (pSignAsset->m_bSHA256Only) {
 		// SHA256-based code directory is usually the alternate; however, make it the primary (and only)
 		// code directory if `m_bUseSHA256Only == true`.
@@ -450,7 +456,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 	string strCMSSignatureSlot;
 	if (!pSignAsset->m_bAdhoc) { //adhoc remove cms signature slot
 		if (!ZSign::SlotBuildCMSSignature(pSignAsset, strCodeDirectorySlot, strAltnateCodeDirectorySlot, strCMSSignatureSlot)) {
-			ZLog::Error(">>> Build CMS signature failed! The signature would be silently unusable, aborting.\n");
+			ZLog::Error(">>> Build CMS signature failed!\n");
 			return false;
 		}
 	}
@@ -580,9 +586,6 @@ bool ZArchO::Sign(ZSignAsset* pSignAsset,
 
 	string strCodeSignBlob;
 	if (!BuildCodeSignature(pSignAsset, bForce, strBundleId, strInfoSHA1, strInfoSHA256, strCodeResourcesSHA1, strCodeResourcesSHA256, strCodeSignBlob)) {
-		return false;
-	}
-	if (strCodeSignBlob.empty()) {
 		ZLog::Error(">>> Build CodeSignature failed!\n");
 		return false;
 	}
