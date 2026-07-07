@@ -230,7 +230,7 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 
 	ASN1_TYPE* type_256 = (ASN1_TYPE*)GenerateASN1Type(sha256);
 	X509_ATTRIBUTE_set1_data(attr, V_ASN1_SEQUENCE,
-		type_256->value.asn1_string->data, type_256->value.asn1_string->length);
+		ASN1_STRING_get0_data(type_256->value.asn1_string), ASN1_STRING_length(type_256->value.asn1_string));
 	int addHashSHA = CMS_signed_add1_attr(si, attr);
 	if (!addHashSHA) {
 		return CMSError();
@@ -285,7 +285,7 @@ bool ZSignAsset::GetCMSContent(const string& strCMSDataInput, string& strContent
 	}
 
 	strContentOutput.clear();
-	strContentOutput.append((const char*)(*pos)->data, (*pos)->length);
+	strContentOutput.append((const char*)ASN1_STRING_get0_data(*pos), ASN1_STRING_length(*pos));
 	return (!strContentOutput.empty());
 }
 
@@ -297,25 +297,25 @@ bool ZSignAsset::GetCertSubjectCN(void* pcert, string& strSubjectCN)
 
 	X509* cert = (X509*)pcert;
 
-	X509_NAME* name = X509_get_subject_name(cert);
+	const X509_NAME* name = X509_get_subject_name(cert);
 
 	int common_name_loc = X509_NAME_get_index_by_NID(name, NID_commonName, -1);
 	if (common_name_loc < 0) {
 		return CMSError();
 	}
 
-	X509_NAME_ENTRY* common_name_entry = X509_NAME_get_entry(name, common_name_loc);
+	const X509_NAME_ENTRY* common_name_entry = X509_NAME_get_entry(name, common_name_loc);
 	if (common_name_entry == NULL) {
 		return CMSError();
 	}
 
-	ASN1_STRING* common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
+	const ASN1_STRING* common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
 	if (common_name_asn1 == NULL) {
 		return CMSError();
 	}
 
 	strSubjectCN.clear();
-	strSubjectCN.append((const char*)common_name_asn1->data, common_name_asn1->length);
+	strSubjectCN.append((const char*)ASN1_STRING_get0_data(common_name_asn1), ASN1_STRING_length(common_name_asn1));
 	return (!strSubjectCN.empty());
 }
 
@@ -432,7 +432,7 @@ bool ZSignAsset::GetCMSInfo(uint8_t * pCMSData, uint32_t uCMSLength, jvalue & jv
 	if (pos) {
 		if ((*pos)) {
 			jbase64 b64;
-			jvOutput["content"] = b64.encode((const char*)(*pos)->data, (*pos)->length);
+			jvOutput["content"] = b64.encode((const char*)ASN1_STRING_get0_data(*pos), ASN1_STRING_length(*pos));
 		}
 	}
 
@@ -460,7 +460,7 @@ bool ZSignAsset::GetCMSInfo(uint8_t * pCMSData, uint32_t uCMSLength, jvalue & jv
 				continue;
 			}
 
-			ASN1_OBJECT* obj = X509_ATTRIBUTE_get0_object(attr);
+			const ASN1_OBJECT* obj = X509_ATTRIBUTE_get0_object(attr);
 			if (!obj) {
 				continue;
 			}
@@ -469,19 +469,19 @@ bool ZSignAsset::GetCMSInfo(uint8_t * pCMSData, uint32_t uCMSLength, jvalue & jv
 			OBJ_obj2txt(txtobj, 128, obj, 1);
 
 			if (0 == strcmp("1.2.840.113549.1.9.3", txtobj)) { //V_ASN1_OBJECT
-				ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
+				const ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
 				if (NULL != av) {
 					jvOutput["attrs"]["ContentType"]["obj"] = txtobj;
 					jvOutput["attrs"]["ContentType"]["data"] = OBJ_nid2ln(OBJ_obj2nid(av->value.object));
 				}
 			} else if (0 == strcmp("1.2.840.113549.1.9.4", txtobj)) { //V_ASN1_OCTET_STRING
-				ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
+				const ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
 				if (NULL != av) {
 					static const char hex_lower[] = "0123456789abcdef";
 					string strSHASum;
-					strSHASum.reserve(av->value.octet_string->length * 2);
-					for (int m = 0; m < av->value.octet_string->length; m++) {
-						uint8_t c = (uint8_t)av->value.octet_string->data[m];
+					strSHASum.reserve(ASN1_STRING_length(av->value.octet_string) * 2);
+					for (int m = 0; m < ASN1_STRING_length(av->value.octet_string); m++) {
+						uint8_t c = (uint8_t)ASN1_STRING_get0_data(av->value.octet_string)[m];
 						strSHASum += hex_lower[c >> 4];
 						strSHASum += hex_lower[c & 0x0F];
 					}
@@ -489,7 +489,7 @@ bool ZSignAsset::GetCMSInfo(uint8_t * pCMSData, uint32_t uCMSLength, jvalue & jv
 					jvOutput["attrs"]["MessageDigest"]["data"] = strSHASum;
 				}
 			} else if (0 == strcmp("1.2.840.113549.1.9.5", txtobj)) { //V_ASN1_UTCTIME
-				ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
+				const ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
 				if (NULL != av) {
 					BIO* mem = BIO_new(BIO_s_mem());
 					ASN1_UTCTIME_print(mem, av->value.utctime);
@@ -506,13 +506,13 @@ bool ZSignAsset::GetCMSInfo(uint8_t * pCMSData, uint32_t uCMSLength, jvalue & jv
 			} else if (0 == strcmp("1.2.840.113635.100.9.2", txtobj)) { //V_ASN1_SEQUENCE
 				jvOutput["attrs"]["CDHashes2"]["obj"] = txtobj;
 				for (int m = 0; m < nCount; m++) {
-					ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, m);
+					const ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, m);
 					if (NULL != av) {
 						ASN1_STRING* s = av->value.sequence;
 
 						BIO* mem = BIO_new(BIO_s_mem());
 
-						ASN1_parse_dump(mem, s->data, s->length, 2, 0);
+						ASN1_parse_dump(mem, ASN1_STRING_get0_data(s), ASN1_STRING_length(s), 2, 0);
 						BUF_MEM* bptr = NULL;
 						BIO_get_mem_ptr(mem, &bptr);
 						BIO_set_close(mem, BIO_NOCLOSE);
@@ -533,15 +533,15 @@ bool ZSignAsset::GetCMSInfo(uint8_t * pCMSData, uint32_t uCMSLength, jvalue & jv
 					}
 				}
 			} else if (0 == strcmp("1.2.840.113635.100.9.1", txtobj)) { //V_ASN1_OCTET_STRING
-				ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
+				const ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
 				if (NULL != av) {
 					string strPList;
-					strPList.append((const char*)av->value.octet_string->data, av->value.octet_string->length);
+					strPList.append((const char*)ASN1_STRING_get0_data(av->value.octet_string), ASN1_STRING_length(av->value.octet_string));
 					jvOutput["attrs"]["CDHashes"]["obj"] = txtobj;
 					jvOutput["attrs"]["CDHashes"]["data"] = strPList;
 				}
 			} else {
-				ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
+				const ASN1_TYPE* av = X509_ATTRIBUTE_get0_type(attr, 0);
 				if (NULL != av) {
 					jvalue jvAttr;
 					jvAttr["obj"] = txtobj;
