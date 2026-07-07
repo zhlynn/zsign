@@ -130,11 +130,9 @@ static X509* LoadEmbeddedCert(const char* pem)
 
 static X509* ResolveIssuer(X509* cert)
 {
-	unsigned long issuerHash = X509_issuer_name_hash(cert);
-	if (issuerHash == 0x817d2f7a)
-		return LoadEmbeddedCert(ZSignAsset::s_szAppleDevCACert);
-	if (issuerHash == 0x9b16b75c)
-		return LoadEmbeddedCert(ZSignAsset::s_szAppleDevCACertG3);
+	const char* pem = ZSignAsset::WWDRIntermediatePEM(X509_issuer_name_hash(cert));
+	if (pem)
+		return LoadEmbeddedCert(pem);
 
 	X509* issuer = LoadEmbeddedCert(ZSignAsset::s_szAppleDevCACertG3);
 	if (issuer && X509_check_issued(issuer, cert) == X509_V_OK) return issuer;

@@ -1,5 +1,7 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -O3
+# -MMD -MP emits header dependency files so incremental builds rebuild every
+# translation unit affected by a header change (e.g. class layout changes).
+CXXFLAGS = -std=c++11 -O3 -MMD -MP
 
 ECHO := $(shell if echo -e "" | grep -q '^-e'; then echo "echo"; else echo "echo -e"; fi)
 GREEN = \033[0;32m
@@ -56,5 +58,7 @@ $(OBJDIR)/minizip/%.o: ../../src/third-party/minizip/%.c
 clean:
 	rm -rf $(OBJDIR) $(TARGET)
 	@$(ECHO) "$(GREEN)>>> Clean OK!$(NC)"
+
+-include $(OBJS:.o=.d)
 
 .PHONY: all clean

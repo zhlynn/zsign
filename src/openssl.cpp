@@ -63,6 +63,159 @@ const char* ZSignAsset::s_szAppleDevCACertG3 = ""
 "UDSdlTs=\n"
 "-----END CERTIFICATE-----\n";
 
+const char* ZSignAsset::s_szAppleDevCACertG2 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIIC9zCCAnygAwIBAgIIb+/Y9emjp+4wCgYIKoZIzj0EAwIwZzEbMBkGA1UEAwwS\n"
+"QXBwbGUgUm9vdCBDQSAtIEczMSYwJAYDVQQLDB1BcHBsZSBDZXJ0aWZpY2F0aW9u\n"
+"IEF1dGhvcml0eTETMBEGA1UECgwKQXBwbGUgSW5jLjELMAkGA1UEBhMCVVMwHhcN\n"
+"MTQwNTA2MjM0MzI0WhcNMjkwNTA2MjM0MzI0WjCBgDE0MDIGA1UEAwwrQXBwbGUg\n"
+"V29ybGR3aWRlIERldmVsb3BlciBSZWxhdGlvbnMgQ0EgLSBHMjEmMCQGA1UECwwd\n"
+"QXBwbGUgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxEzARBgNVBAoMCkFwcGxlIElu\n"
+"Yy4xCzAJBgNVBAYTAlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE3fC3BkvP\n"
+"3XMEE8RDiQOTgPte9nStQmFSWAImUxnIYyIHCVJhysTZV+9tJmiLdJGMxPmAaCj8\n"
+"CWjwENrp0C7JGqOB9zCB9DBGBggrBgEFBQcBAQQ6MDgwNgYIKwYBBQUHMAGGKmh0\n"
+"dHA6Ly9vY3NwLmFwcGxlLmNvbS9vY3NwMDQtYXBwbGVyb290Y2FnMzAdBgNVHQ4E\n"
+"FgQUhLaEzDqGYnIWWZToGqO9SN863wswDwYDVR0TAQH/BAUwAwEB/zAfBgNVHSME\n"
+"GDAWgBS7sN6hWDOImqSKmd6+veuv2sskqzA3BgNVHR8EMDAuMCygKqAohiZodHRw\n"
+"Oi8vY3JsLmFwcGxlLmNvbS9hcHBsZXJvb3RjYWczLmNybDAOBgNVHQ8BAf8EBAMC\n"
+"AQYwEAYKKoZIhvdjZAYCDwQCBQAwCgYIKoZIzj0EAwIDaQAwZgIxANmxxzHGI/ZP\n"
+"TdDZR8V9GGkRh3En02it4Jtlmr5s3z9GppAJvm6hOyywUYlBPIfSvwIxAPxkUolL\n"
+"PF2/axzCiZgvcq61m6oaCyNUd1ToFUOixRLal1BzfF7QbrJcYlDXUfE6Wg==\n"
+"-----END CERTIFICATE-----\n";
+
+const char* ZSignAsset::s_szAppleDevCACertG4 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIIEVTCCAz2gAwIBAgIUE9x3lVJx5T3GMujM/+Uh88zFztIwDQYJKoZIhvcNAQEL\n"
+"BQAwYjELMAkGA1UEBhMCVVMxEzARBgNVBAoTCkFwcGxlIEluYy4xJjAkBgNVBAsT\n"
+"HUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRYwFAYDVQQDEw1BcHBsZSBS\n"
+"b290IENBMB4XDTIwMTIxNjE5MzYwNFoXDTMwMTIxMDAwMDAwMFowdTFEMEIGA1UE\n"
+"Aww7QXBwbGUgV29ybGR3aWRlIERldmVsb3BlciBSZWxhdGlvbnMgQ2VydGlmaWNh\n"
+"dGlvbiBBdXRob3JpdHkxCzAJBgNVBAsMAkc0MRMwEQYDVQQKDApBcHBsZSBJbmMu\n"
+"MQswCQYDVQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANAf\n"
+"eKp6JzKwRl/nF3bYoJ0OKY6tPTKlxGs3yeRBkWq3eXFdDDQEYHX3rkOPR8SGHgjo\n"
+"v9Y5Ui8eZ/xx8YJtPH4GUnadLLzVQ+mxtLxAOnhRXVGhJeG+bJGdayFZGEHVD41t\n"
+"QSo5SiHgkJ9OE0/QjJoyuNdqkh4laqQyziIZhQVg3AJK8lrrd3kCfcCXVGySjnYB\n"
+"5kaP5eYq+6KwrRitbTOFOCOL6oqW7Z+uZk+jDEAnbZXQYojZQykn/e2kv1MukBVl\n"
+"PNkuYmQzHWxq3Y4hqqRfFcYw7V/mjDaSlLfcOQIA+2SM1AyB8j/VNJeHdSbCb64D\n"
+"YyEMe9QbsWLFApy9/a8CAwEAAaOB7zCB7DASBgNVHRMBAf8ECDAGAQH/AgEAMB8G\n"
+"A1UdIwQYMBaAFCvQaUeUdgn+9GuNLkCm90dNfwheMEQGCCsGAQUFBwEBBDgwNjA0\n"
+"BggrBgEFBQcwAYYoaHR0cDovL29jc3AuYXBwbGUuY29tL29jc3AwMy1hcHBsZXJv\n"
+"b3RjYTAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vY3JsLmFwcGxlLmNvbS9yb290\n"
+"LmNybDAdBgNVHQ4EFgQUW9n6HeeaGgujmXYiUIY+kchbd6gwDgYDVR0PAQH/BAQD\n"
+"AgEGMBAGCiqGSIb3Y2QGAgEEAgUAMA0GCSqGSIb3DQEBCwUAA4IBAQA/Vj2e5bbD\n"
+"eeZFIGi9v3OLLBKeAuOugCKMBB7DUshwgKj7zqew1UJEggOCTwb8O0kU+9h0UoWv\n"
+"p50h5wESA5/NQFjQAde/MoMrU1goPO6cn1R2PWQnxn6NHThNLa6B5rmluJyJlPef\n"
+"x4elUWY0GzlxOSTjh2fvpbFoe4zuPfeutnvi0v/fYcZqdUmVIkSoBPyUuAsuORFJ\n"
+"EtHlgepZAE9bPFo22noicwkJac3AfOriJP6YRLj477JxPxpd1F1+M02cHSS+APCQ\n"
+"A1iZQT0xWmJArzmoUUOSqwSonMJNsUvSq3xKX+udO7xPiEAGE/+QF4oIRynoYpgp\n"
+"pU8RBWk6z/Kf\n"
+"-----END CERTIFICATE-----\n";
+
+const char* ZSignAsset::s_szAppleDevCACertG5 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIIEVTCCAz2gAwIBAgIUO36ACu7TAqHm7NuX2cqsKJzxaZQwDQYJKoZIhvcNAQEL\n"
+"BQAwYjELMAkGA1UEBhMCVVMxEzARBgNVBAoTCkFwcGxlIEluYy4xJjAkBgNVBAsT\n"
+"HUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRYwFAYDVQQDEw1BcHBsZSBS\n"
+"b290IENBMB4XDTIwMTIxNjE5Mzg1NloXDTMwMTIxMDAwMDAwMFowdTFEMEIGA1UE\n"
+"Aww7QXBwbGUgV29ybGR3aWRlIERldmVsb3BlciBSZWxhdGlvbnMgQ2VydGlmaWNh\n"
+"dGlvbiBBdXRob3JpdHkxCzAJBgNVBAsMAkc1MRMwEQYDVQQKDApBcHBsZSBJbmMu\n"
+"MQswCQYDVQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJ9d\n"
+"2h/7+rzQSyI8x9Ym+hf39J8ePmQRZprvXr6rNL2qLCFu1h6UIYUsdMEOEGGqPGNK\n"
+"fkrjyHXWz8KcCEh7arkpsclm/ciKFtGyBDyCuoBs4v8Kcuus/jtvSL6eixFNlX2y\n"
+"e5AvAhxO/Em+12+1T754xtress3J2WYRO1rpCUVziVDUTuJoBX7adZxLAa7a489t\n"
+"dE3eU9DVGjiCOtCd410pe7GB6iknC/tgfIYS+/BiTwbnTNEf2W2e7XPaeCENnXDZ\n"
+"RleQX2eEwXN3CqhiYraucIa7dSOJrXn25qTU/YMmMgo7JJJbIKGc0S+AGJvdPAvn\n"
+"tf3sgFcPF54/K4cnu/cCAwEAAaOB7zCB7DASBgNVHRMBAf8ECDAGAQH/AgEAMB8G\n"
+"A1UdIwQYMBaAFCvQaUeUdgn+9GuNLkCm90dNfwheMEQGCCsGAQUFBwEBBDgwNjA0\n"
+"BggrBgEFBQcwAYYoaHR0cDovL29jc3AuYXBwbGUuY29tL29jc3AwMy1hcHBsZXJv\n"
+"b3RjYTAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vY3JsLmFwcGxlLmNvbS9yb290\n"
+"LmNybDAdBgNVHQ4EFgQUGYuXjUpbYXhX9KVcNRKKOQjjsHUwDgYDVR0PAQH/BAQD\n"
+"AgEGMBAGCiqGSIb3Y2QGAgEEAgUAMA0GCSqGSIb3DQEBCwUAA4IBAQBaxDWi2eYK\n"
+"nlKiAIIid81yL5D5Iq8UJcyqCkJgksK9dR3rTMoV5X5rQBBe+1tFdA3wen2Ikc7e\n"
+"Y4tCidIY30GzWJ4GCIdI3UCvI9Xt6yxg5eukfxzpnIPWlF9MYjmKTq4TjX1DuNxe\n"
+"rL4YQPLmDyxdE5Pxe2WowmhI3v+0lpsM+zI2np4NlV84CouW0hJst4sLjtc+7G8B\n"
+"qs5NRWDbhHFmYuUZZTDNiv9FU/tu+4h3Q8NIY/n3UbNyXnniVs+8u4S5OFp4rhFI\n"
+"UrsNNYuU3sx0mmj1SWCUrPKosxWGkNDMMEOG0+VwAlG0gcCol9Tq6rCMCUDvOJOy\n"
+"zSID62dDZchF\n"
+"-----END CERTIFICATE-----\n";
+
+const char* ZSignAsset::s_szAppleDevCACertG6 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIIDFjCCApygAwIBAgIUIsGhRwp0c2nvU4YSycafPTjzbNcwCgYIKoZIzj0EAwMw\n"
+"ZzEbMBkGA1UEAwwSQXBwbGUgUm9vdCBDQSAtIEczMSYwJAYDVQQLDB1BcHBsZSBD\n"
+"ZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTETMBEGA1UECgwKQXBwbGUgSW5jLjELMAkG\n"
+"A1UEBhMCVVMwHhcNMjEwMzE3MjAzNzEwWhcNMzYwMzE5MDAwMDAwWjB1MUQwQgYD\n"
+"VQQDDDtBcHBsZSBXb3JsZHdpZGUgRGV2ZWxvcGVyIFJlbGF0aW9ucyBDZXJ0aWZp\n"
+"Y2F0aW9uIEF1dGhvcml0eTELMAkGA1UECwwCRzYxEzARBgNVBAoMCkFwcGxlIElu\n"
+"Yy4xCzAJBgNVBAYTAlVTMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEbsQKC94PrlWm\n"
+"ZXnXgtxzdVJL8T0SGYngDRGpngn3N6PT8JMEb7FDi4bBmPhCnZ3/sq6PF/cGcKXW\n"
+"sL5vOteRhyJ45x3ASP7cOB+aao90fcpxSv/EZFbniAbNgZGhIhpIo4H6MIH3MBIG\n"
+"A1UdEwEB/wQIMAYBAf8CAQAwHwYDVR0jBBgwFoAUu7DeoVgziJqkipnevr3rr9rL\n"
+"JKswRgYIKwYBBQUHAQEEOjA4MDYGCCsGAQUFBzABhipodHRwOi8vb2NzcC5hcHBs\n"
+"ZS5jb20vb2NzcDAzLWFwcGxlcm9vdGNhZzMwNwYDVR0fBDAwLjAsoCqgKIYmaHR0\n"
+"cDovL2NybC5hcHBsZS5jb20vYXBwbGVyb290Y2FnMy5jcmwwHQYDVR0OBBYEFD8v\n"
+"lCNR01DJmig97bB85c+lkGKZMA4GA1UdDwEB/wQEAwIBBjAQBgoqhkiG92NkBgIB\n"
+"BAIFADAKBggqhkjOPQQDAwNoADBlAjBAXhSq5IyKogMCPtw490BaB677CaEGJXuf\n"
+"QB/EqZGd6CSjiCtOnuMTbXVXmxxcxfkCMQDTSPxarZXvNrkxU3TkUMI33yzvFVVR\n"
+"T4wxWJC994OsdcZ4+RGNsYDyR5gmdr0nDGg=\n"
+"-----END CERTIFICATE-----\n";
+
+const char* ZSignAsset::s_szAppleDevCACertG7 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIIEVTCCAz2gAwIBAgIUNBhY/wH+Bj+O8Z8f6TwBtMFG/8kwDQYJKoZIhvcNAQEF\n"
+"BQAwYjELMAkGA1UEBhMCVVMxEzARBgNVBAoTCkFwcGxlIEluYy4xJjAkBgNVBAsT\n"
+"HUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRYwFAYDVQQDEw1BcHBsZSBS\n"
+"b290IENBMB4XDTIyMTExNzIwNDA1M1oXDTIzMTExNzIwNDA1MlowdTELMAkGA1UE\n"
+"BhMCVVMxEzARBgNVBAoMCkFwcGxlIEluYy4xCzAJBgNVBAsMAkc3MUQwQgYDVQQD\n"
+"DDtBcHBsZSBXb3JsZHdpZGUgRGV2ZWxvcGVyIFJlbGF0aW9ucyBDZXJ0aWZpY2F0\n"
+"aW9uIEF1dGhvcml0eTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKyu\n"
+"0dO2irEbKJWt3lFRTD8z4U5cr7P8AtJlTyrUdGiMdRdlzyjkSAmYcVIyLBZOeI6S\n"
+"VmSp3YvN4tTHO6ISRTcCGWJkL39hxtNZIr+r+RSj7baembov8bHcMEJPtrayxnSq\n"
+"Yla77UQ2D9HlIHSTVzpdntwB/HhvaRY1w24Bwp5y1HE2sXYJer4NKpfxsF4LGxKt\n"
+"K6sH32Mt9YjpMhKiVVhDdjw9F4AfKduxqZ+rlgWdFdzd204P5xN8WisuAkH27npq\n"
+"tnNg95cZFIuVMziT2gAlNq5VWnyf+fRiBAd06R2nlVcjrCsk2mRPKHLplrAIPIgb\n"
+"FGND14mumMHyLY7jUSUCAwEAAaOB7zCB7DASBgNVHRMBAf8ECDAGAQH/AgEAMB8G\n"
+"A1UdIwQYMBaAFCvQaUeUdgn+9GuNLkCm90dNfwheMEQGCCsGAQUFBwEBBDgwNjA0\n"
+"BggrBgEFBQcwAYYoaHR0cDovL29jc3AuYXBwbGUuY29tL29jc3AwMy1hcHBsZXJv\n"
+"b3RjYTAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vY3JsLmFwcGxlLmNvbS9yb290\n"
+"LmNybDAdBgNVHQ4EFgQUXUIQbBu7x1KXTkS9Eye5OhJ3gyswDgYDVR0PAQH/BAQD\n"
+"AgEGMBAGCiqGSIb3Y2QGAgEEAgUAMA0GCSqGSIb3DQEBBQUAA4IBAQBSowgpE2W3\n"
+"tR/mNAPt9hh3vD3KJ7Vw7OxsM0v2mSWUB54hMwNq9X0KLivfCKmC3kp/4ecLSwW4\n"
+"J5hJ3cEMhteBZK6CnMRF8eqPHCIw46IlYUSJ/oV6VvByknwMRFQkt7WknybwMvlX\n"
+"nWp5bEDtDzQGBkL/2A4xZW3mLgHZBr/Fyg2uR9QFF4g86ZzkGWRtipStEdwB9uV4\n"
+"r63ocNcNXYE+RiosriShx9Lgfb8d9TZrxd6pCpqAsRFesmR+s8FXzMJsWZm39LDd\n"
+"MdpI1mqB7rKLUDUW5udccWJusPJR4qht+CrLaHPGpsQaQ0kBPqmpAIqGbIOI0lxw\n"
+"V3ra+HbMGdWw\n"
+"-----END CERTIFICATE-----\n";
+
+const char* ZSignAsset::s_szAppleDevCACertG8 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIIEVTCCAz2gAwIBAgIUVLULr3kNjX+Mr2hMVi9QaQoaul8wDQYJKoZIhvcNAQEF\n"
+"BQAwYjELMAkGA1UEBhMCVVMxEzARBgNVBAoTCkFwcGxlIEluYy4xJjAkBgNVBAsT\n"
+"HUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRYwFAYDVQQDEw1BcHBsZSBS\n"
+"b290IENBMB4XDTIzMDYyMDIzMzcxNVoXDTI1MDEyNDAwMDAwMFowdTELMAkGA1UE\n"
+"BhMCVVMxEzARBgNVBAoMCkFwcGxlIEluYy4xCzAJBgNVBAsMAkc4MUQwQgYDVQQD\n"
+"DDtBcHBsZSBXb3JsZHdpZGUgRGV2ZWxvcGVyIFJlbGF0aW9ucyBDZXJ0aWZpY2F0\n"
+"aW9uIEF1dGhvcml0eTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANBA\n"
+"ENQI+VIhY088aPfUnIICjINovLeNf4jnQk0s7yKlwonevQzXTWFQLTnkMHOl0tVo\n"
+"mjPy79kqrS4fA7r4pfFCC1cuRsbQWNNwX/eyN+9qHz6/iTnCrf71BftYljHIhyzV\n"
+"I7p1sCz1q6C68iAMTOskY2npIkDwjlhb3mR7iRtREgTgF7JZzd/x586vLDLoacHQ\n"
+"CH4dokdz0Us7/bmF3EenKIJ5KUiJAijiwewsH1uG/Ni2y3HAcwFL/AUREWwBAzRa\n"
+"9oHCXh98FA7eP2shy0/112HmhAOSvOclKZ7NWwzB2+PEOtl2V6wvOBQZyLexolVP\n"
+"X06OGVmp2v1y2rAEIQUCAwEAAaOB7zCB7DASBgNVHRMBAf8ECDAGAQH/AgEAMB8G\n"
+"A1UdIwQYMBaAFCvQaUeUdgn+9GuNLkCm90dNfwheMEQGCCsGAQUFBwEBBDgwNjA0\n"
+"BggrBgEFBQcwAYYoaHR0cDovL29jc3AuYXBwbGUuY29tL29jc3AwMy1hcHBsZXJv\n"
+"b3RjYTAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vY3JsLmFwcGxlLmNvbS9yb290\n"
+"LmNybDAdBgNVHQ4EFgQUtb28gMQM4zik9LetI7PvRM65WoUwDgYDVR0PAQH/BAQD\n"
+"AgEGMBAGCiqGSIb3Y2QGAgEEAgUAMA0GCSqGSIb3DQEBBQUAA4IBAQBMs+t6OZRK\n"
+"lWb6FjHqDYqPXUI4xgfN6MkirPwIQn5fk18xKqgiwXYZK+6ucum9Vs9JJJII980Z\n"
+"dcP5GicNDtwpjT+226VPTHLEYJGJEX4klUMiYGe83/+r5TwWF52CFE6d9HX+ULmt\n"
+"BbK4efaV1hDl9lP0zyPmdw/suEtp+OKeAjHZjtnKvmNeX+Ggac7BzW5Jo3hhrzk8\n"
+"aksKNCVk1TC1PKvdEYE5cejAw1iAERAaEdLCvFnwitk1c8DmbeTJfWIUPoICqRBp\n"
+"N3lhb/BGlD419ausY9DYXllXadG4S25d1F8TnHBOJRHcJCweFp6WWgTtRe467mdd\n"
+"j8OGsPVMH2gQ\n"
+"-----END CERTIFICATE-----\n";
+
 const char* ZSignAsset::s_szAppleRootCACert = ""
 "-----BEGIN CERTIFICATE-----\n"
 "MIIEuzCCA6OgAwIBAgIBAjANBgkqhkiG9w0BAQUFADBiMQswCQYDVQQGEwJVUzET\n"
@@ -91,6 +244,23 @@ const char* ZSignAsset::s_szAppleRootCACert = ""
 "xhtbCS+SsvhESPBgOJ4V9T0mZyCKM2r3DYLP3uujL/lTaltkwGMzd/c6ByxW69oP\n"
 "IQ7aunMZT7XZNn/Bh1XZp5m5MkL72NVxnn6hUrcbvZNCJBIqxw8dtk2cXmPIS4AX\n"
 "UKqK1drk/NAJBzewdXUh\n"
+"-----END CERTIFICATE-----\n";
+
+const char* ZSignAsset::s_szAppleRootCACertG3 = ""
+"-----BEGIN CERTIFICATE-----\n"
+"MIICQzCCAcmgAwIBAgIILcX8iNLFS5UwCgYIKoZIzj0EAwMwZzEbMBkGA1UEAwwS\n"
+"QXBwbGUgUm9vdCBDQSAtIEczMSYwJAYDVQQLDB1BcHBsZSBDZXJ0aWZpY2F0aW9u\n"
+"IEF1dGhvcml0eTETMBEGA1UECgwKQXBwbGUgSW5jLjELMAkGA1UEBhMCVVMwHhcN\n"
+"MTQwNDMwMTgxOTA2WhcNMzkwNDMwMTgxOTA2WjBnMRswGQYDVQQDDBJBcHBsZSBS\n"
+"b290IENBIC0gRzMxJjAkBgNVBAsMHUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9y\n"
+"aXR5MRMwEQYDVQQKDApBcHBsZSBJbmMuMQswCQYDVQQGEwJVUzB2MBAGByqGSM49\n"
+"AgEGBSuBBAAiA2IABJjpLz1AcqTtkyJygRMc3RCV8cWjTnHcFBbZDuWmBSp3ZHtf\n"
+"TjjTuxxEtX/1H7YyYl3J6YRbTzBPEVoA/VhYDKX1DyxNB0cTddqXl5dvMVztK517\n"
+"IDvYuVTZXpmkOlEKMaNCMEAwHQYDVR0OBBYEFLuw3qFYM4iapIqZ3r6966/ayySr\n"
+"MA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMDA2gA\n"
+"MGUCMQCD6cHEFl4aXTQY2e3v9GwOAEZLuN+yRhHFD/3meoyhpmvOwgPUnPWTxnS4\n"
+"at+qIxUCMG1mihDK1A3UT82NQz60imOlM27jbdoXt2QfyFMm+YhidDkLF1vLUagM\n"
+"6BgD56KyKA==\n"
 "-----END CERTIFICATE-----\n";
 
 ZSignAsset::OpenSSLInit::OpenSSLInit()
@@ -137,6 +307,50 @@ void* ZSignAsset::GenerateASN1Type(const string& value)
 	return ret;
 }
 
+const char* ZSignAsset::WWDRIntermediatePEM(unsigned long uIssuerHash)
+{
+	switch (uIssuerHash) {
+		case 0x817d2f7a: return s_szAppleDevCACert; //G1
+		case 0x975904ef: return s_szAppleDevCACertG2;
+		case 0x9b16b75c: return s_szAppleDevCACertG3;
+		case 0x1eaac8b7: return s_szAppleDevCACertG4;
+		case 0x12dfbd5d: return s_szAppleDevCACertG5;
+		case 0xf8ecc621: return s_szAppleDevCACertG6;
+		case 0xdbc90301: return s_szAppleDevCACertG7; //expired 2023-11; leaves it issued are expired too
+		case 0x3da0a3ad: return s_szAppleDevCACertG8; //expired 2025-01; leaves it issued are expired too
+	}
+	return NULL;
+}
+
+// Parses a PEM certificate and appends it to certs, which takes ownership.
+static bool AppendPEMCert(STACK_OF(X509)* certs, const char* szPEM)
+{
+	BIO* bio = BIO_new_mem_buf(szPEM, (int)strlen(szPEM));
+	if (!bio) {
+		return false;
+	}
+	X509* cert = PEM_read_bio_X509(bio, NULL, 0, NULL);
+	BIO_free(bio);
+	if (!cert) {
+		return false;
+	}
+	if (!sk_X509_push(certs, cert)) {
+		X509_free(cert);
+		return false;
+	}
+	return true;
+}
+
+static bool StackContainsIssuerOf(STACK_OF(X509)* certs, X509* cert)
+{
+	for (int i = 0; i < sk_X509_num(certs); i++) {
+		if (X509_V_OK == X509_check_issued(sk_X509_value(certs, i), cert)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHashData, const string& strCDHashesPlist, const string& strCodeDirectorySlotSHA1, const string& strAltnateCodeDirectorySlot256, string& strCMSOutput)
 {
 	if (!pscert || !pspkey) {
@@ -146,39 +360,69 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 	X509* scert = (X509*)pscert;
 	EVP_PKEY* spkey = (EVP_PKEY*)pspkey;
 
-	BIO* bother1;
-	unsigned long issuerHash = X509_issuer_name_hash(scert);
-	if (0x817d2f7a == issuerHash) {
-		bother1 = BIO_new_mem_buf(s_szAppleDevCACert, (int)strlen(s_szAppleDevCACert));
-	} else if (0x9b16b75c == issuerHash) {
-		bother1 = BIO_new_mem_buf(s_szAppleDevCACertG3, (int)strlen(s_szAppleDevCACertG3));
-	} else {
-		ZLog::Error(">>> Unknown issuer hash!\n");
-		return false;
-	}
-
-	BIO* bother2 = BIO_new_mem_buf(s_szAppleRootCACert, (int)strlen(s_szAppleRootCACert));
-	if (!bother1 || !bother2) {
-		return CMSError();
-	}
-
-	X509* ocert1 = PEM_read_bio_X509(bother1, NULL, 0, NULL);
-	X509* ocert2 = PEM_read_bio_X509(bother2, NULL, 0, NULL);
-	if (!ocert1 || !ocert2) {
-		return CMSError();
-	}
-
 	STACK_OF(X509)* otherCerts = sk_X509_new_null();
 	if (!otherCerts) {
 		return CMSError();
 	}
 
-	if (!sk_X509_push(otherCerts, ocert1)) {
-		return CMSError();
+	// Prefer the CA chain shipped inside the input p12, but only when it actually
+	// contains the leaf's issuer; a p12 can carry an incomplete or unrelated chain
+	// (e.g. a root-only export), which must not shadow the embedded intermediates.
+	STACK_OF(X509)* caCerts = (STACK_OF(X509)*)m_caCerts;
+	if (NULL != caCerts && StackContainsIssuerOf(caCerts, scert)) {
+		for (int i = 0; i < sk_X509_num(caCerts); i++) {
+			X509* cert = sk_X509_value(caCerts, i);
+			if (!X509_up_ref(cert)) {
+				return CMSError();
+			}
+			if (!sk_X509_push(otherCerts, cert)) {
+				X509_free(cert);
+				return CMSError();
+			}
+		}
+	} else {
+		// Fall back to the embedded WWDR intermediate matching the leaf's issuer.
+		unsigned long issuerHash = X509_issuer_name_hash(scert);
+		const char* szIssuerCert = WWDRIntermediatePEM(issuerHash);
+		if (NULL == szIssuerCert) {
+			ZLog::ErrorV(">>> Unknown issuer hash 0x%08lx! No embedded WWDR intermediate matches and the p12 carries no usable CA chain.\n", issuerHash);
+			return false;
+		}
+		if (!AppendPEMCert(otherCerts, szIssuerCert)) {
+			return CMSError();
+		}
 	}
 
-	if (!sk_X509_push(otherCerts, ocert2)) {
-		return CMSError();
+	// Terminate the chain with the Apple root that actually issued one of its
+	// members (WWDR G2/G6 chain to Apple Root CA - G3, the others to Apple Root
+	// CA), skipping roots already present, to match Apple codesign output.
+	static const char* arrRootPEMs[] = { s_szAppleRootCACert, s_szAppleRootCACertG3 };
+	for (size_t r = 0; r < sizeof(arrRootPEMs) / sizeof(arrRootPEMs[0]); r++) {
+		BIO* bio = BIO_new_mem_buf(arrRootPEMs[r], (int)strlen(arrRootPEMs[r]));
+		X509* root = (NULL != bio) ? PEM_read_bio_X509(bio, NULL, 0, NULL) : NULL;
+		BIO_free(bio);
+		if (!root) {
+			return CMSError();
+		}
+
+		bool bIssuedChain = false;
+		bool bPresent = false;
+		for (int i = 0; i < sk_X509_num(otherCerts); i++) {
+			X509* cert = sk_X509_value(otherCerts, i);
+			if (0 == X509_cmp(root, cert)) {
+				bPresent = true;
+			} else if (X509_V_OK == X509_check_issued(root, cert)) {
+				bIssuedChain = true;
+			}
+		}
+		if (bIssuedChain && !bPresent) {
+			if (!sk_X509_push(otherCerts, root)) {
+				X509_free(root);
+				return CMSError();
+			}
+		} else {
+			X509_free(root);
+		}
 	}
 
 	BIO* in = BIO_new_mem_buf(strCDHashData.c_str(), (int)strCDHashData.size());
@@ -259,6 +503,7 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 	strCMSOutput.clear();
 	strCMSOutput.append(bptr->data, bptr->length);
 	ASN1_TYPE_free(type_256);
+	sk_X509_pop_free(otherCerts, X509_free); // CMS_sign holds its own references
 	return (!strCMSOutput.empty());
 }
 
@@ -561,6 +806,7 @@ ZSignAsset::ZSignAsset()
 {
 	m_evpPKey = NULL;
 	m_x509Cert = NULL;
+	m_caCerts = NULL;
 	m_bAdhoc = false;
 	m_bSingleBinary = false;
 	m_bSHA256Only = false;
@@ -627,9 +873,13 @@ bool ZSignAsset::Init(
 				OSSL_PROVIDER_load(NULL, "legacy");
 				PKCS12* p12 = d2i_PKCS12_bio(bioPKey, NULL);
 				if (NULL != p12) {
-					if (0 == PKCS12_parse(p12, strPassword.c_str(), &evpPKey, &x509Cert, NULL)) {
+					STACK_OF(X509)* caCerts = NULL;
+					if (0 == PKCS12_parse(p12, strPassword.c_str(), &evpPKey, &x509Cert, &caCerts)) {
 						CMSError();
 					}
+					// Keep the p12's own CA chain so GenerateCMS can embed the exact
+					// intermediate(s) that issued the leaf, for any WWDR generation.
+					m_caCerts = caCerts;
 					PKCS12_free(p12);
 				} else {
 					CMSError();

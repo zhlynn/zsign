@@ -36,6 +36,9 @@ private:
 
 public:
 	static bool		CMSError();
+	// Returns the embedded WWDR intermediate (G1-G8) whose subject name hash
+	// matches uIssuerHash, or NULL. Shared by signing and certificate check.
+	static const char*	WWDRIntermediatePEM(unsigned long uIssuerHash);
 	static void*	GenerateASN1Type(const string& value);
 	static bool		GetCertInfo(void* pcert, jvalue& jvCertInfo);
 	static bool		GetCMSInfo(uint8_t* pCMSData, uint32_t uCMSLength, jvalue& jvOutput);
@@ -56,11 +59,19 @@ public:
 private:
 	void*	m_evpPKey;
 	void*	m_x509Cert;
+	void*	m_caCerts; // STACK_OF(X509)* CA chain recovered from the input p12, if any
 
 public:
 	static const char* s_szAppleDevCACert;
 	static const char* s_szAppleRootCACert;
+	static const char* s_szAppleRootCACertG3;
 	static const char* s_szAppleDevCACertG3;
+	static const char* s_szAppleDevCACertG2;
+	static const char* s_szAppleDevCACertG4;
+	static const char* s_szAppleDevCACertG5;
+	static const char* s_szAppleDevCACertG6;
+	static const char* s_szAppleDevCACertG7;
+	static const char* s_szAppleDevCACertG8;
 
 public:
 	class OpenSSLInit
