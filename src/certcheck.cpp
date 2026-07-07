@@ -70,14 +70,14 @@ static int DaysRemaining(const ASN1_TIME* t)
 	return day;
 }
 
-static string GetNameField(X509_NAME* name, int nid)
+static string GetNameField(const X509_NAME* name, int nid)
 {
 	if (!name) return "";
 	int idx = X509_NAME_get_index_by_NID(name, nid, -1);
 	if (idx < 0) return "";
-	X509_NAME_ENTRY* entry = X509_NAME_get_entry(name, idx);
+	const X509_NAME_ENTRY* entry = X509_NAME_get_entry(name, idx);
 	if (!entry) return "";
-	ASN1_STRING* data = X509_NAME_ENTRY_get_data(entry);
+	const ASN1_STRING* data = X509_NAME_ENTRY_get_data(entry);
 	if (!data) return "";
 	unsigned char* utf8 = NULL;
 	int len = ASN1_STRING_to_UTF8(&utf8, data);
@@ -202,7 +202,7 @@ static X509* LoadFromProvision(const string& data)
 
 	ASN1_OCTET_STRING** pos = CMS_get0_content(cms);
 	if (!pos || !(*pos)) { CMS_ContentInfo_free(cms); return NULL; }
-	string xmlContent((const char*)(*pos)->data, (*pos)->length);
+	string xmlContent((const char*)ASN1_STRING_get0_data(*pos), ASN1_STRING_length(*pos));
 	CMS_ContentInfo_free(cms);
 
 	size_t keyPos = xmlContent.find("<key>DeveloperCertificates</key>");
