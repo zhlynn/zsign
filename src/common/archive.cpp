@@ -1,7 +1,12 @@
 #include "archive.h"
 
+#ifdef ZSIGN_SYSTEM_MINIZIP
+#include <minizip/zip.h>
+#include <minizip/unzip.h>
+#else
 #include "third-party/minizip/zip.h"
 #include "third-party/minizip/unzip.h"
+#endif
 
 void Zip::GetModificationTime(const char* path, void* zfi)
 {

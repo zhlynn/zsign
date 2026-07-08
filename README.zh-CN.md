@@ -82,6 +82,14 @@ cd zsign/build/linux
 make clean && make
 ```
 
+#### 链接系统 minizip/zlib
+
+默认构建会编译 `src/third-party/` 内置的 zlib + minizip 源码，无需额外安装包。要求禁止捆绑库的包管理器（如 Homebrew）可以改为链接系统库：
+
+```bash
+make clean && make SYSTEM_MINIZIP=1   # 需要 pkg-config 能找到 minizip
+```
+
 ### Windows
 
 使用 Visual Studio 2022 打开 `build/windows/vs2022/zsign.sln` 进行构建。

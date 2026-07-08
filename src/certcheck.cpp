@@ -5,8 +5,13 @@
 #include "signing.h"
 #include "macho.h"
 
+#ifdef ZSIGN_SYSTEM_MINIZIP
+#include <minizip/zip.h>
+#include <minizip/unzip.h>
+#else
 #include "third-party/minizip/zip.h"
 #include "third-party/minizip/unzip.h"
+#endif
 
 #include <openssl/pem.h>
 #include <openssl/pkcs12.h>

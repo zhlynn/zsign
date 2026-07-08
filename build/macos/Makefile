@@ -34,6 +34,18 @@ ZLIB_OBJS = $(ZLIB_SRCS:../../src/third-party/zlib/%.c=$(OBJDIR)/zlib/%.o)
 MINIZIP_SRCS = ../../src/third-party/minizip/ioapi.c ../../src/third-party/minizip/zip.c ../../src/third-party/minizip/unzip.c
 MINIZIP_OBJS = $(MINIZIP_SRCS:../../src/third-party/minizip/%.c=$(OBJDIR)/minizip/%.o)
 
+# `make SYSTEM_MINIZIP=1` links system minizip + zlib (found via `pkg-config
+# minizip`) instead of compiling the vendored copies in src/third-party.
+SYSTEM_MINIZIP ?= 0
+ifeq ($(SYSTEM_MINIZIP),1)
+INCLUDES = -I../../src -I../../src/common
+INCLUDES += $(OPENSSL_INCLUDE) $(shell pkg-config --cflags minizip)
+CXXFLAGS += -DZSIGN_SYSTEM_MINIZIP
+LIBS += $(shell pkg-config --libs minizip)
+ZLIB_OBJS =
+MINIZIP_OBJS =
+endif
+
 TARGET = $(BINDIR)/zsign
 
 all: $(TARGET)

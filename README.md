@@ -81,6 +81,14 @@ cd zsign/build/linux
 make clean && make
 ```
 
+#### Linking system minizip/zlib
+
+By default the vendored zlib + minizip sources in `src/third-party/` are compiled in, so no extra packages are needed. Package managers that require unbundled libraries (e.g. Homebrew) can link the system copies instead:
+
+```bash
+make clean && make SYSTEM_MINIZIP=1   # requires minizip discoverable via pkg-config
+```
+
 ### Windows
 
 Open `build/windows/vs2022/zsign.sln` in Visual Studio 2022 and build.
