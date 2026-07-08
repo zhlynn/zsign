@@ -5,7 +5,10 @@
 #include "signing.h"
 #include "macho.h"
 
-#ifdef ZSIGN_SYSTEM_MINIZIP
+#if defined(ZSIGN_SYSTEM_MINIZIP_NG)
+#include <zip.h>
+#include <unzip.h>
+#elif defined(ZSIGN_SYSTEM_MINIZIP)
 #include <minizip/zip.h>
 #include <minizip/unzip.h>
 #else

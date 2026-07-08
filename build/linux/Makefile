@@ -35,13 +35,20 @@ MINIZIP_SRCS = ../../src/third-party/minizip/ioapi.c ../../src/third-party/miniz
 MINIZIP_OBJS = $(MINIZIP_SRCS:../../src/third-party/minizip/%.c=$(OBJDIR)/minizip/%.o)
 
 # `make SYSTEM_MINIZIP=1` links system minizip + zlib (found via `pkg-config
-# minizip`) instead of compiling the vendored copies in src/third-party.
+# minizip`) instead of compiling the vendored copies in src/third-party;
+# `make SYSTEM_MINIZIP=ng` links minizip-ng through its minizip compat layer.
 SYSTEM_MINIZIP ?= 0
-ifeq ($(SYSTEM_MINIZIP),1)
-INCLUDES = -I../../src -I../../src/common
-INCLUDES += $(OPENSSL_INCLUDE) $(shell pkg-config --cflags minizip)
+ifneq ($(SYSTEM_MINIZIP),0)
+ifeq ($(SYSTEM_MINIZIP),ng)
+MINIZIP_PC = minizip-ng
+CXXFLAGS += -DZSIGN_SYSTEM_MINIZIP_NG
+else
+MINIZIP_PC = minizip
 CXXFLAGS += -DZSIGN_SYSTEM_MINIZIP
-LIBS += $(shell pkg-config --libs minizip)
+endif
+INCLUDES = -I../../src -I../../src/common
+INCLUDES += $(OPENSSL_INCLUDE) $(shell pkg-config --cflags $(MINIZIP_PC))
+LIBS += $(shell pkg-config --libs $(MINIZIP_PC))
 ZLIB_OBJS =
 MINIZIP_OBJS =
 endif

@@ -86,7 +86,8 @@ make clean && make
 By default the vendored zlib + minizip sources in `src/third-party/` are compiled in, so no extra packages are needed. Package managers that require unbundled libraries (e.g. Homebrew) can link the system copies instead:
 
 ```bash
-make clean && make SYSTEM_MINIZIP=1   # requires minizip discoverable via pkg-config
+make clean && make SYSTEM_MINIZIP=1    # links minizip (requires pkg-config minizip)
+make clean && make SYSTEM_MINIZIP=ng   # links minizip-ng via its minizip compat layer
 ```
 
 ### Windows

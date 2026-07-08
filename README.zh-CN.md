@@ -87,7 +87,8 @@ make clean && make
 默认构建会编译 `src/third-party/` 内置的 zlib + minizip 源码，无需额外安装包。要求禁止捆绑库的包管理器（如 Homebrew）可以改为链接系统库：
 
 ```bash
-make clean && make SYSTEM_MINIZIP=1   # 需要 pkg-config 能找到 minizip
+make clean && make SYSTEM_MINIZIP=1    # 链接 minizip（需要 pkg-config 能找到 minizip）
+make clean && make SYSTEM_MINIZIP=ng   # 通过兼容层链接 minizip-ng
 ```
 
 ### Windows
