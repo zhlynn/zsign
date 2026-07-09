@@ -217,11 +217,14 @@ bool Zip::_ReadFileFromZip(void* hZip, const string& strPath, const string& strR
 	if (NULL != pbuff) {
 		int32_t nReaded = unzReadCurrentFile(hZip, pbuff, uBufSize);
 		while (nReaded > 0) {
-			if (nReaded != fwrite(pbuff, 1, nReaded, fp)) {
+			if ((size_t)nReaded != fwrite(pbuff, 1, (size_t)nReaded, fp)) {
 				bRet = false;
 				break;
 			}
 			nReaded = unzReadCurrentFile(hZip, pbuff, uBufSize);
+		}
+		if (nReaded < 0) {
+			bRet = false;
 		}
 		free(pbuff);
 	} else {
