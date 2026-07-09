@@ -153,6 +153,19 @@ static X509* ResolveIssuer(X509* cert)
 	return NULL;
 }
 
+static X509* FindIssuerInChain(STACK_OF(X509)* certs, X509* cert)
+{
+	if (!certs || !cert) return NULL;
+	for (int i = 0; i < sk_X509_num(certs); i++) {
+		X509* issuer = sk_X509_value(certs, i);
+		if (issuer && X509_check_issued(issuer, cert) == X509_V_OK) {
+			X509_up_ref(issuer);
+			return issuer;
+		}
+	}
+	return NULL;
+}
+
 // ─── file type detection ────────────────────────────────────────────
 
 enum CertFileType {
@@ -191,9 +204,16 @@ static CertFileType DetectFileType(const string& path, const string& data)
 			return CERT_FILE_MACHO;
 		if (data.find("<?xml") != string::npos && data.find("</plist>") != string::npos)
 			return CERT_FILE_PROVISION;
-		if (d[0] == 0x30 && data.size() > 500) return CERT_FILE_P12;
-		if (d[0] == 0x30) return CERT_FILE_CER;
 		if (data.find("-----BEGIN") != string::npos) return CERT_FILE_PEM;
+		if (d[0] == 0x30) {
+			const uint8_t* p = (const uint8_t*)data.data();
+			PKCS12* p12 = d2i_PKCS12(NULL, &p, (long)data.size());
+			if (p12) {
+				PKCS12_free(p12);
+				return CERT_FILE_P12;
+			}
+			return CERT_FILE_CER;
+		}
 	}
 	return CERT_FILE_UNKNOWN;
 }
@@ -695,7 +715,7 @@ int CheckCertificate(const string& strFilePath, const string& strPassword)
 	bool expired = (daysLeft < 0);
 
 	X509* issuer = NULL;
-	if (ca && sk_X509_num(ca) > 0) { issuer = sk_X509_value(ca, 0); X509_up_ref(issuer); }
+	if (ca && sk_X509_num(ca) > 0) issuer = FindIssuerInChain(ca, cert);
 	if (!issuer) issuer = ResolveIssuer(cert);
 
 	int retCode = 0;

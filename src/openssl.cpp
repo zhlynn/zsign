@@ -283,27 +283,35 @@ void* ZSignAsset::GenerateASN1Type(const string& value)
 	char* genstr = NULL;
 	BIO* ldapbio = BIO_new(BIO_s_mem());
 	CONF* cnf = NCONF_new(NULL);
-
-	if (cnf == NULL) {
-		ZLog::Error(">>> NCONF_new failed\n");
-		BIO_free(ldapbio);
-	}
+	ASN1_TYPE* ret = NULL;
 	string a = "asn1=SEQUENCE:A\n[A]\nC=OBJECT:sha256\nB=FORMAT:HEX,OCT:" + value + "\n";
-	int code = BIO_puts(ldapbio, a.c_str());
-	if (NCONF_load_bio(cnf, ldapbio, &errline) <= 0) {
-		BIO_free(ldapbio);
-		NCONF_free(cnf);
-		ZLog::PrintV(">>> NCONF_load_bio failed %d\n", errline);
+
+	if (NULL == ldapbio || NULL == cnf) {
+		ZLog::Error(">>> NCONF_new failed\n");
+		goto cleanup;
 	}
-	BIO_free(ldapbio);
+	if (BIO_puts(ldapbio, a.c_str()) <= 0) {
+		ZLog::Error(">>> BIO_puts failed\n");
+		goto cleanup;
+	}
+	if (NCONF_load_bio(cnf, ldapbio, &errline) <= 0) {
+		ZLog::PrintV(">>> NCONF_load_bio failed %d\n", errline);
+		goto cleanup;
+	}
 	genstr = NCONF_get_string(cnf, "default", "asn1");
 
 	if (genstr == NULL) {
 		ZLog::Error(">>> NCONF_get_string failed\n");
-		NCONF_free(cnf);
+		goto cleanup;
 	}
-	ASN1_TYPE* ret = ASN1_generate_nconf(genstr, cnf);
-	NCONF_free(cnf);
+	ret = ASN1_generate_nconf(genstr, cnf);
+	if (NULL == ret) {
+		ZLog::Error(">>> ASN1_generate_nconf failed\n");
+	}
+
+cleanup:
+	if (ldapbio) BIO_free(ldapbio);
+	if (cnf) NCONF_free(cnf);
 	return ret;
 }
 
@@ -470,9 +478,15 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 	}
 
 	X509_ATTRIBUTE* attr = X509_ATTRIBUTE_new();
+	if (!attr) {
+		return CMSError();
+	}
 	X509_ATTRIBUTE_set1_object(attr, obj2);
 
 	ASN1_TYPE* type_256 = (ASN1_TYPE*)GenerateASN1Type(sha256);
+	if (!type_256) {
+		return CMSError();
+	}
 	X509_ATTRIBUTE_set1_data(attr, V_ASN1_SEQUENCE,
 		ASN1_STRING_get0_data(type_256->value.asn1_string), ASN1_STRING_length(type_256->value.asn1_string));
 	int addHashSHA = CMS_signed_add1_attr(si, attr);
