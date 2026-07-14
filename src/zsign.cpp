@@ -23,7 +23,7 @@
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
 	{"force", no_argument, NULL, 'f'},
-	{"verbose", no_argument, NULL, 'V'},
+	{"version", no_argument, NULL, 'v'},
 	{"adhoc", no_argument, NULL, 'a'},
 	{"cert", required_argument, NULL, 'c'},
 	{"pkey", required_argument, NULL, 'k'},
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 			break;
 		}
 
-		ZLog::DebugV(">>> Option:\t-%c, %s\n", opt, optarg);
+		ZLog::DebugV(">>> Option:\t-%c, %s\n", opt, optarg ? optarg : "");
 	}
 
 	if (optind >= argc) {
