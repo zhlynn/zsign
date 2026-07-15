@@ -183,6 +183,7 @@ zsign -w -l "@executable_path/demo.dylib" demo.app/execute
 ```bash
 zsign -k dev.p12 -p 123 -m dev.prov -x ./metadata -o output.ipa demo.ipa
 # outputs ./metadata/metadata.json and ./metadata/<hash>.png
+# Apple-optimized (CgBI) icons are converted to standard PNG automatically
 ```
 
 **Enable Files app integration:**
