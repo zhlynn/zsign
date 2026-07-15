@@ -124,7 +124,8 @@ jobs:
             $defs = "ZSIGN_VERSION=$ver"
             $nums = @(($ver -replace '[^0-9.].*$', '') -split '\.' | Where-Object { $_ -ne '' })
             while ($nums.Count -lt 3) { $nums += '0' }
-            $rdefs = "ZSIGN_VERSION_NUM=$($nums[0]),$($nums[1]),$($nums[2]),0"
+            # %2C = escaped comma: msbuild /p: splits raw commas into separate properties (MSB1006)
+            $rdefs = "ZSIGN_VERSION_NUM=$($nums[0])%2C$($nums[1])%2C$($nums[2])%2C0"
           }
           msbuild build\windows\vs2022\zsign.sln /p:Configuration=Release /p:Platform=x64 /p:ExtraDefines="$defs" /p:ExtraResourceDefines="$rdefs" /m
 
