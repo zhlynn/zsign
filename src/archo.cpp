@@ -388,7 +388,7 @@ bool ZArchO::BuildCodeSignature(ZSignAsset* pSignAsset,
 	// ALLOW_UNSIGNED is a development-only flag. It must be set *only* when
 	// get-task-allow is actually true (debug build), not merely present in
 	// the entitlements plist. Distribution profiles include
-	// <key>get-task-allow</key><false/> and must keep this flag cleared — Apple
+	// <key>get-task-allow</key><false/> and must keep this flag cleared -- Apple
 	// codesign never sets ALLOW_UNSIGNED for such signatures.
 	if (!strEntitlementsSlot.empty()) {
 		const char* pEnt = strEntitlementsSlot.data() + 8; // skip blob header

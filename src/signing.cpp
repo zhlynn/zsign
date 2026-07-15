@@ -170,7 +170,7 @@ bool ZSign::SlotBuildRequirements(const string& strBundleID, const string& strSu
 	// Apple WWDR intermediate marker OID: 1.2.840.113635.100.6.2.1
 	static const uint8_t kAppleWWDROID[] = { 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x63, 0x64, 0x06, 0x02, 0x01 };
 
-	// ── Build the inner requirement expression blob (CSMAGIC_REQUIREMENT) ──
+	// -- Build the inner requirement expression blob (CSMAGIC_REQUIREMENT) --
 	// Generates the designated requirement equivalent to:
 	//   identifier "<bundleID>" and anchor apple generic
 	//     and certificate leaf[subject.CN] = "<subjectCN>"
@@ -237,7 +237,7 @@ bool ZSign::SlotBuildRequirements(const string& strBundleID, const string& strSu
 	}
 	appendExprBE32(kReqMatchExists);
 
-	// ── Build the outer requirements vector (CSMAGIC_REQUIREMENTS) ──
+	// -- Build the outer requirements vector (CSMAGIC_REQUIREMENTS) --
 	// Outer header: magic(4) + length(4) + count(4) + BlobIndex[type(4) + offset(4)] = 20 bytes
 	uint32_t reqBlobLen = 8 + (uint32_t)strExpr.size(); // inner magic + inner length + expr
 	uint32_t outerHeaderLen = 20;
@@ -696,7 +696,7 @@ bool ZSign::SlotBuildCMSSignature(ZSignAsset* pSignAsset,
 	// - CDHashes2 attribute: full hash (32 bytes for SHA256) of each CD wrapped
 	//   in `SEQUENCE { OID sha256, OCTET STRING hash }`. The current
 	//   GenerateCMS() implementation consumes a single `strAltnateCodeDirectorySlot256`
-	//   string for this attribute — when there is no alternate CD we pass the
+	//   string for this attribute -- when there is no alternate CD we pass the
 	//   SHA256 of the primary CD instead of SHA256(empty).
 	const bool bHasAlternate = !strAltnateCodeDirectorySlot.empty();
 
@@ -724,7 +724,7 @@ bool ZSign::SlotBuildCMSSignature(ZSignAsset* pSignAsset,
 
 	// Full SHA256 hash to embed in the CDHashes2 signed attribute. In SHA256-only
 	// mode this must be the SHA256 of the primary CD, not SHA256 of an empty
-	// alternate — the latter is rejected by Apple's verifier.
+	// alternate -- the latter is rejected by Apple's verifier.
 	const string& strCDHashes2 = bHasAlternate ? strAltnateCD_SHA256 : strPrimaryCD_SHA256;
 
 	string strCMSData;

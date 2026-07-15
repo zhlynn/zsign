@@ -38,7 +38,7 @@ typedef int ssize_t;
 #define OCSP_CLOSE_SOCKET(s) close(s)
 #endif
 
-// ─── helpers ───────────────────────────────────────────────────────
+// --- helpers -------------------------------------------------------
 
 static string SerialToHex(X509* cert)
 {
@@ -125,7 +125,7 @@ static string DetectCertType(const string& cn)
 	return "Certificate";
 }
 
-// ─── issuer resolution ──────────────────────────────────────────────
+// --- issuer resolution ----------------------------------------------
 
 static X509* LoadEmbeddedCert(const char* pem)
 {
@@ -166,7 +166,7 @@ static X509* FindIssuerInChain(STACK_OF(X509)* certs, X509* cert)
 	return NULL;
 }
 
-// ─── file type detection ────────────────────────────────────────────
+// --- file type detection --------------------------------------------
 
 enum CertFileType {
 	CERT_FILE_UNKNOWN = 0,
@@ -218,7 +218,7 @@ static CertFileType DetectFileType(const string& path, const string& data)
 	return CERT_FILE_UNKNOWN;
 }
 
-// ─── cert extraction ────────────────────────────────────────────────
+// --- cert extraction ------------------------------------------------
 
 static X509* LoadFromProvision(const string& data)
 {
@@ -287,7 +287,7 @@ static X509* LoadFromCER(const string& data)
 	return cert;
 }
 
-// ─── Leaf cert from CMS ─────────────────────────────────────────────
+// --- Leaf cert from CMS ---------------------------------------------
 
 static X509* FindLeafCert(STACK_OF(X509)* certs)
 {
@@ -319,7 +319,7 @@ static X509* ExtractCertFromCMS(uint8_t* pCMSData, uint32_t uCMSLength)
 	return leaf;
 }
 
-// ─── Mach-O cert extraction ─────────────────────────────────────────
+// --- Mach-O cert extraction -----------------------------------------
 
 struct MachOSignInfo {
 	bool isSigned;
@@ -349,7 +349,7 @@ static MachOSignInfo ExtractFromMachOData(uint8_t* pBase, uint32_t uLength)
 	return info;
 }
 
-// ─── Read from zip (no extraction) ──────────────────────────────────
+// --- Read from zip (no extraction) ----------------------------------
 
 static bool ReadFileFromZipToMemory(unzFile uf, string& outData)
 {
@@ -413,7 +413,7 @@ static MachOSignInfo LoadFromIPA(const string& ipaPath)
 	return ExtractFromMachOData((uint8_t*)strBinaryData.data(), (uint32_t)strBinaryData.size());
 }
 
-// ─── OCSP check ─────────────────────────────────────────────────────
+// --- OCSP check -----------------------------------------------------
 
 struct OCSPResult {
 	string status;
@@ -590,7 +590,7 @@ static OCSPResult PerformOCSP(X509* cert, X509* issuer)
 	return result;
 }
 
-// ─── display (simple text, matches zsign style) ──────────────────────
+// --- display (simple text, matches zsign style) ----------------------
 
 static void PrintCertInfo(X509* cert, const string& fileTypeStr, bool showSigned, bool isSigned)
 {
@@ -649,7 +649,7 @@ static int PrintOCSPResult(const OCSPResult& result)
 	return -1;
 }
 
-// ─── main entry ─────────────────────────────────────────────────────
+// --- main entry -----------------------------------------------------
 
 int CheckCertificate(const string& strFilePath, const string& strPassword)
 {
@@ -743,7 +743,7 @@ int CheckCertificate(const string& strFilePath, const string& strPassword)
 	return retCode;
 }
 
-// ─── Post-sign binary check ─────────────────────────────────────────
+// --- Post-sign binary check -----------------------------------------
 
 int CheckSignedBinary(const string& strAppFolder)
 {
