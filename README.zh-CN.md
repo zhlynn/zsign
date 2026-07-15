@@ -128,6 +128,7 @@ Options:
   -E, --rm_extensions     移除所有 App Extensions（PlugIns/Extensions）
   -W, --rm_watch          移除 Bundle 中的 Watch App
   -U, --rm_uisd           移除 Info.plist 中的 UISupportedDevices
+  -P, --inject_extensions 同时把 -l 指定的 dylib 注入到 App Extensions（PlugIns/Extensions）
   -q, --quiet             安静模式
   -v, --version           显示版本
   -h, --help              显示帮助
@@ -163,6 +164,14 @@ zsign -a -o output.ipa demo.ipa
 **注入 dylib 并重签：**
 ```bash
 zsign -k dev.p12 -p 123 -m dev.prov -l demo.dylib -o output.ipa demo.ipa
+```
+
+**将 dylib 注入 App 及其扩展：**
+```bash
+# App Extensions（PlugIns/*.appex）以独立进程运行，不会继承主 App 注入的 dylib，
+# 因此 -P 会把 dylib 也注入到扩展中。dylib 仅在 App 根目录保留一份，扩展通过
+# 相对路径引用（@executable_path/../../demo.dylib）。
+zsign -k dev.p12 -p 123 -m dev.prov -P -l demo.dylib -o output.ipa demo.ipa
 ```
 
 **修改 Bundle ID 与名称：**

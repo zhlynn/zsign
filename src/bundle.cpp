@@ -16,6 +16,7 @@ ZBundle::ZBundle()
 	m_bRemoveExtensions = false;
 	m_bRemoveWatchApp = false;
 	m_bRemoveUISupportedDevices = false;
+	m_bInjectExtensions = false;
 }
 
 bool ZBundle::FindAppFolder(const string& strFolder, string& strAppFolder)
@@ -292,6 +293,20 @@ void ZBundle::GetNodeChangedFiles(jvalue& jvNode)
 	}
 }
 
+static bool IsAppExtensionPath(const string& strPath)
+{
+	// Top-level app extension: PlugIns/<name>.appex or Extensions/<name>.appex.
+	// Restrict to a single path component under PlugIns/Extensions so watch-app
+	// and other nested .appex bundles (different arch/container) are left alone.
+	if (!ZFile::IsPathSuffix(strPath, ".appex")) {
+		return false;
+	}
+	if (1 != count(strPath.begin(), strPath.end(), '/')) {
+		return false;
+	}
+	return (0 == strPath.rfind("PlugIns/", 0) || 0 == strPath.rfind("Extensions/", 0));
+}
+
 bool ZBundle::SignNode(jvalue& jvNode)
 {
 	if (jvNode.has("files")) {
@@ -368,6 +383,21 @@ bool ZBundle::SignNode(jvalue& jvNode)
 				ZFile::RemoveFileV("%s/%s", m_strAppFolder.c_str(), baseName.c_str());
 			}
 			bForceSign = true;
+		}
+	} else if (m_bInjectExtensions && !m_arrInjectDylibNames.empty() && IsAppExtensionPath(strFolder)) {
+		// App extensions run as separate processes and don't inherit the main
+		// app's injected dylibs, so inject them here too. The dylibs stay as a
+		// single shared copy at the app root, referenced from the extension
+		// executable via a relative path back up to it.
+		string strPrefix;
+		for (size_t i = 0, n = 1 + (size_t)count(strFolder.begin(), strFolder.end(), '/'); i < n; i++) {
+			strPrefix += "../";
+		}
+		for (const string& strName : m_arrInjectDylibNames) {
+			string strLoadPath = "@executable_path/" + strPrefix + strName;
+			if (macho.InjectDylib(m_bWeakInject, strLoadPath.c_str())) {
+				bForceSign = true;
+			}
 		}
 	}
 
@@ -821,6 +851,7 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 			string strFileName = ZUtil::GetBaseName(strDylibFile.c_str());
 			if (ZFile::CopyFileV(strDylibFile.c_str(), "%s/%s", m_strAppFolder.c_str(), strFileName.c_str())) {
 				m_arrInjectDylibs.push_back("@executable_path/" + strFileName);
+				m_arrInjectDylibNames.push_back(strFileName);
 			}
 		}
 	}

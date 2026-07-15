@@ -52,6 +52,7 @@ const struct option options[] = {
 	{"rm_extensions", no_argument, NULL, 'E'},
 	{"rm_watch", no_argument, NULL, 'W'},
 	{"rm_uisd", no_argument, NULL, 'U'},
+	{"inject_extensions", no_argument, NULL, 'P'},
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
@@ -91,6 +92,7 @@ int usage()
 	ZLog::Print("-E, --rm_extensions\tRemove all app extensions (PlugIns/Extensions).\n");
 	ZLog::Print("-W, --rm_watch\t\tRemove watch app from the bundle.\n");
 	ZLog::Print("-U, --rm_uisd\t\tRemove UISupportedDevices from Info.plist.\n");
+	ZLog::Print("-P, --inject_extensions\tAlso inject -l dylibs into app extensions (PlugIns/Extensions).\n");
 	ZLog::Print("-v, --version\t\tShows version.\n");
 	ZLog::Print("-h, --help\t\tShows help (this message).\n");
 
@@ -114,6 +116,7 @@ int main(int argc, char* argv[])
 	bool bRemoveExtensions = false;
 	bool bRemoveWatchApp = false;
 	bool bRemoveUISupportedDevices = false;
+	bool bInjectExtensions = false;
 	uint32_t uZipLevel = 0;
 
 	string strCertFile;
@@ -134,7 +137,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2LhiqwCRSEWUc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:I:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2LhiqwCRSEWUPc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:I:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -228,6 +231,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'U':
 			bRemoveUISupportedDevices = true;
+			break;
+		case 'P':
+			bInjectExtensions = true;
 			break;
 		case 'v': {
 			printf("version: %s\n", ZSIGN_VERSION_STR);
@@ -386,6 +392,7 @@ int main(int argc, char* argv[])
 	bundle.m_bRemoveExtensions = bRemoveExtensions;
 	bundle.m_bRemoveWatchApp = bRemoveWatchApp;
 	bundle.m_bRemoveUISupportedDevices = bRemoveUISupportedDevices;
+	bundle.m_bInjectExtensions = bInjectExtensions;
 
 	bool bRet;
 	if (arrProvFiles.size() > 1) {

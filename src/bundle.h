@@ -59,6 +59,7 @@ private:
 	ZSignAsset*		m_pSignAsset;
 	list<ZSignAsset>*	m_pSignAssets;
 	vector<string>	m_arrInjectDylibs;
+	vector<string>	m_arrInjectDylibNames;
 	set<string>		m_setRemoveDylibs;
 
 private:
@@ -71,5 +72,6 @@ public:
 	bool		m_bRemoveExtensions;
 	bool		m_bRemoveWatchApp;
 	bool		m_bRemoveUISupportedDevices;
+	bool		m_bInjectExtensions;
 	string			m_strAppFolder;
 };

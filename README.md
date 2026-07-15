@@ -128,6 +128,7 @@ Options:
   -E, --rm_extensions     Remove all app extensions (PlugIns/Extensions)
   -W, --rm_watch          Remove watch app from bundle
   -U, --rm_uisd           Remove UISupportedDevices from Info.plist
+  -P, --inject_extensions Also inject -l dylibs into app extensions (PlugIns/Extensions)
   -q, --quiet             Quiet operation
   -v, --version           Show version
   -h, --help              Show help
@@ -163,6 +164,15 @@ zsign -a -o output.ipa demo.ipa
 **Inject dylib and re-sign:**
 ```bash
 zsign -k dev.p12 -p 123 -m dev.prov -l demo.dylib -o output.ipa demo.ipa
+```
+
+**Inject dylib into the app and its extensions:**
+```bash
+# App extensions (PlugIns/*.appex) run as separate processes and don't inherit
+# the main app's injected dylibs, so -P injects into them too. The dylib is kept
+# as a single copy at the app root and referenced from each extension by a
+# relative path (@executable_path/../../demo.dylib).
+zsign -k dev.p12 -p 123 -m dev.prov -P -l demo.dylib -o output.ipa demo.ipa
 ```
 
 **Change bundle id and name:**
