@@ -1,0 +1,43 @@
+// VERSIONINFO gives the unsigned zsign.exe a publisher/product identity,
+// which reduces antivirus heuristic false positives (issue #394).
+#include <winresrc.h>
+
+#ifndef ZSIGN_VERSION
+#define ZSIGN_VERSION 0.0.0-dev
+#endif
+#ifndef ZSIGN_VERSION_NUM
+#define ZSIGN_VERSION_NUM 0,0,0,0
+#endif
+#define ZSIGN_STR_(x) #x
+#define ZSIGN_STR(x) ZSIGN_STR_(x)
+#define ZSIGN_VERSION_STR ZSIGN_STR(ZSIGN_VERSION)
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION ZSIGN_VERSION_NUM
+ PRODUCTVERSION ZSIGN_VERSION_NUM
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+ FILEFLAGS 0x0L
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "zhlynn"
+            VALUE "FileDescription", "zsign - codesign alternative for iOS 12+ on macOS, Linux and Windows"
+            VALUE "FileVersion", ZSIGN_VERSION_STR
+            VALUE "InternalName", "zsign"
+            VALUE "LegalCopyright", "Copyright (c) zhlynn. Released under the MIT License."
+            VALUE "OriginalFilename", "zsign.exe"
+            VALUE "ProductName", "zsign"
+            VALUE "ProductVersion", ZSIGN_VERSION_STR
+            VALUE "Comments", "https://github.com/zhlynn/zsign"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
