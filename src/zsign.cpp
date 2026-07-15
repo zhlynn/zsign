@@ -33,6 +33,7 @@ const struct option options[] = {
 	{"bundle_name", required_argument, NULL, 'n'},
 	{"bundle_version", required_argument, NULL, 'r'},
 	{"entitlements", required_argument, NULL, 'e'},
+	{"icon", required_argument, NULL, 'I'},
 	{"output", required_argument, NULL, 'o'},
 	{"zip_level", required_argument, NULL, 'z'},
 	{"dylib", required_argument, NULL, 'l'},
@@ -72,6 +73,7 @@ int usage()
 	ZLog::Print("-n, --bundle_name\tNew bundle name to change.\n");
 	ZLog::Print("-r, --bundle_version\tNew bundle version to change.\n");
 	ZLog::Print("-e, --entitlements\tNew entitlements to change.\n");
+	ZLog::Print("-I, --icon\t\tPath to new app icon to replace the primary icon. (PNG format)\n");
 	ZLog::Print("-z, --zip_level\t\tCompressed level when output the ipa file. (0-9)\n");
 	ZLog::Print("-l, --dylib\t\tPath to inject dylib file. Use -l multiple time to inject multiple dylib files at once.\n");
 	ZLog::Print("-D, --rm_dylib\t\tName of dylib to remove. Use -D multiple times to remove multiple dylibs at once.\n");
@@ -124,6 +126,7 @@ int main(int argc, char* argv[])
 	string strOutputFile;
 	string strDisplayName;
 	string strEntitleFile;
+	string strIconFile;
 	vector<string> arrDylibFiles;
 	vector<string> arrRemoveDylibNames;
 	string strMetadataDir;
@@ -131,7 +134,7 @@ int main(int argc, char* argv[])
 
 	int opt = 0;
 	int argslot = -1;
-	while (-1 != (opt = getopt_long(argc, argv, "dfva2LhiqwCRSEWUc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:",
+	while (-1 != (opt = getopt_long(argc, argv, "dfva2LhiqwCRSEWUc:k:m:o:p:e:b:n:z:l:D:t:r:x:M:I:",
 		options, &argslot))) {
 		switch (opt) {
 		case 'd':
@@ -167,6 +170,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'e':
 			strEntitleFile = ZFile::GetFullPath(optarg);
+			break;
+		case 'I':
+			strIconFile = ZFile::GetFullPath(optarg);
 			break;
 		case 'l':
 			arrDylibFiles.push_back(ZFile::GetFullPath(optarg));
@@ -269,6 +275,15 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	if (!strIconFile.empty()) {
+		string strIconData;
+		if (!ZFile::ReadFile(strIconFile.c_str(), strIconData) || strIconData.size() < 8 ||
+			0 != memcmp(strIconData.data(), "\x89PNG\r\n\x1a\n", 8)) {
+			ZLog::ErrorV(">>> Invalid icon file! Only PNG format is supported. %s\n", strIconFile.c_str());
+			return -1;
+		}
+	}
+
 	if (ZLog::IsDebug()) {
 		ZFile::CreateFolder("./.zsign_debug");
 		for (int i = optind; i < argc; i++) {
@@ -367,6 +382,7 @@ int main(int argc, char* argv[])
 	ZBundle bundle;
 	bundle.m_bEnableDocuments = bEnableDocuments;
 	bundle.m_strMinVersion = strMinVersion;
+	bundle.m_strIconFile = strIconFile;
 	bundle.m_bRemoveExtensions = bRemoveExtensions;
 	bundle.m_bRemoveWatchApp = bRemoveWatchApp;
 	bundle.m_bRemoveUISupportedDevices = bRemoveUISupportedDevices;

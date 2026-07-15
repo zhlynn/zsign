@@ -508,6 +508,132 @@ bool ZBundle::ModifyPluginsBundleId(const string& strOldBundleId, const string& 
 	return true;
 }
 
+static bool GetPngSize(const string& strData, uint32_t& uWidth, uint32_t& uHeight)
+{
+	static const uint8_t pngMagic[8] = { 0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a };
+	if (strData.size() < 24 || 0 != memcmp(strData.data(), pngMagic, 8)) {
+		return false;
+	}
+	const uint8_t* p = (const uint8_t*)strData.data();
+	if (0 != memcmp(p + 12, "IHDR", 4)) {
+		return false;
+	}
+	uWidth = ((uint32_t)p[16] << 24) | ((uint32_t)p[17] << 16) | ((uint32_t)p[18] << 8) | p[19];
+	uHeight = ((uint32_t)p[20] << 24) | ((uint32_t)p[21] << 16) | ((uint32_t)p[22] << 8) | p[23];
+	return (uWidth > 0 && uHeight > 0);
+}
+
+bool ZBundle::ChangeAppIcon()
+{
+	string strIconData;
+	if (!ZFile::ReadFile(m_strIconFile.c_str(), strIconData)) {
+		ZLog::ErrorV(">>> Can't read icon file! %s\n", m_strIconFile.c_str());
+		return false;
+	}
+
+	uint32_t uWidth = 0;
+	uint32_t uHeight = 0;
+	if (!GetPngSize(strIconData, uWidth, uHeight)) {
+		ZLog::ErrorV(">>> Invalid icon file! Only PNG format is supported. %s\n", m_strIconFile.c_str());
+		return false;
+	}
+	if (uWidth != uHeight) {
+		ZLog::WarnV(">>> Warning: Icon is not square! (%ux%u)\n", uWidth, uHeight);
+	}
+
+	jvalue jvInfo;
+	if (!jvInfo.read_plist_from_file("%s/Info.plist", m_strAppFolder.c_str())) {
+		ZLog::ErrorV(">>> Can't find app's Info.plist! %s\n", m_strAppFolder.c_str());
+		return false;
+	}
+
+	vector<string> arrIconNames;
+	const char* arrIconKeys[] = { "CFBundleIcons", "CFBundleIcons~ipad" };
+	for (const char* szKey : arrIconKeys) {
+		if (jvInfo.has(szKey) && jvInfo[szKey].has("CFBundlePrimaryIcon")) {
+			jvalue& jvPrimary = jvInfo[szKey]["CFBundlePrimaryIcon"];
+			if (jvPrimary.has("CFBundleIconFiles") && jvPrimary["CFBundleIconFiles"].is_array()) {
+				jvalue& jvFiles = jvPrimary["CFBundleIconFiles"];
+				for (size_t i = 0; i < jvFiles.size(); i++) {
+					string strName = jvFiles[i];
+					if (!strName.empty()) {
+						arrIconNames.push_back(strName);
+					}
+				}
+			}
+			// iOS 11+ prefers the Assets.car icon referenced by CFBundleIconName;
+			// drop it so the replaced PNG files take effect
+			jvPrimary.erase("CFBundleIconName");
+		}
+	}
+
+	if (arrIconNames.empty() && jvInfo.has("CFBundleIconFiles") && jvInfo["CFBundleIconFiles"].is_array()) {
+		jvalue& jvFiles = jvInfo["CFBundleIconFiles"];
+		for (size_t i = 0; i < jvFiles.size(); i++) {
+			string strName = jvFiles[i];
+			if (!strName.empty()) {
+				arrIconNames.push_back(strName);
+			}
+		}
+	}
+
+	if (arrIconNames.empty() && jvInfo.has("CFBundleIconFile")) {
+		string strName = jvInfo["CFBundleIconFile"];
+		if (!strName.empty()) {
+			arrIconNames.push_back(strName);
+		}
+	}
+
+	if (arrIconNames.empty()) { // no icon declared at all, create fresh entries
+		jvalue jvFiles;
+		jvFiles.push_back("AppIcon60x60");
+		jvInfo["CFBundleIcons"]["CFBundlePrimaryIcon"]["CFBundleIconFiles"] = jvFiles;
+		jvInfo["CFBundleIcons~ipad"]["CFBundlePrimaryIcon"]["CFBundleIconFiles"] = jvFiles;
+		arrIconNames.push_back("AppIcon60x60");
+	}
+
+	// overwrite every bundle-root png matching a declared icon name prefix
+	vector<string> arrIconFiles;
+	ZFile::EnumFolder(m_strAppFolder.c_str(), false, NULL, [&](bool bFolder, const string& strPath) {
+		if (!bFolder && ZFile::IsPathSuffix(strPath, ".png")) {
+			string strBaseName = ZUtil::GetBaseName(strPath.c_str());
+			for (const string& strName : arrIconNames) {
+				if (0 == strncmp(strBaseName.c_str(), strName.c_str(), strName.size())) {
+					arrIconFiles.push_back(strPath);
+					break;
+				}
+			}
+		}
+		return false;
+	});
+
+	if (arrIconFiles.empty()) { // declared but missing on disk
+		arrIconFiles.push_back(m_strAppFolder + "/" + arrIconNames[0] + "@2x.png");
+	}
+
+	int nReplaced = 0;
+	for (const string& strPath : arrIconFiles) {
+		if (ZFile::WriteFile(strPath.c_str(), strIconData)) {
+			nReplaced++;
+			ZLog::DebugV("\t\tIcon: %s\n", strPath.substr(m_strAppFolder.size() + 1).c_str());
+		} else {
+			ZLog::WarnV(">>> Warning: Can't write icon file! %s\n", strPath.c_str());
+		}
+	}
+	if (0 == nReplaced) {
+		ZLog::ErrorV(">>> Can't write any icon file!\n");
+		return false;
+	}
+
+	if (!jvInfo.style_write_plist_to_file("%s/Info.plist", m_strAppFolder.c_str())) {
+		ZLog::ErrorV(">>> Can't write app's Info.plist! %s\n", m_strAppFolder.c_str());
+		return false;
+	}
+
+	ZLog::PrintV(">>> AppIcon: \t%s (%ux%u) -> %d file(s)\n", ZUtil::GetBaseName(m_strIconFile.c_str()), uWidth, uHeight, nReplaced);
+	return true;
+}
+
 bool ZBundle::ModifyBundleInfo(const string& strBundleId, const string& strBundleVersion, const string& strDisplayName)
 {
 	jvalue jvInfo;
@@ -666,6 +792,13 @@ bool ZBundle::SignFolder(ZSignAsset* pSignAsset,
 	}
 
 	ApplyAppModifications();
+
+	if (!m_strIconFile.empty()) {
+		m_bForceSign = true;
+		if (!ChangeAppIcon()) {
+			return false;
+		}
+	}
 
 	if (!strBundleId.empty() || !strDisplayName.empty() || !strBundleVersion.empty()) {
 		m_bForceSign = true;

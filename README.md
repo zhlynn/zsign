@@ -112,6 +112,7 @@ Options:
   -n, --bundle_name       New bundle display name
   -r, --bundle_version    New bundle version
   -e, --entitlements      New entitlements file
+  -I, --icon              New app icon to replace the primary icon (PNG format)
   -z, --zip_level         Compression level for output ipa (0-9)
   -l, --dylib             Dylib to inject (use multiple -l for multiple dylibs)
   -D, --rm_dylib          Dylib to remove (use multiple -D for multiple)
@@ -167,6 +168,13 @@ zsign -k dev.p12 -p 123 -m dev.prov -l demo.dylib -o output.ipa demo.ipa
 **Change bundle id and name:**
 ```bash
 zsign -k dev.p12 -p 123 -m dev.prov -b 'com.new.bundle.id' -n 'NewName' -o output.ipa demo.ipa
+```
+
+**Change app icon:**
+```bash
+zsign -k dev.p12 -p 123 -m dev.prov -I newicon.png -o output.ipa demo.ipa
+# replaces the primary icon PNGs referenced by Info.plist and removes
+# CFBundleIconName so the new icon takes effect (a square PNG is recommended)
 ```
 
 **Inject dylib (LC_LOAD_DYLIB) into Mach-O:**

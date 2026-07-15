@@ -42,6 +42,7 @@ private:
 	void GetChangedFiles(jvalue& jvNode, vector<string>& arrChangedFiles);
 	bool ModifyPluginsBundleId(const string& strOldBundleId, const string& strNewBundleId);
 	bool ModifyBundleInfo(const string& strBundleId, const string& strBundleVersion, const string& strDisplayName);
+	bool ChangeAppIcon();
 
 private:
 	bool FindAppFolder(const string& strFolder, string& strAppFolder);
@@ -66,6 +67,7 @@ private:
 public:
 	bool		m_bEnableDocuments;
 	string		m_strMinVersion;
+	string		m_strIconFile;
 	bool		m_bRemoveExtensions;
 	bool		m_bRemoveWatchApp;
 	bool		m_bRemoveUISupportedDevices;
