@@ -238,19 +238,28 @@ bool Zip::_ReadFileFromZip(void* hZip, const string& strPath, const string& strR
 
 static bool _IsPathSafe(const string& strPath)
 {
-	if (strPath.empty() || strPath[0] == '/') {
+	if (strPath.empty()) {
+		return false;
+	}
+
+	string strNormalized = strPath;
+	ZUtil::StringReplace(strNormalized, "\\", "/");
+	if (strNormalized[0] == '/' || strNormalized[0] == '\\') {
+		return false;
+	}
+	if (string::npos != strNormalized.find(':')) {
 		return false;
 	}
 
 	size_t start = 0;
-	size_t len = strPath.size();
+	size_t len = strNormalized.size();
 	while (start < len) {
-		size_t end = strPath.find('/', start);
+		size_t end = strNormalized.find('/', start);
 		if (end == string::npos) {
 			end = len;
 		}
 		size_t compLen = end - start;
-		if (compLen == 2 && strPath[start] == '.' && strPath[start + 1] == '.') {
+		if (compLen == 2 && strNormalized[start] == '.' && strNormalized[start + 1] == '.') {
 			return false;
 		}
 		start = end + 1;

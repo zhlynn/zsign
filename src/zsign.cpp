@@ -11,6 +11,8 @@
 
 #ifdef _WIN32
 #include "common_win32.h"
+#else
+#include <sys/wait.h>
 #endif
 
 #ifndef ZSIGN_VERSION
@@ -56,6 +58,64 @@ const struct option options[] = {
 	{"help", no_argument, NULL, 'h'},
 	{}
 };
+
+static bool InstallSignedIpa(const string& strOutputFile)
+{
+	if (strOutputFile.empty()) {
+		return false;
+	}
+
+#ifdef _WIN32
+	string strCommand = "ideviceinstaller install \"";
+	strCommand += strOutputFile;
+	strCommand += "\"";
+
+	STARTUPINFOA si;
+	PROCESS_INFORMATION pi;
+	memset(&si, 0, sizeof(si));
+	memset(&pi, 0, sizeof(pi));
+	si.cb = sizeof(si);
+
+	vector<char> arrCommand(strCommand.begin(), strCommand.end());
+	arrCommand.push_back('\0');
+	if (!CreateProcessA(NULL, arrCommand.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+		ZLog::ErrorV(">>> Install failed to start ideviceinstaller! %s\n", strOutputFile.c_str());
+		return false;
+	}
+
+	WaitForSingleObject(pi.hProcess, INFINITE);
+	DWORD dwExitCode = 1;
+	GetExitCodeProcess(pi.hProcess, &dwExitCode);
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+	if (0 != dwExitCode) {
+		ZLog::ErrorV(">>> ideviceinstaller install failed! %s\n", strOutputFile.c_str());
+		return false;
+	}
+	return true;
+#else
+	pid_t pid = fork();
+	if (pid < 0) {
+		ZLog::ErrorV(">>> Install failed to fork ideviceinstaller! %s\n", strOutputFile.c_str());
+		return false;
+	}
+	if (0 == pid) {
+		execlp("ideviceinstaller", "ideviceinstaller", "install", strOutputFile.c_str(), (char*)NULL);
+		_exit(127);
+	}
+
+	int nStatus = 0;
+	if (waitpid(pid, &nStatus, 0) < 0) {
+		ZLog::ErrorV(">>> Install failed to wait ideviceinstaller! %s\n", strOutputFile.c_str());
+		return false;
+	}
+	if (!WIFEXITED(nStatus) || 0 != WEXITSTATUS(nStatus)) {
+		ZLog::ErrorV(">>> ideviceinstaller install failed! %s\n", strOutputFile.c_str());
+		return false;
+	}
+	return true;
+#endif
+}
 
 int usage()
 {
@@ -440,7 +500,7 @@ int main(int argc, char* argv[])
 
 	//install
 	if (bRet && bInstall) {
-		bRet = ZUtil::SystemExecV("ideviceinstaller install  \"%s\"", strOutputFile.c_str());
+		bRet = InstallSignedIpa(strOutputFile);
 	}
 
 	//clean
