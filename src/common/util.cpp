@@ -51,22 +51,6 @@ uint64_t ZUtil::GetMicroSecond()
 #endif
 }
 
-bool  ZUtil::SystemExecV(const char* szCmd, ...)
-{
-	FORMAT_V(szCmd, szRealCmd);
-
-	if (strlen(szRealCmd) <= 0) {
-		return false;
-	}
-
-	int status = system(szRealCmd);
-	if (0 != status) {
-		ZLog::ErrorV("SystemExec: \"%s\", error!\n", szRealCmd);
-		return false;
-	}
-	return true;
-}
-
 uint16_t ZUtil::Swap(uint16_t value)
 {
 	return ((value >> 8) & 0x00ff) | ((value << 8) & 0xff00);
