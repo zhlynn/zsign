@@ -49,6 +49,7 @@ endif
 INCLUDES = -I../../src -I../../src/common
 INCLUDES += $(OPENSSL_INCLUDE) $(shell pkg-config --cflags $(MINIZIP_PC))
 LIBS += $(shell pkg-config --libs $(MINIZIP_PC))
+LIBS += $(shell pkg-config --libs zlib)
 ZLIB_OBJS =
 MINIZIP_OBJS =
 endif
