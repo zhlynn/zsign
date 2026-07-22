@@ -477,24 +477,42 @@ int main(int argc, char* argv[])
 
 	//archive
 	if (bRet && !strOutputFile.empty()) {
-		size_t pos = bundle.m_strAppFolder.rfind("Payload");
-		if (string::npos != pos && pos > 0) {
-			atimer.Reset();
-			ZLog::PrintV(">>> Archiving: \t%s ... \n", strOutputFile.c_str());
-			string strBaseFolder = bundle.m_strAppFolder.substr(0, pos - 1);
-			if (!Zip::Archive(strBaseFolder.c_str(), strOutputFile.c_str(), uZipLevel)) {
+		atimer.Reset();
+		ZLog::PrintV(">>> Archiving: \t%s ... \n", strOutputFile.c_str());
+
+		// Stage the signed app inside its own throwaway Payload/ folder (as a
+		// sibling of the app, so the move is a same-filesystem rename) instead
+		// of archiving from wherever the app happens to sit on disk. That
+		// guarantees the IPA only ever contains Payload/<app>, regardless of
+		// what other files/folders happen to live alongside the app.
+		string strAppFolder = bundle.m_strAppFolder;
+		size_t sepPos = strAppFolder.find_last_of("/\\");
+		string strParentFolder = (string::npos != sepPos) ? strAppFolder.substr(0, sepPos) : ".";
+		string strAppBaseName = ZUtil::GetBaseName(strAppFolder.c_str());
+
+		string strStageRoot = ZFile::GetRealPathV("%s/.zsign_stage_%llu", strParentFolder.c_str(), ZUtil::GetMicroSecond());
+		string strStagePayload = strStageRoot + "/Payload";
+		string strStageAppPath = strStagePayload + "/" + strAppBaseName;
+
+		ZFile::CreateFolder(strStagePayload.c_str());
+		if (0 != rename(strAppFolder.c_str(), strStageAppPath.c_str())) {
+			ZLog::ErrorV(">>> Failed to stage app folder for archiving! %s\n", strAppFolder.c_str());
+			ZFile::RemoveFolder(strStageRoot.c_str());
+			bRet = false;
+		} else {
+			bRet = Zip::Archive(strStageRoot.c_str(), strOutputFile.c_str(), uZipLevel);
+			rename(strStageAppPath.c_str(), strAppFolder.c_str()); // restore regardless of archive result
+			ZFile::RemoveFolder(strStageRoot.c_str());
+
+			if (!bRet) {
 				ZLog::Error(">>> Archive failed!\n");
-				bRet = false;
 			} else {
 				atimer.PrintResult(true, ">>> Archive OK! (%s)", ZFile::GetFileSizeString(strOutputFile.c_str()).c_str());
-				if (bRet && !strMetadataDir.empty()) {
+				if (!strMetadataDir.empty()) {
 					ZFile::CreateFolder(strMetadataDir.c_str());
 					GetMetadata(bundle.m_strAppFolder, strMetadataDir, strOutputFile);
 				}
 			}
-		} else {
-			ZLog::Error(">>> Can't find payload directory!\n");
-			bRet = false;
 		}
 	}
 
