@@ -1,5 +1,5 @@
 #pragma once
-#include "common/mach-o.h"
+#include "mach-o.h"
 #include "openssl.h"
 #include <set>
 

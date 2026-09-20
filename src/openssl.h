@@ -1,5 +1,5 @@
 #pragma once
-#include "common/json.h"
+#include "json.h"
 #include <openssl/x509.h>
 #include <openssl/pem.h>
 

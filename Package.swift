@@ -10,10 +10,6 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "zsign",
-            targets: ["zsign"]
-        ),
-        .library(
             name: "Zupersign",
             targets: ["Zupersign"]
         ),
@@ -23,24 +19,18 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "zsign",
+            name: "Zupersign",
             dependencies: [
                 .product(name: "OpenSSL", package: "xtool-core"),
+                .product(name: "SignerSupport", package: "xtool-core")
             ],
             path: "src",
             exclude: [
                 "third-party/minizip/iowin32.c",
             ],
             cSettings: [
-                .headerSearchPath("include/common"),
-            ]
-        ),
-        .target(
-            name: "Zupersign",
-            dependencies: [
-                "zsign",
-                .product(name: "OpenSSL", package: "xtool-core"),
-                .product(name: "SignerSupport", package: "xtool-core")
+                .headerSearchPath("common"),
+                .headerSearchPath("."),
             ]
         ),
     ],
