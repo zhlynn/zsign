@@ -191,7 +191,10 @@ bool ZBundle::GenerateCodeResources(const string& strFolder, jvalue& jvCodeRes)
 		string strFile = strFolder + "/" + strKey;
 		string strSHA1Base64;
 		string strSHA256Base64;
-		ZSHA::SHABase64File(strFile.c_str(), strSHA1Base64, strSHA256Base64);
+		if (!ZSHA::SHABase64File(strFile.c_str(), strSHA1Base64, strSHA256Base64)) {
+			ZLog::ErrorV(">>> Can't get file SHASum! %s\n", strFile.c_str());
+			return false;
+		}
 
 #ifdef _WIN32
 		strKey = ic.A2U8(strKey);
