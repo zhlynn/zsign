@@ -14,7 +14,7 @@ ZMachO::ZMachO()
 
 ZMachO::~ZMachO()
 {
-	FreeArchOes();
+	Free();
 }
 
 bool ZMachO::Init(const char* szFile)
@@ -31,8 +31,9 @@ bool ZMachO::InitV(const char* szPath, ...)
 
 bool ZMachO::Free()
 {
+	bool closed = CloseFile();
 	FreeArchOes();
-	return CloseFile();
+	return closed;
 }
 
 bool ZMachO::NewArchO(uint8_t* pBase, uint32_t uLength)
@@ -59,7 +60,7 @@ void ZMachO::FreeArchOes()
 
 bool ZMachO::OpenFile(const char* szPath)
 {
-	FreeArchOes();
+	Free();
 
 	m_sSize = 0;
 	m_pBase = (uint8_t*)ZFile::MapFile(szPath, 0, 0, &m_sSize, false);
@@ -93,15 +94,17 @@ bool ZMachO::OpenFile(const char* szPath)
 
 bool ZMachO::CloseFile()
 {
-	if (NULL == m_pBase || m_sSize <= 0) {
-		return false;
+	if (NULL == m_pBase) {
+		return true;
 	}
 
-	if (!ZFile::UnmapFile((void*)m_pBase, m_sSize)) {
+	bool closed = ZFile::UnmapFile((void*)m_pBase, m_sSize);
+	if (!closed) {
 		ZLog::ErrorV(">>> CodeSign write(munmap) failed! Error: %p, %lu, %s\n", m_pBase, m_sSize, strerror(errno));
-		return false;
 	}
-	return true;
+	m_pBase = NULL;
+	m_sSize = 0;
+	return closed;
 }
 
 void ZMachO::PrintInfo()

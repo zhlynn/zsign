@@ -94,6 +94,41 @@ make clean && make SYSTEM_MINIZIP=ng   # links minizip-ng via its minizip compat
 
 Open `build/windows/vs2022/zsign.sln` in Visual Studio 2022 and build.
 
+### WebAssembly
+
+The `zsign-wasm.zip` release asset contains a CLI (`zsign.js`), an ES module (`zsign.mjs`) and their shared `zsign.wasm`. Keep all three files together. Run `node zsign.js -v`, or pass the usual zsign arguments to sign files on the host filesystem.
+
+In a browser, serve `zsign.mjs` and `zsign.wasm` together over HTTP(S). Run the CLI in a module Worker to keep signing off the UI thread:
+
+```js
+// signer.mjs — start with new Worker('./signer.mjs', { type: 'module' }).
+import createZsignModule from './zsign.mjs';
+
+self.onmessage = async ({ data }) => {
+  try {
+    const zsign = await createZsignModule({ noInitialRun: true });
+    zsign.FS.writeFile('/input.dylib', new Uint8Array(data));
+    const status = zsign.callMain(['-a', '-f', '/input.dylib']);
+    if (status !== 0) throw new Error(`zsign exited with status ${status}`);
+    const output = zsign.FS.readFile('/input.dylib');
+    self.postMessage({ output: output.buffer }, [output.buffer]);
+  } catch (error) {
+    self.postMessage({ error: error.message });
+  } finally {
+    self.close();
+  }
+};
+```
+
+Send an input `ArrayBuffer` to the Worker. Browser paths refer to its in-memory filesystem; write inputs (including keys and provisioning profiles) there before calling the CLI, then read the output before closing the Worker. For IPA input, pass `-o /signed.ipa` and read that file. IPA installation (`-i`) is unavailable in WebAssembly.
+
+To build it locally with Docker from the repository root:
+
+```bash
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/src" -w /src \
+  emscripten/emsdk:3.1.74 bash build/wasm/build.sh
+```
+
 ## Usage
 
 ```
