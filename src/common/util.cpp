@@ -4,6 +4,8 @@
 #define PRId64						"lld"
 #elif __APPLE__
 #define PRId64						"lld"
+#elif __EMSCRIPTEN__
+#define PRId64						"lld"
 #else
 #define PRId64						"ld"
 #endif

@@ -11,7 +11,7 @@
 
 #ifdef _WIN32
 #include "common_win32.h"
-#else
+#elif !__EMSCRIPTEN__
 #include <sys/wait.h>
 #endif
 
@@ -65,7 +65,10 @@ static bool InstallSignedIpa(const string& strOutputFile)
 		return false;
 	}
 
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+	ZLog::ErrorV(">>> Installing an IPA is unavailable in the WebAssembly build.\n");
+	return false;
+#elif defined(_WIN32)
 	string strCommand = "ideviceinstaller install \"";
 	strCommand += strOutputFile;
 	strCommand += "\"";
@@ -161,6 +164,12 @@ int usage()
 
 int main(int argc, char* argv[])
 {
+#ifdef __EMSCRIPTEN__
+	// A module can invoke the CLI more than once. Reset process-global CLI state.
+	optind = 0;
+	ZLog::SetLogLever(ZLog::E_INFO);
+#endif
+
 	ZTimer atimer;
 	ZTimer gtimer;
 
@@ -363,7 +372,7 @@ int main(int argc, char* argv[])
 
 	bool bZipFile = ZFile::IsZipFile(strPath.c_str());
 	if (!bZipFile && !ZFile::IsFolder(strPath.c_str())) { // macho file
-		ZMachO* macho = new ZMachO();
+		unique_ptr<ZMachO> macho(new ZMachO());
 		if (!macho->Init(strPath.c_str())) {
 			ZLog::ErrorV(">>> Invalid mach-o file! %s\n", strPath.c_str());
 			return -1;

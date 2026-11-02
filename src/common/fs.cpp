@@ -6,6 +6,10 @@
 
 map<void*, void*> ZFile::s_mapFiles;
 
+#ifdef __EMSCRIPTEN__
+static map<void*, pair<int, bool>> s_wasmMapFiles;
+#endif
+
 bool ZFile::IsRegularFile(const char* path)
 {
 	struct stat st = { 0 };
@@ -58,7 +62,16 @@ void* ZFile::MapFile(const char* path, size_t offset, size_t size, size_t* psize
 		if (MAP_FAILED == base) {
 			base = NULL;
 		}
+#ifdef __EMSCRIPTEN__
+		if (NULL != base) {
+			// Emscripten needs the descriptor open until msync writes the mapping back.
+			s_wasmMapFiles[base] = make_pair(fd, ro);
+		} else {
+			close(fd);
+		}
+#else
 		close(fd);
+#endif
 	}
 
 #endif
@@ -78,7 +91,25 @@ bool ZFile::UnmapFile(void* base, size_t size)
 	}
 	return false;
 #else
+#ifdef __EMSCRIPTEN__
+	auto it = s_wasmMapFiles.find(base);
+	if (it == s_wasmMapFiles.end()) {
+		errno = EINVAL;
+		return false;
+	}
+	bool synced = (it->second.second || 0 == msync(base, size, MS_SYNC));
+	int syncError = errno;
+	int result = munmap(base, size);
+	close(it->second.first);
+	s_wasmMapFiles.erase(it);
+	if (!synced) {
+		errno = syncError;
+		return false;
+	}
+	return 0 == result;
+#else
 	return (0 == munmap(base, size));
+#endif
 #endif
 }
 
@@ -245,7 +276,12 @@ bool ZFile::CreateFolderV(const char* szPath, ...)
 
 int ZFile::RemoveFolderCallBack(const char* fpath, const struct stat* sb, int typeflag, struct FTW* ftwbuf)
 {
+#ifdef __EMSCRIPTEN__
+	// Emscripten maps remove() to unlink(), which cannot remove directories.
+	int ret = (FTW_DP == typeflag) ? rmdir(fpath) : unlink(fpath);
+#else
 	int ret = remove(fpath);
+#endif
 	if (ret) {
 		perror(fpath);
 	}

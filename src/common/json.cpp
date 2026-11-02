@@ -17,6 +17,8 @@ using namespace std;
 
 #ifdef __APPLE__
 #define PRId64						"lld"
+#elif __EMSCRIPTEN__
+#define PRId64						"lld"
 #else
 #define PRId64						"ld"
 #endif
@@ -398,6 +400,8 @@ string jvalue::as_string() const
 	{
 		char buf[256];
 #ifdef _WIN32
+		::snprintf(buf, 256, "%lld", m_value.v_date);
+#elif __EMSCRIPTEN__
 		::snprintf(buf, 256, "%lld", m_value.v_date);
 #else
 		::snprintf(buf, 256, "%ld", m_value.v_date);	

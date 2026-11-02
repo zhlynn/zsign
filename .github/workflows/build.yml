@@ -392,9 +392,40 @@ jobs:
           name: zsign-freebsd-x86_64
           path: bin/zsign
 
+  build-wasm:
+    name: Build WebAssembly
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build
+        run: |
+          VER=""
+          if [[ "${{ github.ref_name }}" == v* ]]; then
+            VER="${{ github.ref_name }}"
+            VER="${VER#v}"
+          fi
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -e VERSION="$VER" -v "$PWD:/src" -w /src \
+            emscripten/emsdk:3.1.74 bash build/wasm/build.sh
+
+      - name: package and smoke test
+        run: |
+          (cd bin && zip -r ../zsign-wasm.zip zsign.js zsign.mjs zsign.wasm LICENSE OPENSSL-LICENSE.txt bundled-notices)
+          mkdir "$RUNNER_TEMP/zsign-wasm"
+          unzip -q zsign-wasm.zip -d "$RUNNER_TEMP/zsign-wasm"
+          node "$RUNNER_TEMP/zsign-wasm/zsign.js" -v
+          ZSIGN_WASM_DIR="$RUNNER_TEMP/zsign-wasm" node build/wasm/smoke.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zsign-wasm
+          path: zsign-wasm.zip
+          if-no-files-found: error
+
   create-release:
     name: Create Release
-    needs: [build-linux, build-macos, build-windows, build-android, build-docker, build-linux-musl, build-linux-armv7, build-freebsd]
+    needs: [build-linux, build-macos, build-windows, build-android, build-docker, build-linux-musl, build-linux-armv7, build-freebsd, build-wasm]
     runs-on: ubuntu-22.04
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -412,6 +443,7 @@ jobs:
           [ -d zsign-linux-musl-static ] && chmod +x zsign-linux-musl-static/zsign-musl && tar -czf ../releases/zsign-linux-musl-static.tar.gz -C zsign-linux-musl-static zsign-musl
           [ -d zsign-macos-arm64 ] && chmod +x zsign-macos-arm64/zsign && tar -czf ../releases/zsign-macos-arm64.tar.gz -C zsign-macos-arm64 zsign
           [ -d zsign-windows-x64 ] && (cd zsign-windows-x64 && zip ../../releases/zsign-windows-x64.zip zsign.exe)
+          [ -f zsign-wasm/zsign-wasm.zip ] && cp zsign-wasm/zsign-wasm.zip ../releases/
           [ -f zsign-docker/zsign-docker.tar.gz ] && cp zsign-docker/zsign-docker.tar.gz ../releases/
           cd ..
           ls -lh releases/
