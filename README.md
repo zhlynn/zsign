@@ -19,6 +19,7 @@ If this tool helps you, please give it a ⭐ **star** — [zhlynn](https://githu
 - [Features](#features)
 - [Supported Platforms](#supported-platforms)
 - [Build](#build)
+- [Swift package](#swift-package)
 - [Usage](#usage)
 - [Examples](#examples)
 - [Certificate Check (-C)](#certificate-check--c)
@@ -93,6 +94,43 @@ make clean && make SYSTEM_MINIZIP=ng   # links minizip-ng via its minizip compat
 ### Windows
 
 Open `build/windows/vs2022/zsign.sln` in Visual Studio 2022 and build.
+
+## Swift package
+
+This fork can also be used as a library from Swift. `Package.swift` builds the signing code as a SwiftPM target, and the `ZSign` product puts a small Swift API on top of it for re-signing an IPA. The command line tool is unchanged and still builds with the Makefiles above.
+
+Add the package, pinned to a commit:
+
+```swift
+.package(url: "https://github.com/SongShift/zsign.git", revision: "<commit>")
+```
+
+Then sign:
+
+```swift
+import ZSign
+
+let report = try IPASigner().sign(
+    ipa: inputURL,
+    output: outputURL,
+    identity: SigningIdentity(privateKey: keyData),
+    profiles: [try ProvisioningProfile(data: profileData)],
+    workDirectory: FileManager.default.temporaryDirectory
+)
+```
+
+Pass one provisioning profile for the app and one for each app extension. Each is matched to its bundle by bundle ID, and signing fails if one is missing. The private key can be PEM, DER or PKCS#12. If you don't pass a certificate, the one in the profile that matches the key is used.
+
+Unlike the command line tool, the Swift API keeps the entitlements each binary was built with instead of taking them from the profile. A profile lists everything the app is allowed to claim, wildcards included, which is usually more than a signed app should carry.
+
+The package links the system OpenSSL 3 and zlib rather than the bundled copies:
+
+```bash
+brew install openssl@3                  # macOS
+dnf -y install openssl-devel zlib-devel # Amazon Linux 2023, Fedora
+```
+
+zsign keeps global state while it signs, so calls are serialized and only one sign runs at a time per process. The package has been built and tested on macOS. Linux has not been verified yet.
 
 ## Usage
 

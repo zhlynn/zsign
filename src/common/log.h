@@ -30,8 +30,10 @@ public:
 	static void Print(int nLevel, const char* szLog);
 	static void PrintV(int nLevel, const char* szFormat, ...);
 	static void SetLogLever(int nLogLevel) { g_nLogLevel = nLogLevel; }
+	static void SetSink(void (*pSink)(const char*)) { g_pSink = pSink; }
 
 private:
 	static void _Print(const char* szLog, int nColor = 0);
 	static int g_nLogLevel;
+	static void (*g_pSink)(const char*);
 };

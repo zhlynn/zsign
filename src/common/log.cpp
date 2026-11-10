@@ -2,10 +2,16 @@
 
 
 int ZLog::g_nLogLevel = ZLog::E_INFO;
+void (*ZLog::g_pSink)(const char*) = NULL;
 
 void ZLog::_Print(const char* szLog, int nColor)
 {
 	if (g_nLogLevel <= E_NONE) {
+		return;
+	}
+
+	if (NULL != g_pSink) {
+		g_pSink(szLog);
 		return;
 	}
 

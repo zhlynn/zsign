@@ -1,0 +1,5 @@
+module COpenSSL [system] {
+    header "shim.h"
+    link "crypto"
+    export *
+}
