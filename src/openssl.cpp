@@ -515,6 +515,12 @@ bool ZSignAsset::GenerateCMS(void* pscert, void* pspkey, const string& strCDHash
 
 	strCMSOutput.clear();
 	strCMSOutput.append(bptr->data, bptr->length);
+	BIO_free(out);
+	BIO_free(in);
+	CMS_ContentInfo_free(cms);
+	X509_ATTRIBUTE_free(attr);
+	ASN1_OBJECT_free(obj2);
+	ASN1_OBJECT_free(obj);
 	ASN1_TYPE_free(type_256);
 	sk_X509_pop_free(otherCerts, X509_free); // CMS_sign holds its own references
 	return (!strCMSOutput.empty());
@@ -529,21 +535,25 @@ bool ZSignAsset::GetCMSContent(const string& strCMSDataInput, string& strContent
 	BIO* in = BIO_new(BIO_s_mem());
 	OPENSSL_assert((size_t)BIO_write(in, strCMSDataInput.data(), (int)strCMSDataInput.size()) == strCMSDataInput.size());
 	CMS_ContentInfo* cms = d2i_CMS_bio(in, NULL);
+	BIO_free(in);
 	if (!cms) {
 		return CMSError();
 	}
 
 	ASN1_OCTET_STRING** pos = CMS_get0_content(cms);
 	if (!pos) {
+		CMS_ContentInfo_free(cms);
 		return CMSError();
 	}
 
 	if (!(*pos)) {
+		CMS_ContentInfo_free(cms);
 		return CMSError();
 	}
 
 	strContentOutput.clear();
 	strContentOutput.append((const char*)ASN1_STRING_get0_data(*pos), ASN1_STRING_length(*pos));
+	CMS_ContentInfo_free(cms);
 	return (!strContentOutput.empty());
 }
 
@@ -932,6 +942,7 @@ bool ZSignAsset::Init(
 			BIO* bioCert = BIO_new_mem_buf(strCertData.c_str(), (int)strCertData.size());
 			if (NULL != bioCert) {
 				x509Cert = d2i_X509_bio(bioCert, NULL);
+				BIO_free(bioCert);
 				if (NULL != x509Cert) {
 					if (X509_check_private_key(x509Cert, evpPKey)) {
 						break;
@@ -939,18 +950,20 @@ bool ZSignAsset::Init(
 					X509_free(x509Cert);
 					x509Cert = NULL;
 				}
-				BIO_free(bioCert);
 			}
 		}
 	}
 
 	if (NULL == x509Cert) {
 		ZLog::Error(">>> Can't find paired certificate and private key!\n");
+		EVP_PKEY_free(evpPKey);
 		return false;
 	}
 
 	if (!GetCertSubjectCN(x509Cert, m_strSubjectCN)) {
 		ZLog::Error(">>> Can't find paired certificate subject common name!\n");
+		X509_free(x509Cert);
+		EVP_PKEY_free(evpPKey);
 		return false;
 	}
 
